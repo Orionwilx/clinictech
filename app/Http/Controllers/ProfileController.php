@@ -50,7 +50,9 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $user->delete();
+        // Autoeliminación: borrado definitivo (libera el email). El borrado
+        // recuperable (soft delete) es solo para bajas gestionadas por admin.
+        $user->forceDelete();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
