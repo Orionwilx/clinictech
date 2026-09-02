@@ -43,7 +43,10 @@ class EquipmentController extends Controller
     {
         $this->authorize('view equipment');
 
-        $equipment->load(['client', 'area', 'brand', 'model']);
+        $equipment->load([
+            'client', 'area', 'brand', 'model',
+            'workOrders' => fn ($q) => $q->with('technician')->latest(),
+        ]);
 
         return view('admin.equipment.show', compact('equipment'));
     }

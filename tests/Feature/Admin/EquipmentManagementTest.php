@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Equipment;
 use App\Models\EquipmentModel;
 use App\Models\User;
+use App\Models\WorkOrder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -133,5 +134,22 @@ class EquipmentManagementTest extends TestCase
         $this->actingAs($this->admin())
             ->post(route('admin.equipment.store'), [])
             ->assertSessionHasErrors(['client_id', 'name', 'serial_number', 'status']);
+    }
+
+    public function test_equipment_life_sheet_shows_work_order_history(): void
+    {
+        $equipment = Equipment::factory()->create();
+        $order = WorkOrder::factory()->create([
+            'client_id' => $equipment->client_id,
+            'equipment_id' => $equipment->id,
+            'title' => 'Cambio de sensor de presión',
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.equipment.show', $equipment))
+            ->assertOk()
+            ->assertSee('Hoja de vida del equipo')
+            ->assertSee($order->code)
+            ->assertSee('Cambio de sensor de presión');
     }
 }

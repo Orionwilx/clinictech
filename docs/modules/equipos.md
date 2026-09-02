@@ -1,10 +1,13 @@
 # Módulo: Equipos (Equipment)
 
 - **Ref. plan**: §5.3 de `project.md`
-- **Estado**: ✅ implementado (CRUD + inventario; hoja de vida pendiente de OT/Mantenimientos)
+- **Estado**: ✅ implementado (CRUD + inventario + hoja de vida)
 - **Depende de**: Clientes ✅
 
-> Inventario de equipos que pertenecen a un cliente. La hoja de vida/historial (§5.3) se completa cuando existan Órdenes y Mantenimientos. Equipos eliminados = soft delete, visibles solo para admin.
+> Inventario de equipos que pertenecen a un cliente. La hoja de vida/historial (§5.3) consolida las Órdenes de trabajo del equipo. Equipos eliminados = soft delete, visibles solo para admin.
+
+## Hoja de vida (`equipment/show`)
+La ficha del equipo es su **hoja de vida**: identidad (cliente, área, marca/modelo, serial, compra/garantía, ubicación, observaciones) + **resumen** (nº de intervenciones, preventivas, correctivas, última intervención) + **historial cronológico** de sus `WorkOrder` (código enlazado, tipo, estado, título, diagnóstico, trabajo realizado, técnico, fecha), ordenado del más reciente al más antiguo. El controlador (`EquipmentController::show`) carga `workOrders.technician` con `latest()`. Botón «+ Nueva orden» precarga `client_id` + `equipment_id` en el form de OT.
 
 ## Modelo
 `Equipment` → tabla `equipment` (incontable; el segmento de ruta y vistas también son `equipment`).

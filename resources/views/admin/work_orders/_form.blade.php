@@ -21,7 +21,7 @@
             <option value="">— Sin equipo —</option>
             @foreach ($equipment as $item)
                 <option value="{{ $item->id }}" data-client="{{ $item->client_id }}"
-                        @selected(old('equipment_id', $workOrder->equipment_id ?? '') == $item->id)>{{ $item->name }}</option>
+                        @selected(old('equipment_id', $workOrder->equipment_id ?? request('equipment_id')) == $item->id)>{{ $item->name }}</option>
             @endforeach
         </select>
         <x-input-error :messages="$errors->get('equipment_id')" class="mt-2" />
