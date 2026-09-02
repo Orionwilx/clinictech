@@ -28,8 +28,8 @@ class Equipment extends Model
         'client_id',
         'name',
         'type',
-        'brand',
-        'model',
+        'brand_id',
+        'model_id',
         'serial_number',
         'purchase_date',
         'warranty_expiry',
@@ -49,6 +49,16 @@ class Equipment extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function model(): BelongsTo
+    {
+        return $this->belongsTo(EquipmentModel::class, 'model_id');
     }
 
     public function workOrders(): HasMany

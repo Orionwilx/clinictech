@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\EquipmentModel;
 use App\Services\ClientService;
 use App\Services\TechnicianService;
 use App\Services\WorkOrderService;
@@ -92,11 +93,19 @@ class DemoSeeder extends Seeder
             ]),
         ];
 
+        // Resuelve [brand_id, model_id] a partir de los nombres del catálogo.
+        $catalog = function (string $brandName, string $modelName): array {
+            $model = EquipmentModel::whereHas('brand', fn ($q) => $q->where('name', $brandName))
+                ->where('name', $modelName)->first();
+
+            return ['brand_id' => optional($model)->brand_id, 'model_id' => optional($model)->id];
+        };
+
         // Equipos por cliente.
         $monitor = Equipment::create([
             'client_id' => $clinicaValle->id,
             'name' => 'Monitor de signos vitales',
-            'type' => 'Monitor', 'brand' => 'Philips', 'model' => 'MX450',
+            'type' => 'Monitor', ...$catalog('Philips', 'IntelliVue MX450'),
             'serial_number' => 'SN-VLL-0001', 'location' => 'UCI',
             'purchase_date' => '2023-03-10', 'warranty_expiry' => '2026-03-10',
             'status' => 'active',
@@ -104,7 +113,7 @@ class DemoSeeder extends Seeder
         $ventilador = Equipment::create([
             'client_id' => $clinicaValle->id,
             'name' => 'Ventilador mecánico',
-            'type' => 'Ventilador', 'brand' => 'Dräger', 'model' => 'Evita V300',
+            'type' => 'Ventilador', ...$catalog('Dräger', 'Evita V300'),
             'serial_number' => 'SN-VLL-0002', 'location' => 'UCI',
             'purchase_date' => '2022-07-01', 'warranty_expiry' => '2025-07-01',
             'status' => 'maintenance',
@@ -112,7 +121,7 @@ class DemoSeeder extends Seeder
         $desfibrilador = Equipment::create([
             'client_id' => $hospitalNorte->id,
             'name' => 'Desfibrilador', 'type' => 'Desfibrilador',
-            'brand' => 'Zoll', 'model' => 'R Series',
+            ...$catalog('Zoll', 'R Series'),
             'serial_number' => 'SN-NOR-0001', 'location' => 'Urgencias',
             'purchase_date' => '2021-11-20', 'warranty_expiry' => '2024-11-20',
             'status' => 'active',
@@ -120,7 +129,7 @@ class DemoSeeder extends Seeder
         $bomba = Equipment::create([
             'client_id' => $hospitalNorte->id,
             'name' => 'Bomba de infusión', 'type' => 'Bomba de infusión',
-            'brand' => 'B. Braun', 'model' => 'Infusomat',
+            ...$catalog('B. Braun', 'Infusomat Space'),
             'serial_number' => 'SN-NOR-0002', 'location' => 'Hospitalización',
             'purchase_date' => '2020-05-15', 'warranty_expiry' => '2023-05-15',
             'status' => 'inactive',
@@ -128,7 +137,7 @@ class DemoSeeder extends Seeder
         $ecografo = Equipment::create([
             'client_id' => $centroImagen->id,
             'name' => 'Ecógrafo', 'type' => 'Imagenología',
-            'brand' => 'GE', 'model' => 'Logiq E10',
+            ...$catalog('GE Healthcare', 'Logiq E10'),
             'serial_number' => 'SN-IMG-0001', 'location' => 'Sala 2',
             'purchase_date' => '2024-01-05', 'warranty_expiry' => '2027-01-05',
             'status' => 'active',

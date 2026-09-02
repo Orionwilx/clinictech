@@ -15,8 +15,8 @@
 | client_id | FK clients | required, constrained | Dueño del equipo |
 | name | string | required, max:255 | Nombre del equipo |
 | type | string | nullable | Tipo (monitor, ventilador…) |
-| brand | string | nullable | Marca |
-| model | string | nullable | Modelo |
+| brand_id | FK brands | nullable, exists | Marca (catálogo) |
+| model_id | FK equipment_models | nullable, exists, debe pertenecer a la marca | Modelo (catálogo) |
 | serial_number | string | required, unique | Serial |
 | purchase_date | date | nullable | Fecha de compra |
 | warranty_expiry | date | nullable | Vencimiento de garantía |
@@ -34,9 +34,15 @@ Constante `Equipment::STATUSES` mapea valor → etiqueta:
 
 Default: `active`. En BD/código se guarda el valor en inglés; en vistas se muestra la etiqueta en español (`Equipment::STATUSES[$status]`).
 
+## Catálogo de marcas y modelos
+- `Brand` (tabla `brands`) y `EquipmentModel` (tabla `equipment_models`, `belongsTo Brand`). Un modelo pertenece a una marca (`unique(brand_id, name)`).
+- En el formulario de equipo, **listas dependientes**: al elegir marca se filtran sus modelos (Alpine). El `model_id` debe pertenecer al `brand_id` (validado en Request).
+- CRUD admin: `Admin/BrandController` y `Admin/EquipmentModelController` (permisos `brands` y `equipment_models`, solo admin). Semilla inicial en `EquipmentCatalogSeeder`.
+
 ## Relaciones
 - `belongsTo(Client)` — dueño del equipo.
-- (futuras) `hasMany(WorkOrder)`, `hasMany(Maintenance)` — alimentan la hoja de vida.
+- `belongsTo(Brand)` · `belongsTo(EquipmentModel, 'model_id')` — catálogo.
+- `hasMany(WorkOrder)`. (Mantenimiento = OT tipo preventivo/correctivo.)
 
 ## Reglas de negocio
 - `serial_number` requerido y único (identifica el equipo).

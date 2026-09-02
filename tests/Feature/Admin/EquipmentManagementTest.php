@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Brand;
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\EquipmentModel;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,12 +31,15 @@ class EquipmentManagementTest extends TestCase
      */
     private function validPayload(array $overrides = []): array
     {
+        $brand = Brand::factory()->create();
+        $model = EquipmentModel::factory()->create(['brand_id' => $brand->id]);
+
         return array_merge([
             'client_id' => Client::factory()->create()->id,
             'name' => 'Monitor de signos vitales',
             'type' => 'Monitor',
-            'brand' => 'Philips',
-            'model' => 'MX450',
+            'brand_id' => $brand->id,
+            'model_id' => $model->id,
             'serial_number' => 'SN-12345678',
             'purchase_date' => '2025-01-15',
             'warranty_expiry' => '2027-01-15',

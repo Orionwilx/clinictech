@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Equipment\StoreEquipmentRequest;
 use App\Http\Requests\Equipment\UpdateEquipmentRequest;
+use App\Models\Brand;
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\EquipmentModel;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class EquipmentController extends Controller
@@ -17,7 +18,7 @@ class EquipmentController extends Controller
     {
         $this->authorize('view equipment');
 
-        $equipment = Equipment::with('client')->withTrashed()->latest()->paginate(15);
+        $equipment = Equipment::with(['client', 'brand', 'model'])->withTrashed()->latest()->paginate(15);
 
         return view('admin.equipment.index', compact('equipment'));
     }
@@ -26,7 +27,7 @@ class EquipmentController extends Controller
     {
         $this->authorize('create equipment');
 
-        return view('admin.equipment.create', ['clients' => $this->clientOptions()]);
+        return view('admin.equipment.create', $this->formOptions());
     }
 
     public function store(StoreEquipmentRequest $request): RedirectResponse
@@ -41,7 +42,7 @@ class EquipmentController extends Controller
     {
         $this->authorize('view equipment');
 
-        $equipment->load('client');
+        $equipment->load(['client', 'brand', 'model']);
 
         return view('admin.equipment.show', compact('equipment'));
     }
@@ -50,10 +51,10 @@ class EquipmentController extends Controller
     {
         $this->authorize('update equipment');
 
-        return view('admin.equipment.edit', [
-            'equipment' => $equipment,
-            'clients' => $this->clientOptions(),
-        ]);
+        return view('admin.equipment.edit', array_merge(
+            ['equipment' => $equipment],
+            $this->formOptions()
+        ));
     }
 
     public function update(UpdateEquipmentRequest $request, Equipment $equipment): RedirectResponse
@@ -85,12 +86,16 @@ class EquipmentController extends Controller
     }
 
     /**
-     * Clientes activos para el selector (id => nombre).
+     * Opciones para los selectores del formulario.
      *
-     * @return Collection<int, string>
+     * @return array<string, mixed>
      */
-    private function clientOptions()
+    private function formOptions(): array
     {
-        return Client::orderBy('name')->pluck('name', 'id');
+        return [
+            'clients' => Client::orderBy('name')->pluck('name', 'id'),
+            'brands' => Brand::orderBy('name')->pluck('name', 'id'),
+            'models' => EquipmentModel::orderBy('name')->get(['id', 'name', 'brand_id']),
+        ];
     }
 }

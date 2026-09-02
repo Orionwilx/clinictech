@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('type')->nullable();
-            $table->string('brand')->nullable();
-            $table->string('model')->nullable();
+            $table->foreignId('brand_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('model_id')->nullable()->constrained('equipment_models')->nullOnDelete();
             $table->string('serial_number')->unique();
             $table->date('purchase_date')->nullable();
             $table->date('warranty_expiry')->nullable();
