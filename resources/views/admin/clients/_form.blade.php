@@ -43,6 +43,18 @@
                               :value="old('phone', $client->phone ?? '')" />
                 <x-input-error :messages="$errors->get('phone')" class="mt-2" />
             </div>
+            <div class="sm:col-span-2">
+                <x-input-label for="logo" :value="__('Logo de la empresa')" />
+                <div class="mt-1 flex items-center gap-4">
+                    @if ($editing && $client->logoUrl())
+                        <img src="{{ $client->logoUrl() }}" alt="Logo" class="h-14 w-14 rounded object-contain border border-gray-200 bg-white p-1">
+                    @endif
+                    <input id="logo" name="logo" type="file" accept="image/*"
+                           class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                </div>
+                <p class="mt-1 text-xs text-gray-400">PNG/JPG, máx. 2 MB.</p>
+                <x-input-error :messages="$errors->get('logo')" class="mt-2" />
+            </div>
         </div>
     </div>
 

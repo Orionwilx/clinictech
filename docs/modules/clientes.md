@@ -19,6 +19,7 @@ Subdivisiones internas del cliente (UCI, Urgencias, Laboratorio…). `Area belon
 | Campo | Tipo | Reglas | Notas |
 |-------|------|--------|-------|
 | name | string | required, max:255 | Nombre de la empresa |
+| logo_path | string | nullable, image max 2MB | Logo de la empresa (disco `public`, subida en el form) |
 | nit | string | required, unique | NIT / identificación |
 | email | string | required, email | Correo (= login de la cuenta) |
 | city | string | nullable | Ciudad |

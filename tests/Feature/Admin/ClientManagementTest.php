@@ -6,6 +6,8 @@ use App\Models\Client;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ClientManagementTest extends TestCase
@@ -48,6 +50,21 @@ class ClientManagementTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('admin.clients.index'))
             ->assertOk();
+    }
+
+    public function test_admin_can_upload_client_logo(): void
+    {
+        Storage::fake('public');
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.clients.store'), $this->validPayload([
+                'logo' => UploadedFile::fake()->image('logo.png'),
+            ]))
+            ->assertRedirect(route('admin.clients.index'));
+
+        $client = Client::where('nit', '900123456-7')->firstOrFail();
+        $this->assertNotNull($client->logo_path);
+        Storage::disk('public')->assertExists($client->logo_path);
     }
 
     public function test_non_admin_cannot_view_clients_index(): void

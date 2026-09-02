@@ -16,6 +16,7 @@ class Client extends Model
 
     protected $fillable = [
         'name',
+        'logo_path',
         'nit',
         'email',
         'city',
@@ -31,6 +32,14 @@ class Client extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * URL pública del logo (o null si no tiene).
+     */
+    public function logoUrl(): ?string
+    {
+        return $this->logo_path ? asset('storage/'.$this->logo_path) : null;
     }
 
     /**

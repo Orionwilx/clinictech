@@ -21,6 +21,7 @@ class StoreClientRequest extends FormRequest
         return [
             // Datos de empresa
             'name' => ['required', 'string', 'max:255'],
+            'logo' => ['nullable', 'image', 'max:2048'],
             'nit' => ['required', 'string', 'max:255', 'unique:clients,nit'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'city' => ['nullable', 'string', 'max:255'],

@@ -21,6 +21,17 @@
                 </div>
             @endif
 
+            @if ($client->logoUrl())
+                <div class="mb-6 flex items-center gap-4">
+                    <img src="{{ $client->logoUrl() }}" alt="Logo de {{ $client->name }}"
+                         class="h-16 w-16 rounded-lg object-contain border border-gray-200 bg-white p-1.5">
+                    <div>
+                        <p class="text-lg font-bold text-gray-900">{{ $client->name }}</p>
+                        <p class="text-sm text-gray-500">NIT {{ $client->nit }}</p>
+                    </div>
+                </div>
+            @endif
+
             {{-- Pestañas (segmentado prominente) --}}
             <div class="mb-6 inline-flex flex-wrap gap-1 rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Secciones del cliente">
                 @php($tabs = [

@@ -23,6 +23,7 @@ class UpdateClientRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
+            'logo' => ['nullable', 'image', 'max:2048'],
             'nit' => ['required', 'string', 'max:255', Rule::unique('clients', 'nit')->ignore($client->id)],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users', 'email')->ignore($client->user_id)],
             'city' => ['nullable', 'string', 'max:255'],

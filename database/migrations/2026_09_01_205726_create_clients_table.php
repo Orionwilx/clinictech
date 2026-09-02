@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('clients', function (Blueprint $table) {
             $table->id();
             $table->string('name');                 // nombre de la empresa
+            $table->string('logo_path')->nullable(); // logo de la empresa (disco public)
             $table->string('nit')->unique();        // identificación
             $table->string('email');                // correo (= login de la cuenta)
             $table->string('city')->nullable();
