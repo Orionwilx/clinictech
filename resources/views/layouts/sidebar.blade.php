@@ -53,6 +53,26 @@
             </x-sidebar-link>
         @endcan
 
+        @can('view brands')
+            <x-sidebar-link :href="route('admin.brands.index')" :active="request()->routeIs('admin.brands.*')" label="Marcas">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5M7.5 20.25H6A2.25 2.25 0 0 1 3.75 18v-1.5M16.5 20.25H18A2.25 2.25 0 0 0 20.25 18v-1.5M9 12h6"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+        @endcan
+
+        @can('view equipment_models')
+            <x-sidebar-link :href="route('admin.equipment_models.index')" :active="request()->routeIs('admin.equipment_models.*')" label="Modelos">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+        @endcan
+
         @can('view technicians')
             <x-sidebar-link :href="route('admin.technicians.index')" :active="request()->routeIs('admin.technicians.*')" label="Técnicos">
                 <x-slot:icon>
@@ -72,6 +92,7 @@
                 </x-slot:icon>
             </x-sidebar-link>
         @endcan
+
     </nav>
 
     {{-- Colapsar (solo desktop) --}}

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Nueva orden de trabajo') }}</h2>
+        <x-page-header title="Nueva orden de trabajo" :breadcrumbs="[['label' => 'Órdenes de trabajo', 'href' => route('admin.work_orders.index')], ['label' => 'Nueva']]" />
     </x-slot>
 
     <div class="py-12">

@@ -1,16 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Órdenes de trabajo') }}
-            </h2>
-            @can('create work_orders')
-                <a href="{{ route('admin.work_orders.create') }}"
-                   class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                    {{ __('Nueva orden') }}
-                </a>
-            @endcan
-        </div>
+        <x-page-header title="Órdenes de trabajo" :breadcrumbs="[['label' => 'Órdenes de trabajo']]">
+            <x-slot:actions>
+                @can('create work_orders')
+                    <a href="{{ route('admin.work_orders.create') }}"
+                       class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                        {{ __('Nueva orden') }}
+                    </a>
+                @endcan
+            </x-slot:actions>
+        </x-page-header>
     </x-slot>
 
     <div class="py-12">

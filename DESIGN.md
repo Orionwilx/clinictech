@@ -25,6 +25,8 @@ Reutiliza SIEMPRE estos; no escribas clases sueltas para lo que ya existe:
 - `<x-danger-button>` — acción destructiva (rojo, semántico).
 - `<x-text-input>` / `<x-input-label>` / `<x-input-error>` — formularios.
 - `<x-sidebar-link :href :active label>` con slot `icon` — ítem del menú lateral (activo en `brand-600`).
+- `<x-breadcrumbs :items>` — migas de pan. `items` = array de `['label' => ..., 'href' => ...]`; el primer nivel "Inicio" (dashboard) se antepone solo; el último ítem se muestra como actual (sin enlace, en `brand-700`).
+- `<x-page-header :title :breadcrumbs>` con slot `actions` — cabecera de página estándar (migas + título prominente `text-2xl font-bold` + botones a la derecha). Va SIEMPRE dentro del `<x-slot name="header">`.
 
 ## Shell administrativo (layout con sidebar)
 El área autenticada usa un **sidebar colapsable** (estándar de software administrativo):
@@ -36,7 +38,7 @@ El área autenticada usa un **sidebar colapsable** (estándar de software admini
 
 ## Estándar de vistas
 - **Layout**: envuelve todo en `<x-app-layout>` (autenticado, con sidebar) o `<x-guest-layout>` (público).
-- **Header de página**: `<x-slot name="header">` con `<h2 class="font-semibold text-xl text-gray-800 leading-tight">` (se muestra en la topbar).
+- **Header de página**: `<x-slot name="header">` con `<x-page-header title="..." :breadcrumbs="[...]">` (se muestra en la topbar; incluye migas de pan y título prominente). El botón de acción principal va en su slot `actions`. Patrón de migas: índice `[['label' => 'Equipos']]`; detalle/form `[['label' => 'Equipos', 'href' => route('admin.equipment.index')], ['label' => 'Nuevo']]`.
 - **Contenedor**: `<div class="py-12"><div class="max-w-7xl mx-auto sm:px-6 lg:px-8">` (formularios: `max-w-2xl`).
 - **Tarjeta**: `bg-white shadow-sm sm:rounded-lg p-6`.
 - **Flash de éxito**: caja `bg-green-50 text-green-700` leyendo `session('status')`.

@@ -1,14 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Usuarios') }}
-            </h2>
-            <a href="{{ route('admin.users.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                {{ __('Nuevo usuario') }}
-            </a>
-        </div>
+        <x-page-header title="Usuarios" :breadcrumbs="[['label' => 'Usuarios']]">
+            <x-slot:actions>
+                <a href="{{ route('admin.users.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                    {{ __('Nuevo usuario') }}
+                </a>
+            </x-slot:actions>
+        </x-page-header>
     </x-slot>
 
     <div class="py-12">

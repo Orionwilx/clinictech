@@ -35,7 +35,7 @@
 
                 {{-- Topbar --}}
                 <header class="sticky top-0 z-30 bg-white border-b border-gray-200">
-                    <div class="flex items-center gap-4 h-16 px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center gap-4 min-h-[4rem] py-3 px-4 sm:px-6 lg:px-8">
                         {{-- Toggle móvil --}}
                         <button type="button" @click="mobileOpen = true"
                                 class="lg:hidden p-2 -ml-2 rounded-md text-gray-500 hover:bg-gray-100">

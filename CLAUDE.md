@@ -105,12 +105,14 @@ npm run dev                  # assets en watch
 - ✅ **Usuarios/roles**: spatie instalado, roles+permisos sembrados, CRUD admin completo (`Admin/UserController`) con activar/desactivar (`is_active`) y baja/recuperación (soft delete + restore). Tests en `tests/Feature/Admin/UserManagementTest.php`.
 - ✅ **Clientes** (`Admin/ClientController` + `ClientService`): CRUD de empresa (name, nit, email, city, country, whatsapp, phone) con **cuenta de acceso vinculada** (`Client belongsTo User` rol `cliente`; usuario→`User.name`, correo→`User.email`, login por email). Soft delete + restore; al eliminar se desactiva la cuenta. Spec en `docs/modules/clientes.md`, tests en `ClientManagementTest`.
 - ℹ️ Autoeliminación de cuenta (`ProfileController::destroy`) usa `forceDelete` (borrado real); el soft delete es solo para bajas gestionadas por admin.
-- ✅ **Equipos** (`Admin/EquipmentController`): CRUD + inventario (`equipment` pertenece a `Client`); campos type/brand/model/serial(único)/compra/garantía/ubicación/notas; `status` con **valores en inglés en código y etiquetas en español en UI** (`Equipment::STATUSES`). Soft delete (equipos eliminados visibles solo admin). Spec en `docs/modules/equipos.md`.
+- ✅ **Equipos** (`Admin/EquipmentController`): CRUD + inventario (`equipment` pertenece a `Client`); campos type/serial(único)/compra/garantía/ubicación/notas; `status` con **valores en inglés en código y etiquetas en español en UI** (`Equipment::STATUSES`). **Marca y modelo por catálogo** (`brand_id`/`model_id`): `Brand` y `EquipmentModel` (modelo pertenece a marca) con CRUD admin (`Admin/BrandController`, `Admin/EquipmentModelController`, permisos `brands`/`equipment_models`) y semilla `EquipmentCatalogSeeder`; en el form hay **listas dependientes** (marca→modelo, Alpine) y el modelo debe pertenecer a la marca. Soft delete (equipos eliminados visibles solo admin). Spec en `docs/modules/equipos.md`.
 - ⏳ Pendiente en Clientes: contactos, áreas de trabajo, adjuntos, recordatorios (§5.4). Login por username (fase Panel Cliente).
 - ✅ **Técnicos** (`Admin/TechnicianController` + `TechnicianService`): ficha (name, document único, email, phone, specialty) con **cuenta vinculada** (`Technician belongsTo User` rol `tecnico`, login por email). Soft delete + restore. Spec en `docs/modules/tecnicos.md`.
 - ✅ **Órdenes de trabajo** (`Admin/WorkOrderController` + `WorkOrderService`): OT que relaciona `Client` (req.), `Equipment` (opcional, debe pertenecer al cliente) y `Technician` (opcional). `code` autogenerado (`OT-000001`) por el servicio; `type`/`priority`/`status` con **código EN y etiquetas ES** (`WorkOrder::TYPES/PRIORITIES/STATUSES`); sellos automáticos `started_at/completed_at/closed_at` según estado. Soft delete + restore. Spec en `docs/modules/ordenes-trabajo.md`, tests en `WorkOrderManagementTest`.
-- ⏳ Pendiente en Equipos: hoja de vida/historial (requiere Mantenimientos; ya cuenta con OT). Pendiente en Técnicos: capacitaciones (`Training`). Pendiente en OT: adjuntos/evidencias de archivo.
-- ⏳ Siguiente: Mantenimientos → Reportes → Panel cliente + despliegue AWS.
+- ℹ️ **Mantenimiento = tipo de OT** (NO hay entidad separada): un mantenimiento es una `WorkOrder` con `type` preventivo/correctivo. Se crean/consultan desde el módulo de Órdenes y desde el hub del cliente. Tipos abiertos a ampliar (pendiente: hacerlos configurables por admin).
+- ✅ **Hub del cliente**: la ficha `clients/show` es un tablero con pestañas (Datos / Equipos / Órdenes) que lista lo del cliente y ofrece «+ Nuevo» con `?client_id` precargado (editable). En Órdenes hay accesos «+ OT preventiva» / «+ OT correctiva» que precargan `type`.
+- ⏳ Pendiente en Equipos: hoja de vida/historial consolidado (fuente: OT). Pendiente en Técnicos: capacitaciones (`Training`). Pendiente en OT: adjuntos/evidencias, recordatorios (para preventivas), tipos configurables por admin.
+- ⏳ Siguiente: Reportes → Panel cliente (con Policies de segregación por `client_id`) + despliegue AWS.
 
 ## Dominio (orden de implementación por fases — detalle en `project.md`)
 1. ✅ **Usuarios/roles y permisos** — admin, técnico, cliente. Base de seguridad y segregación por cliente.
@@ -118,8 +120,8 @@ npm run dev                  # assets en watch
 3. ✅ **Equipos e inventario** (`Equipment`) — pertenece a un cliente; estados (código EN/UI ES); equipos eliminados visibles solo a admin. Pendiente: hoja de vida/historial.
 4. ✅ **Órdenes de trabajo** (`WorkOrder`) — ciclo: creación → asignación a técnico → estados → diagnóstico/actividades → cierre. Relaciona cliente y equipo. Pendiente: adjuntos/evidencias de archivo.
 5. ✅ **Técnicos** (`Technician`) — ficha + cuenta vinculada. Pendiente: capacitaciones (`Training`).
-6. **Mantenimientos** (`Maintenance`) — preventivo/correctivo; programación; recordatorios.
-7. **Reportes** — por cliente, equipo, OT, técnico, mantenimiento; filtros y exportaciones.
-8. **Panel cliente** — acceso segregado a su propia información según permisos.
+6. ✅ **Mantenimientos** — NO es entidad propia: es una OT de `type` preventivo/correctivo (ver Fase 4). Pendiente: recordatorios/notificaciones para preventivas.
+7. **Reportes** — por cliente, equipo, OT, técnico, tipo de OT (mantenimiento); filtros y exportaciones.
+8. **Panel cliente** — acceso segregado a su propia información según permisos (requiere Policies por `client_id`).
 
 > Nombres de modelo tentativos en inglés (convención del código). Confirma el mapeo negocio↔modelo en `project.md` antes de crear cada recurso.

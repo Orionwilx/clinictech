@@ -1,14 +1,13 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Equipos') }}
-            </h2>
-            <a href="{{ route('admin.equipment.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                {{ __('Nuevo equipo') }}
-            </a>
-        </div>
+        <x-page-header title="Equipos" :breadcrumbs="[['label' => 'Equipos']]">
+            <x-slot:actions>
+                <a href="{{ route('admin.equipment.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                    {{ __('Nuevo equipo') }}
+                </a>
+            </x-slot:actions>
+        </x-page-header>
     </x-slot>
 
     <div class="py-12">
@@ -35,7 +34,7 @@
                             <tr class="{{ $item->trashed() ? 'bg-red-50' : '' }}">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ $item->name }}
-                                    <span class="block text-xs text-gray-400">{{ $item->brand }} {{ $item->model }}</span>
+                                    <span class="block text-xs text-gray-400">{{ optional($item->brand)->name }} {{ optional($item->model)->name }}</span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->serial_number }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ optional($item->client)->name ?? '—' }}</td>

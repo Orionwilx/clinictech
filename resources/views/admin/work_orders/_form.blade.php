@@ -8,7 +8,7 @@
                 class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
             <option value="">— Selecciona —</option>
             @foreach ($clients as $id => $name)
-                <option value="{{ $id }}" @selected(old('client_id', $workOrder->client_id ?? '') == $id)>{{ $name }}</option>
+                <option value="{{ $id }}" @selected(old('client_id', $workOrder->client_id ?? request('client_id')) == $id)>{{ $name }}</option>
             @endforeach
         </select>
         <x-input-error :messages="$errors->get('client_id')" class="mt-2" />
@@ -51,7 +51,7 @@
         <select id="type" name="type" required
                 class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
             @foreach (\App\Models\WorkOrder::TYPES as $value => $label)
-                <option value="{{ $value }}" @selected(old('type', $workOrder->type ?? 'corrective') === $value)>{{ $label }}</option>
+                <option value="{{ $value }}" @selected(old('type', $workOrder->type ?? request('type', 'corrective')) === $value)>{{ $label }}</option>
             @endforeach
         </select>
         <x-input-error :messages="$errors->get('type')" class="mt-2" />

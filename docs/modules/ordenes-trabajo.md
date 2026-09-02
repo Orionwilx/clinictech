@@ -4,7 +4,9 @@
 - **Estado**: ✅ implementado (ciclo CRUD + estados + asignación; adjuntos/evidencias de archivo pendientes)
 - **Depende de**: Clientes ✅ · Equipos ✅ · Técnicos ✅
 
-> Piedra angular operativa. Una orden de trabajo (OT) relaciona un **cliente**, un **equipo** (opcional) y un **técnico** asignado (opcional). Cubre el ciclo: creación → asignación → en proceso → diagnóstico/actividades → finalización/cierre. Su historial alimentará la hoja de vida de equipos, los mantenimientos y los reportes. Los **adjuntos/evidencias de archivo** (§5.2) se difieren a una iteración posterior (mismo criterio que «adjuntos» de Clientes); el diagnóstico y las actividades se registran como texto.
+> Piedra angular operativa. Una orden de trabajo (OT) relaciona un **cliente**, un **equipo** (opcional) y un **técnico** asignado (opcional). Cubre el ciclo: creación → asignación → en proceso → diagnóstico/actividades → finalización/cierre. Su historial alimentará la hoja de vida de equipos y los reportes. Los **adjuntos/evidencias de archivo** (§5.2) se difieren a una iteración posterior (mismo criterio que «adjuntos» de Clientes); el diagnóstico y las actividades se registran como texto.
+>
+> **Mantenimiento = tipo de OT.** No existe una entidad `Maintenance` separada: un mantenimiento **preventivo** o **correctivo** es una OT con el `type` correspondiente. Desde el hub del cliente hay accesos directos «+ OT preventiva» / «+ OT correctiva» que precargan el tipo.
 
 ## Modelo
 `WorkOrder` → tabla `work_orders`. Segmento de ruta y vistas: `work_orders`.
@@ -39,6 +41,7 @@
 
 ## Tipos (`WorkOrder::TYPES`)
 - `corrective` → «Correctivo» (default) · `preventive` → «Preventivo»
+- Representan la naturaleza del trabajo (mantenimiento correctivo/preventivo). **Diseñado para ampliarse**; pendiente hacerlos configurables por el admin.
 
 ## Prioridades (`WorkOrder::PRIORITIES`)
 - `low` → «Baja» · `medium` → «Media» (default) · `high` → «Alta»

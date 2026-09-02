@@ -8,7 +8,7 @@
                 class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
             <option value="">— Selecciona —</option>
             @foreach ($clients as $id => $name)
-                <option value="{{ $id }}" @selected(old('client_id', $equipment->client_id ?? '') == $id)>{{ $name }}</option>
+                <option value="{{ $id }}" @selected(old('client_id', $equipment->client_id ?? request('client_id')) == $id)>{{ $name }}</option>
             @endforeach
         </select>
         <x-input-error :messages="$errors->get('client_id')" class="mt-2" />
@@ -26,17 +26,35 @@
                       :value="old('type', $equipment->type ?? '')" />
         <x-input-error :messages="$errors->get('type')" class="mt-2" />
     </div>
-    <div>
-        <x-input-label for="brand" :value="__('Marca')" />
-        <x-text-input id="brand" name="brand" type="text" class="mt-1 block w-full"
-                      :value="old('brand', $equipment->brand ?? '')" />
-        <x-input-error :messages="$errors->get('brand')" class="mt-2" />
-    </div>
-    <div>
-        <x-input-label for="model" :value="__('Modelo')" />
-        <x-text-input id="model" name="model" type="text" class="mt-1 block w-full"
-                      :value="old('model', $equipment->model ?? '')" />
-        <x-input-error :messages="$errors->get('model')" class="mt-2" />
+    <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4"
+         x-data="{
+            brand: '{{ old('brand_id', $equipment->brand_id ?? '') }}',
+            model: '{{ old('model_id', $equipment->model_id ?? '') }}',
+            models: {{ Illuminate\Support\Js::from($models->map->only('id', 'name', 'brand_id')) }},
+            get filtered() { return this.models.filter(m => String(m.brand_id) === String(this.brand)); }
+         }">
+        <div>
+            <x-input-label for="brand_id" :value="__('Marca')" />
+            <select id="brand_id" name="brand_id" x-model="brand" @change="model = ''"
+                    class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                <option value="">— Selecciona —</option>
+                @foreach ($brands as $id => $name)
+                    <option value="{{ $id }}">{{ $name }}</option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('brand_id')" class="mt-2" />
+        </div>
+        <div>
+            <x-input-label for="model_id" :value="__('Modelo')" />
+            <select id="model_id" name="model_id" x-model="model" :disabled="!brand"
+                    class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
+                <option value="">{{ __('— Selecciona una marca primero —') }}</option>
+                <template x-for="m in filtered" :key="m.id">
+                    <option :value="m.id" x-text="m.name" :selected="String(m.id) === String(model)"></option>
+                </template>
+            </select>
+            <x-input-error :messages="$errors->get('model_id')" class="mt-2" />
+        </div>
     </div>
     <div>
         <x-input-label for="serial_number" :value="__('Serial')" />

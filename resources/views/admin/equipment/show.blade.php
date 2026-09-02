@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Detalle de equipo') }}</h2>
+        <x-page-header title="Detalle de equipo" :breadcrumbs="[['label' => 'Equipos', 'href' => route('admin.equipment.index')], ['label' => 'Detalle']]" />
     </x-slot>
 
     <div class="py-12">
@@ -11,8 +11,8 @@
                         'Nombre' => $equipment->name,
                         'Cliente' => optional($equipment->client)->name ?? '—',
                         'Tipo' => $equipment->type ?: '—',
-                        'Marca' => $equipment->brand ?: '—',
-                        'Modelo' => $equipment->model ?: '—',
+                        'Marca' => optional($equipment->brand)->name ?: '—',
+                        'Modelo' => optional($equipment->model)->name ?: '—',
                         'Serial' => $equipment->serial_number,
                         'Estado' => $equipment->statusLabel(),
                         'Fecha de compra' => optional($equipment->purchase_date)->format('Y-m-d') ?: '—',

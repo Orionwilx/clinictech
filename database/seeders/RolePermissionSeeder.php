@@ -16,10 +16,11 @@ class RolePermissionSeeder extends Seeder
         'users',
         'clients',
         'equipment',
+        'brands',
+        'equipment_models',
         'work_orders',
         'technicians',
         'trainings',
-        'maintenances',
         'reports',
     ];
 
@@ -39,12 +40,11 @@ class RolePermissionSeeder extends Seeder
         Role::firstOrCreate(['name' => 'admin'])
             ->syncPermissions($permissions);
 
-        // tecnico: opera equipos, órdenes, mantenimientos; consulta clientes/capacitaciones.
+        // tecnico: opera equipos y órdenes (incluye mantenimientos, que son OT); consulta clientes/capacitaciones.
         Role::firstOrCreate(['name' => 'tecnico'])->syncPermissions([
             'view clients',
             'view equipment', 'update equipment',
             'view work_orders', 'update work_orders',
-            'view maintenances', 'update maintenances',
             'view trainings',
         ]);
 
@@ -52,7 +52,6 @@ class RolePermissionSeeder extends Seeder
         Role::firstOrCreate(['name' => 'cliente'])->syncPermissions([
             'view equipment',
             'view work_orders',
-            'view maintenances',
             'view trainings',
             'view reports',
         ]);

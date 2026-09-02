@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ __('Nuevo equipo') }}</h2>
+        <x-page-header title="Nuevo equipo" :breadcrumbs="[['label' => 'Equipos', 'href' => route('admin.equipment.index')], ['label' => 'Nuevo']]" />
     </x-slot>
 
     <div class="py-12">

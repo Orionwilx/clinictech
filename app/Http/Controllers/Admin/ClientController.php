@@ -42,7 +42,11 @@ class ClientController extends Controller
     {
         $this->authorize('view clients');
 
-        $client->load('user');
+        $client->load([
+            'user',
+            'equipment' => fn ($q) => $q->latest(),
+            'workOrders' => fn ($q) => $q->with(['equipment', 'technician'])->latest(),
+        ]);
 
         return view('admin.clients.show', compact('client'));
     }
