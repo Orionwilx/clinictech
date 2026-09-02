@@ -114,7 +114,18 @@ class DemoSeeder extends Seeder
             'name' => 'Monitor de signos vitales',
             'type' => 'Monitor', ...$catalog('Philips', 'IntelliVue MX450'),
             'serial_number' => 'SN-VLL-0001', 'location' => 'Sede Principal - Cali',
+            'entry_date' => '2023-03-15',
             'purchase_date' => '2023-03-10', 'warranty_expiry' => '2026-03-10',
+            'warranty_status' => 'en_garantia', 'risk_class' => 'IIB',
+            'specialties' => ['prevention', 'treatment'],
+            'invima_registry' => 'INVIMA-2023EBC-0012345', 'manufacturer' => 'Philips Medical',
+            'origin_country' => 'Países Bajos', 'maintenance_frequency' => 'quarterly',
+            'acquisition_type' => 'purchase', 'voltage' => '110-240V', 'power' => '150W',
+            'predominant_technology' => 'Electrónica digital',
+            'maintenance_tasks' => ['functional_test', 'alarm_check', 'connectors_check', 'boards_cleaning'],
+            'accessories' => ['ac_cable', 'spo2_sensor', 'nibp_hose', 'cuff', 'battery'],
+            'components' => 'Sensor SpO2 adulto, brazalete adulto, cable de poder.',
+            'default_ot_observations' => 'Verificar batería y calibración de NIBP en cada visita.',
             'status' => 'active',
         ]);
         $ventilador = Equipment::create([

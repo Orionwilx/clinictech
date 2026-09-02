@@ -44,14 +44,23 @@
                     ])>{{ $equipment->statusLabel() }}</span>
                 </div>
 
-                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3">
                     @foreach ([
                         'Cliente' => optional($equipment->client)->name ?: '—',
                         'Área' => optional($equipment->area)->name ?: '—',
                         'Tipo' => $equipment->type ?: '—',
                         'Ubicación / sede' => $equipment->location ?: '—',
+                        'Fecha de ingreso' => optional($equipment->entry_date)->format('Y-m-d') ?: '—',
                         'Fecha de compra' => optional($equipment->purchase_date)->format('Y-m-d') ?: '—',
+                        'Garantía' => $equipment->warrantyStatusLabel() ?: '—',
                         'Vencimiento de garantía' => optional($equipment->warranty_expiry)->format('Y-m-d') ?: '—',
+                        'Clasificación por riesgo' => $equipment->riskClassLabel() ?: '—',
+                        'Registro INVIMA' => $equipment->invima_registry ?: '—',
+                        'Fabricante' => $equipment->manufacturer ?: '—',
+                        'País de origen' => $equipment->origin_country ?: '—',
+                        'Periodicidad' => $equipment->frequencyLabel() ?: '—',
+                        'Tipo de adquisición' => $equipment->acquisitionTypeLabel() ?: '—',
+                        'Especialidad' => $equipment->specialtyLabels() ? implode(', ', $equipment->specialtyLabels()) : '—',
                     ] as $label => $value)
                         <div>
                             <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>
@@ -59,13 +68,78 @@
                         </div>
                     @endforeach
                     @if ($equipment->notes)
-                        <div class="sm:col-span-2">
+                        <div class="sm:col-span-3">
                             <dt class="text-xs font-medium text-gray-500 uppercase">Observaciones</dt>
                             <dd class="text-sm text-gray-900">{{ $equipment->notes }}</dd>
                         </div>
                     @endif
                 </dl>
             </div>
+
+            {{-- Características técnicas --}}
+            @php($techFields = array_filter([
+                'Voltaje' => $equipment->voltage,
+                'Amperaje' => $equipment->amperage,
+                'Corriente' => $equipment->current,
+                'Potencia' => $equipment->power,
+                'Temperatura' => $equipment->temperature,
+                'Presión' => $equipment->pressure,
+                'Peso' => $equipment->weight,
+                'Velocidad' => $equipment->speed,
+                'Tecnología predominante' => $equipment->predominant_technology,
+            ]))
+            @if ($techFields || $equipment->technical_observations || $equipment->general_observations)
+                <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">Características técnicas</h3>
+                    <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
+                        @foreach ($techFields as $label => $value)
+                            <div>
+                                <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>
+                                <dd class="text-sm text-gray-900">{{ $value }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                    @if ($equipment->technical_observations)
+                        <p class="text-sm text-gray-700 mt-4"><span class="font-medium">Obs. técnicas:</span> {{ $equipment->technical_observations }}</p>
+                    @endif
+                    @if ($equipment->general_observations)
+                        <p class="text-sm text-gray-700 mt-1"><span class="font-medium">Obs. generales:</span> {{ $equipment->general_observations }}</p>
+                    @endif
+                </div>
+            @endif
+
+            {{-- Plantilla de mantenimiento y accesorios --}}
+            @if ($equipment->maintenance_tasks || $equipment->accessories || $equipment->components)
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                        <h3 class="font-semibold text-gray-900 mb-3">Subtareas de mantenimiento</h3>
+                        @if ($equipment->maintenance_tasks)
+                            <ul class="grid grid-cols-1 gap-1 text-sm text-gray-700">
+                                @foreach ($equipment->maintenance_tasks as $key)
+                                    <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ \App\Models\Equipment::MAINTENANCE_TASKS[$key] ?? $key }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-sm text-gray-400">Sin subtareas definidas.</p>
+                        @endif
+                    </div>
+                    <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                        <h3 class="font-semibold text-gray-900 mb-3">Accesorios</h3>
+                        @if ($equipment->accessories)
+                            <ul class="grid grid-cols-1 gap-1 text-sm text-gray-700">
+                                @foreach ($equipment->accessories as $key)
+                                    <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ \App\Models\Equipment::ACCESSORIES[$key] ?? $key }}</li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <p class="text-sm text-gray-400">Sin accesorios definidos.</p>
+                        @endif
+                        @if ($equipment->components)
+                            <p class="text-sm text-gray-700 mt-3"><span class="font-medium">Detalle:</span> {{ $equipment->components }}</p>
+                        @endif
+                    </div>
+                </div>
+            @endif
 
             {{-- Resumen de intervenciones --}}
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">

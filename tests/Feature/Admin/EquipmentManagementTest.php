@@ -136,6 +136,42 @@ class EquipmentManagementTest extends TestCase
             ->assertSessionHasErrors(['client_id', 'name', 'serial_number', 'status']);
     }
 
+    public function test_admin_can_store_extended_equipment_fields(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.equipment.store'), $this->validPayload([
+                'serial_number' => 'SN-EXT-001',
+                'risk_class' => 'IIB',
+                'acquisition_type' => 'comodato',
+                'maintenance_frequency' => 'quarterly',
+                'warranty_status' => 'en_garantia',
+                'specialties' => ['prevention', 'treatment'],
+                'maintenance_tasks' => ['functional_test', 'leak_test'],
+                'accessories' => ['ac_cable', 'battery'],
+                'voltage' => '110V',
+            ]))
+            ->assertRedirect(route('admin.equipment.index'));
+
+        $equipment = Equipment::where('serial_number', 'SN-EXT-001')->firstOrFail();
+        $this->assertSame('IIB', $equipment->risk_class);
+        $this->assertSame('comodato', $equipment->acquisition_type);
+        $this->assertEqualsCanonicalizing(['prevention', 'treatment'], $equipment->specialties);
+        $this->assertEqualsCanonicalizing(['functional_test', 'leak_test'], $equipment->maintenance_tasks);
+        $this->assertEqualsCanonicalizing(['ac_cable', 'battery'], $equipment->accessories);
+    }
+
+    public function test_extended_enum_fields_are_validated(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.equipment.store'), $this->validPayload([
+                'serial_number' => 'SN-EXT-002',
+                'risk_class' => 'IV',
+                'acquisition_type' => 'robo',
+                'maintenance_tasks' => ['inexistente'],
+            ]))
+            ->assertSessionHasErrors(['risk_class', 'acquisition_type', 'maintenance_tasks.0']);
+    }
+
     public function test_equipment_life_sheet_shows_work_order_history(): void
     {
         $equipment = Equipment::factory()->create();
