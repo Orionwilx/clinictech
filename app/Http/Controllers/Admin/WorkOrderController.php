@@ -11,20 +11,38 @@ use App\Models\Technician;
 use App\Models\WorkOrder;
 use App\Services\WorkOrderService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class WorkOrderController extends Controller
 {
     public function __construct(private readonly WorkOrderService $service) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('view work_orders');
 
-        $workOrders = WorkOrder::with(['client', 'equipment', 'technician'])
-            ->withTrashed()->latest()->paginate(15);
+        $filters = $request->only(['search', 'client_id', 'technician_id', 'type', 'priority', 'status']);
 
-        return view('admin.work_orders.index', compact('workOrders'));
+        $workOrders = WorkOrder::with(['client', 'equipment', 'technician'])
+            ->withTrashed()
+            ->when($filters['search'] ?? null, fn ($q, $search) => $q->where(fn ($q) => $q->where('code', 'like', "%{$search}%")
+                ->orWhere('title', 'like', "%{$search}%")))
+            ->when($filters['client_id'] ?? null, fn ($q, $v) => $q->where('client_id', $v))
+            ->when($filters['technician_id'] ?? null, fn ($q, $v) => $q->where('technician_id', $v))
+            ->when($filters['type'] ?? null, fn ($q, $v) => $q->where('type', $v))
+            ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
+            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.work_orders.index', [
+            'workOrders' => $workOrders,
+            'filters' => $filters,
+            'clients' => Client::orderBy('name')->pluck('name', 'id'),
+            'technicians' => Technician::orderBy('name')->pluck('name', 'id'),
+        ]);
     }
 
     public function create(): View

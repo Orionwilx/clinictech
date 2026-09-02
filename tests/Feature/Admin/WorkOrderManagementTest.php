@@ -129,6 +129,34 @@ class WorkOrderManagementTest extends TestCase
         $this->assertSame($technician->id, $order->fresh()->technician_id);
     }
 
+    public function test_index_filters_by_status_and_client(): void
+    {
+        $clientA = Client::factory()->create();
+        $clientB = Client::factory()->create();
+        $open = WorkOrder::factory()->create(['client_id' => $clientA->id, 'status' => 'open', 'title' => 'Orden abierta A']);
+        $closed = WorkOrder::factory()->create(['client_id' => $clientA->id, 'status' => 'closed', 'title' => 'Orden cerrada A']);
+        $otherClient = WorkOrder::factory()->create(['client_id' => $clientB->id, 'status' => 'open', 'title' => 'Orden abierta B']);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.work_orders.index', ['status' => 'open', 'client_id' => $clientA->id]))
+            ->assertOk()
+            ->assertSee($open->code)
+            ->assertDontSee($closed->code)
+            ->assertDontSee($otherClient->code);
+    }
+
+    public function test_index_search_matches_code_or_title(): void
+    {
+        $match = WorkOrder::factory()->create(['title' => 'Calibración especial']);
+        $other = WorkOrder::factory()->create(['title' => 'Revisión rutinaria']);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.work_orders.index', ['search' => 'Calibración']))
+            ->assertOk()
+            ->assertSee($match->code)
+            ->assertDontSee($other->code);
+    }
+
     public function test_admin_can_soft_delete_and_restore_work_order(): void
     {
         $order = WorkOrder::factory()->create();

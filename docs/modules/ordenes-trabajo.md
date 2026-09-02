@@ -67,6 +67,7 @@
 - Vistas en `resources/views/admin/work_orders/` siguiendo `DESIGN.md`.
 - Selectores de cliente, equipo y técnico; selectores de tipo/prioridad/estado con etiquetas en español.
 - **Lista dependiente cliente→equipo** (Alpine): al elegir cliente se filtran solo sus equipos; al cambiar de cliente se limpia el equipo. Además validado en servidor (el equipo debe pertenecer al cliente).
+- **Filtros en el índice**: búsqueda por Nº/asunto (`search`, LIKE sobre `code`/`title`) + selectores de cliente, técnico, tipo, estado y prioridad. Se combinan (AND), persisten en la paginación (`withQueryString`) y «Limpiar» resetea. Implementados con `->when()` en `WorkOrderController::index`.
 - Enlace en el sidebar con `@can('view work_orders')`.
 
 ## Pendiente (iteraciones futuras)
