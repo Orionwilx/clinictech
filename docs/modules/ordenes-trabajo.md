@@ -25,6 +25,8 @@
 | status | string | required, in:STATUSES | Estado (ver abajo) |
 | diagnosis | text | nullable | Diagnóstico técnico |
 | work_performed | text | nullable | Actividades realizadas / solución |
+| maintenance_tasks | json (array) | nullable, in:Equipment::MAINTENANCE_TASKS | Subtareas ejecutadas en esta OT |
+| accessories_checked | json (array) | nullable, in:Equipment::ACCESSORIES | Accesorios revisados en esta OT |
 | scheduled_at | datetime | nullable | Fecha programada |
 | started_at | datetime | nullable | Se sella al pasar a «En proceso» |
 | completed_at | datetime | nullable | Se sella al «Completar» |
@@ -67,6 +69,7 @@
 - Vistas en `resources/views/admin/work_orders/` siguiendo `DESIGN.md`.
 - Selectores de cliente, equipo y técnico; selectores de tipo/prioridad/estado con etiquetas en español.
 - **Lista dependiente cliente→equipo** (Alpine): al elegir cliente se filtran solo sus equipos; al cambiar de cliente se limpia el equipo. Además validado en servidor (el equipo debe pertenecer al cliente).
+- **Checklist de mantenimiento (plantilla → ejecución)**: al seleccionar un equipo se precargan sus subtareas (`maintenance_tasks`) y accesorios (`accessories`) definidos como plantilla; el técnico marca lo ejecutado/revisado y se guarda en la OT (`maintenance_tasks` / `accessories_checked`). Al crear se autocompleta desde la plantilla; al editar no se sobrescribe lo ya registrado. Se muestran en la ficha de la OT.
 - **Filtros en el índice**: búsqueda por Nº/asunto (`search`, LIKE sobre `code`/`title`) + selectores de cliente, técnico, tipo, estado y prioridad. Se combinan (AND), persisten en la paginación (`withQueryString`) y «Limpiar» resetea. Implementados con `->when()` en `WorkOrderController::index`.
 - Enlace en el sidebar con `@can('view work_orders')`.
 

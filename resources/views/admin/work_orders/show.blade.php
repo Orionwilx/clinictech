@@ -31,6 +31,35 @@
                     @endforeach
                 </dl>
 
+                @if ($workOrder->maintenance_tasks || $workOrder->accessories_checked)
+                    <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900 mb-2">Subtareas ejecutadas</h3>
+                            @if ($workOrder->maintenance_tasks)
+                                <ul class="grid grid-cols-1 gap-1 text-sm text-gray-700">
+                                    @foreach ($workOrder->maintenance_tasks as $key)
+                                        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ \App\Models\Equipment::MAINTENANCE_TASKS[$key] ?? $key }}</li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="text-sm text-gray-400">—</p>
+                            @endif
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900 mb-2">Accesorios revisados</h3>
+                            @if ($workOrder->accessories_checked)
+                                <ul class="grid grid-cols-1 gap-1 text-sm text-gray-700">
+                                    @foreach ($workOrder->accessories_checked as $key)
+                                        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ \App\Models\Equipment::ACCESSORIES[$key] ?? $key }}</li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="text-sm text-gray-400">—</p>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 <div class="flex items-center gap-4 mt-6">
                     @can('update work_orders')
                         <a href="{{ route('admin.work_orders.edit', $workOrder) }}"

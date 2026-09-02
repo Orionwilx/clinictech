@@ -116,7 +116,7 @@ class WorkOrderController extends Controller
     {
         return [
             'clients' => Client::orderBy('name')->pluck('name', 'id'),
-            'equipment' => Equipment::orderBy('name')->get(['id', 'name', 'client_id']),
+            'equipment' => Equipment::orderBy('name')->get(['id', 'name', 'client_id', 'maintenance_tasks', 'accessories']),
             'technicians' => Technician::orderBy('name')->pluck('name', 'id'),
         ];
     }

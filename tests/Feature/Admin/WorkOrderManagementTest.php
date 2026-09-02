@@ -157,6 +157,36 @@ class WorkOrderManagementTest extends TestCase
             ->assertDontSee($other->code);
     }
 
+    public function test_work_order_stores_maintenance_checklist(): void
+    {
+        $client = Client::factory()->create();
+        $equipment = Equipment::factory()->create(['client_id' => $client->id]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.work_orders.store'), $this->validPayload([
+                'client_id' => $client->id,
+                'equipment_id' => $equipment->id,
+                'type' => 'preventive',
+                'maintenance_tasks' => ['functional_test', 'alarm_check'],
+                'accessories_checked' => ['ac_cable', 'battery'],
+            ]))
+            ->assertRedirect(route('admin.work_orders.index'));
+
+        $order = WorkOrder::firstOrFail();
+        $this->assertEqualsCanonicalizing(['functional_test', 'alarm_check'], $order->maintenance_tasks);
+        $this->assertEqualsCanonicalizing(['ac_cable', 'battery'], $order->accessories_checked);
+    }
+
+    public function test_work_order_checklist_values_are_validated(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.work_orders.store'), $this->validPayload([
+                'maintenance_tasks' => ['inexistente'],
+                'accessories_checked' => ['nope'],
+            ]))
+            ->assertSessionHasErrors(['maintenance_tasks.0', 'accessories_checked.0']);
+    }
+
     public function test_admin_can_soft_delete_and_restore_work_order(): void
     {
         $order = WorkOrder::factory()->create();

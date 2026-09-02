@@ -54,6 +54,8 @@ class WorkOrder extends Model
         'status',
         'diagnosis',
         'work_performed',
+        'maintenance_tasks',
+        'accessories_checked',
         'scheduled_at',
         'started_at',
         'completed_at',
@@ -67,6 +69,8 @@ class WorkOrder extends Model
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
             'closed_at' => 'datetime',
+            'maintenance_tasks' => 'array',
+            'accessories_checked' => 'array',
         ];
     }
 
