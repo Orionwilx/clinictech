@@ -39,6 +39,7 @@
                     'areas' => ['Áreas', $client->areas->count()],
                     'equipos' => ['Equipos', $client->equipment->count()],
                     'ordenes' => ['Órdenes', $client->workOrders->count()],
+                    'pendientes' => ['OT pendientes', $pendingEquipment->count()],
                 ])
                 @foreach ($tabs as $key => [$label, $count])
                     <button type="button" @click="tab = '{{ $key }}'" role="tab"
@@ -225,6 +226,62 @@
                                 </tr>
                             @empty
                                 <tr><td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Este cliente no tiene órdenes.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- OT pendientes / en proceso (por equipo) --}}
+            <div x-show="tab === 'pendientes'" x-cloak>
+                <p class="mb-4 text-sm text-gray-500">Equipos con órdenes de trabajo abiertas, asignadas o en proceso.</p>
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Equipo</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Área</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marca / Modelo</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N. Serie</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Obs. técnicas</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">OT pendientes</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @forelse ($pendingEquipment as $item)
+                                <tr>
+                                    <td class="px-4 py-4 text-sm text-gray-900">{{ $item->name }}
+                                        <span class="block text-xs text-gray-400">{{ $item->type }}</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-gray-500">{{ optional($item->area)->name ?: '—' }}</td>
+                                    <td class="px-4 py-4 text-sm text-gray-500">{{ optional($item->brand)->name }} {{ optional($item->model)->name }}</td>
+                                    <td class="px-4 py-4 text-sm text-gray-500">{{ $item->serial_number }}</td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                        <span @class([
+                                            'inline-flex rounded-full px-2 text-xs font-semibold',
+                                            'bg-green-100 text-green-800' => $item->status === 'active',
+                                            'bg-gray-100 text-gray-800' => $item->status === 'inactive',
+                                            'bg-amber-100 text-amber-800' => $item->status === 'maintenance',
+                                            'bg-red-100 text-red-800' => $item->status === 'retired',
+                                        ])>{{ $item->statusLabel() }}</span>
+                                    </td>
+                                    <td class="px-4 py-4 text-sm text-gray-500 max-w-xs truncate" title="{{ $item->technical_observations }}">{{ $item->technical_observations ?: '—' }}</td>
+                                    <td class="px-4 py-4 text-sm">
+                                        <span class="inline-flex items-center justify-center rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-semibold">{{ $item->pending_count }}</span>
+                                        <div class="mt-1 space-y-0.5">
+                                            @foreach ($item->workOrders as $order)
+                                                <a href="{{ route('admin.work_orders.show', $order) }}" class="block text-xs text-brand-600 hover:underline">{{ $order->code }} · {{ $order->statusLabel() }}</a>
+                                            @endforeach
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-right text-sm">
+                                        <a href="{{ route('admin.equipment.show', $item) }}" class="text-brand-600 hover:text-brand-800">Hoja de vida</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="8" class="px-4 py-4 text-center text-sm text-gray-500">No hay equipos con OT pendientes.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

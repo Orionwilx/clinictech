@@ -26,6 +26,11 @@ class WorkOrder extends Model
     ];
 
     /**
+     * Estados considerados "activos" (pendiente / en proceso).
+     */
+    public const ACTIVE_STATUSES = ['open', 'assigned', 'in_progress'];
+
+    /**
      * Tipos: valor (código, EN) => etiqueta (UI, ES).
      */
     public const TYPES = [

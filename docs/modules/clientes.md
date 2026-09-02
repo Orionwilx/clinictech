@@ -7,7 +7,10 @@
 > Base del sistema: de Clientes cuelgan equipos, órdenes y el panel cliente. "De menos a más": empresa + login + hub con áreas ya implementados; contactos, adjuntos y recordatorios se añaden después.
 
 ## Hub del cliente
-La ficha `clients/show` es un **tablero con pestañas** (Datos / Áreas / Equipos / Órdenes) que lista lo del cliente. La pestaña activa se puede fijar con `?tab=areas`. Desde Equipos/Órdenes se crea con `?client_id` precargado.
+La ficha `clients/show` es un **tablero con pestañas** (Datos / Áreas / Equipos / Órdenes / OT pendientes) que lista lo del cliente. La pestaña activa se puede fijar con `?tab=areas`. Desde Equipos/Órdenes se crea con `?client_id` precargado. Si el cliente tiene logo, se muestra en la cabecera del hub.
+
+### Pestaña «OT pendientes»
+Lista los **equipos del cliente que tienen OT activas** (estados `open`/`assigned`/`in_progress`, ver `WorkOrder::ACTIVE_STATUSES`). Columnas: equipo, área, marca/modelo, N. serie, estado, obs. técnicas, OT pendientes (nº + enlaces a cada OT) y acceso a la hoja de vida. El controlador arma `pendingEquipment` con `whereHas`/`withCount` sobre las OT activas.
 
 ## Áreas de trabajo (`Area`)
 Subdivisiones internas del cliente (UCI, Urgencias, Laboratorio…). `Area belongsTo Client`, `unique(client_id, name)`. Campos: `name`, `description?`, `is_active`. Se gestionan **en línea** en la pestaña «Áreas» del hub (rutas `clients/{client}/areas` store, `areas/{area}` update/destroy). Permiso `areas` (admin total; técnico/cliente `view`). El equipo se asigna a un área (`equipment.area_id`); distinto de `location` (sede/dirección de la instalación).

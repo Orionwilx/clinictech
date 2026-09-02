@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Client\StoreClientRequest;
 use App\Http\Requests\Client\UpdateClientRequest;
 use App\Models\Client;
+use App\Models\WorkOrder;
 use App\Services\ClientService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
@@ -56,7 +57,18 @@ class ClientController extends Controller
             'workOrders' => fn ($q) => $q->with(['equipment', 'technician'])->latest(),
         ]);
 
-        return view('admin.clients.show', compact('client'));
+        $active = WorkOrder::ACTIVE_STATUSES;
+
+        // Equipos del cliente con OT pendientes / en proceso.
+        $pendingEquipment = $client->equipment()
+            ->with(['area', 'brand', 'model'])
+            ->whereHas('workOrders', fn ($q) => $q->whereIn('status', $active))
+            ->withCount(['workOrders as pending_count' => fn ($q) => $q->whereIn('status', $active)])
+            ->with(['workOrders' => fn ($q) => $q->whereIn('status', $active)->with('technician')->latest()])
+            ->latest()
+            ->get();
+
+        return view('admin.clients.show', compact('client', 'pendingEquipment'));
     }
 
     public function edit(Client $client): View

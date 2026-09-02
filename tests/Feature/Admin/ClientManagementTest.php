@@ -3,7 +3,9 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Client;
+use App\Models\Equipment;
 use App\Models\User;
+use App\Models\WorkOrder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -90,6 +92,23 @@ class ClientManagementTest extends TestCase
         $this->assertSame('contacto@clinicanorte.com', $client->user->email);
         $this->assertSame('clinica_norte', $client->user->name);
         $this->assertTrue($client->user->hasRole('cliente'));
+    }
+
+    public function test_client_hub_shows_equipment_with_pending_work_orders(): void
+    {
+        $client = Client::factory()->create();
+        $withPending = Equipment::factory()->create(['client_id' => $client->id, 'name' => 'Ventilador con OT']);
+        $withoutPending = Equipment::factory()->create(['client_id' => $client->id, 'name' => 'Equipo tranquilo']);
+
+        WorkOrder::factory()->create(['client_id' => $client->id, 'equipment_id' => $withPending->id, 'status' => 'in_progress']);
+        WorkOrder::factory()->create(['client_id' => $client->id, 'equipment_id' => $withoutPending->id, 'status' => 'closed']);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.clients.show', ['client' => $client, 'tab' => 'pendientes']))
+            ->assertOk()
+            ->assertViewHas('pendingEquipment', fn ($eq) => $eq->pluck('id')->contains($withPending->id)
+                && ! $eq->pluck('id')->contains($withoutPending->id)
+                && (int) $eq->firstWhere('id', $withPending->id)->pending_count === 1);
     }
 
     public function test_email_must_be_unique_across_users(): void
