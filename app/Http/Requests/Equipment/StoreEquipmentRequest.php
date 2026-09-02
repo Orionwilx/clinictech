@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Equipment;
 
+use App\Models\Area;
 use App\Models\Equipment;
 use App\Models\EquipmentModel;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -23,6 +24,7 @@ class StoreEquipmentRequest extends FormRequest
     {
         return [
             'client_id' => ['required', 'exists:clients,id'],
+            'area_id' => ['nullable', 'exists:areas,id'],
             'name' => ['required', 'string', 'max:255'],
             'type' => ['nullable', 'string', 'max:255'],
             'brand_id' => ['nullable', 'exists:brands,id'],
@@ -44,6 +46,13 @@ class StoreEquipmentRequest extends FormRequest
 
             if ($modelId && ! EquipmentModel::where('id', $modelId)->where('brand_id', $brandId)->exists()) {
                 $validator->errors()->add('model_id', 'El modelo seleccionado no pertenece a la marca.');
+            }
+
+            $areaId = $this->input('area_id');
+            $clientId = $this->input('client_id');
+
+            if ($areaId && ! Area::where('id', $areaId)->where('client_id', $clientId)->exists()) {
+                $validator->errors()->add('area_id', 'El área seleccionada no pertenece al cliente.');
             }
         });
     }

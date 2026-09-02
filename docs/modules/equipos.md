@@ -13,6 +13,7 @@
 | Campo | Tipo | Reglas | Notas |
 |-------|------|--------|-------|
 | client_id | FK clients | required, constrained | Dueño del equipo |
+| area_id | FK areas | nullable, exists, debe pertenecer al cliente | Área interna donde está el equipo (UCI…) |
 | name | string | required, max:255 | Nombre del equipo |
 | type | string | nullable | Tipo (monitor, ventilador…) |
 | brand_id | FK brands | nullable, exists | Marca (catálogo) |
@@ -20,7 +21,7 @@
 | serial_number | string | required, unique | Serial |
 | purchase_date | date | nullable | Fecha de compra |
 | warranty_expiry | date | nullable | Vencimiento de garantía |
-| location | string | nullable | Ubicación/área en el cliente |
+| location | string | nullable | Ubicación / sede (dirección de la instalación del cliente); distinto de `area_id` |
 | notes | text | nullable | Observaciones |
 | status | string | required, in:STATUSES | Estado (ver abajo) |
 | (soft deletes) | — | — | Baja recuperable, visible solo admin |
@@ -41,6 +42,7 @@ Default: `active`. En BD/código se guarda el valor en inglés; en vistas se mue
 
 ## Relaciones
 - `belongsTo(Client)` — dueño del equipo.
+- `belongsTo(Area)` — área interna del cliente donde está el equipo (dependiente del cliente en el form).
 - `belongsTo(Brand)` · `belongsTo(EquipmentModel, 'model_id')` — catálogo.
 - `hasMany(WorkOrder)`. (Mantenimiento = OT tipo preventivo/correctivo.)
 

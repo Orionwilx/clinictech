@@ -44,7 +44,8 @@ class ClientController extends Controller
 
         $client->load([
             'user',
-            'equipment' => fn ($q) => $q->latest(),
+            'areas' => fn ($q) => $q->withCount('equipment')->orderBy('name'),
+            'equipment' => fn ($q) => $q->with('area')->latest(),
             'workOrders' => fn ($q) => $q->with(['equipment', 'technician'])->latest(),
         ]);
 

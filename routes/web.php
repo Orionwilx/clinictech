@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AreaController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\EquipmentController;
@@ -34,6 +35,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->withTrashed()
         ->name('clients.restore');
     Route::resource('clients', ClientController::class);
+
+    // Áreas de trabajo (anidadas al cliente; se gestionan desde el hub).
+    Route::post('clients/{client}/areas', [AreaController::class, 'store'])->name('clients.areas.store');
+    Route::put('areas/{area}', [AreaController::class, 'update'])->name('areas.update');
+    Route::delete('areas/{area}', [AreaController::class, 'destroy'])->name('areas.destroy');
 
     Route::put('equipment/{id}/restore', [EquipmentController::class, 'restore'])
         ->withTrashed()

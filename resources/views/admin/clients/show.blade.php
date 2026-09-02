@@ -13,7 +13,7 @@
         </x-page-header>
     </x-slot>
 
-    <div class="py-12" x-data="{ tab: 'datos' }">
+    <div class="py-12" x-data="{ tab: '{{ request('tab', 'datos') }}' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             @if (session('status'))
                 <div class="mb-4 rounded-md bg-green-50 p-4 text-sm text-green-700">
@@ -25,6 +25,7 @@
             <div class="mb-6 inline-flex flex-wrap gap-1 rounded-xl bg-gray-100 p-1" role="tablist" aria-label="Secciones del cliente">
                 @php($tabs = [
                     'datos' => ['Datos', null],
+                    'areas' => ['Áreas', $client->areas->count()],
                     'equipos' => ['Equipos', $client->equipment->count()],
                     'ordenes' => ['Órdenes', $client->workOrders->count()],
                 ])
@@ -63,6 +64,78 @@
                 </dl>
             </div>
 
+            {{-- Áreas (gestión en línea) --}}
+            <div x-show="tab === 'areas'" x-cloak class="bg-white shadow-sm sm:rounded-lg p-6">
+                @can('create areas')
+                    <form action="{{ route('admin.clients.areas.store', $client) }}" method="POST" class="flex flex-wrap items-end gap-3 mb-6">
+                        @csrf
+                        <div class="flex-1 min-w-[12rem]">
+                            <x-input-label for="area_name" :value="__('Nueva área')" />
+                            <x-text-input id="area_name" name="name" type="text" class="mt-1 block w-full"
+                                          :value="old('name')" placeholder="Ej. UCI, Urgencias…" required />
+                        </div>
+                        <div class="flex-1 min-w-[12rem]">
+                            <x-input-label for="area_description" :value="__('Descripción (opcional)')" />
+                            <x-text-input id="area_description" name="description" type="text" class="mt-1 block w-full"
+                                          :value="old('description')" />
+                        </div>
+                        <x-primary-button>{{ __('Agregar') }}</x-primary-button>
+                    </form>
+                    <x-input-error :messages="$errors->get('name')" class="mb-4" />
+                @endcan
+
+                <div class="overflow-hidden border border-gray-100 rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Área</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Equipos</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @forelse ($client->areas as $area)
+                                <tr x-data="{ editing: false }">
+                                    {{-- Vista --}}
+                                    <td class="px-6 py-4 text-sm text-gray-900" x-show="!editing">{{ $area->name }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500" x-show="!editing">{{ $area->description ?: '—' }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500" x-show="!editing">{{ $area->equipment_count }}</td>
+                                    <td class="px-6 py-4 text-right text-sm font-medium space-x-2" x-show="!editing">
+                                        @can('update areas')
+                                            <button type="button" @click="editing = true" class="text-brand-600 hover:text-brand-800">Editar</button>
+                                        @endcan
+                                        @can('delete areas')
+                                            <form action="{{ route('admin.areas.destroy', $area) }}" method="POST" class="inline"
+                                                  onsubmit="return confirm('¿Eliminar esta área? Los equipos quedarán sin área.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>
+                                            </form>
+                                        @endcan
+                                    </td>
+                                    {{-- Edición en línea --}}
+                                    <td colspan="4" class="px-6 py-4" x-show="editing" x-cloak>
+                                        <form action="{{ route('admin.areas.update', $area) }}" method="POST" class="flex flex-wrap items-center gap-3">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="text" name="name" value="{{ $area->name }}" required
+                                                   class="flex-1 min-w-[10rem] border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm text-sm" />
+                                            <input type="text" name="description" value="{{ $area->description }}" placeholder="Descripción"
+                                                   class="flex-1 min-w-[10rem] border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm text-sm" />
+                                            <x-primary-button>{{ __('Guardar') }}</x-primary-button>
+                                            <button type="button" @click="editing = false" class="text-sm text-gray-600 hover:text-gray-900">Cancelar</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">Este cliente no tiene áreas.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             {{-- Equipos --}}
             <div x-show="tab === 'equipos'" x-cloak>
                 <div class="flex justify-end mb-3">
@@ -77,6 +150,7 @@
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Equipo</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serial</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Área</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"></th>
                             </tr>
@@ -85,16 +159,17 @@
                             @forelse ($client->equipment as $item)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $item->name }}
-                                        <span class="block text-xs text-gray-400">{{ $item->brand }} {{ $item->model }}</span>
+                                        <span class="block text-xs text-gray-400">{{ optional($item->brand)->name }} {{ optional($item->model)->name }}</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->serial_number }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ optional($item->area)->name ?? '—' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->statusLabel() }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
                                         <a href="{{ route('admin.equipment.show', $item) }}" class="text-brand-600 hover:text-brand-800">Ver</a>
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">Este cliente no tiene equipos.</td></tr>
+                                <tr><td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Este cliente no tiene equipos.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

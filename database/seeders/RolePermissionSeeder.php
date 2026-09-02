@@ -15,6 +15,7 @@ class RolePermissionSeeder extends Seeder
     private const MODULES = [
         'users',
         'clients',
+        'areas',
         'equipment',
         'brands',
         'equipment_models',
@@ -43,6 +44,7 @@ class RolePermissionSeeder extends Seeder
         // tecnico: opera equipos y órdenes (incluye mantenimientos, que son OT); consulta clientes/capacitaciones.
         Role::firstOrCreate(['name' => 'tecnico'])->syncPermissions([
             'view clients',
+            'view areas',
             'view equipment', 'update equipment',
             'view work_orders', 'update work_orders',
             'view trainings',
@@ -50,6 +52,7 @@ class RolePermissionSeeder extends Seeder
 
         // cliente: solo consulta de su propia información (segregación en Policies, §7).
         Role::firstOrCreate(['name' => 'cliente'])->syncPermissions([
+            'view areas',
             'view equipment',
             'view work_orders',
             'view trainings',

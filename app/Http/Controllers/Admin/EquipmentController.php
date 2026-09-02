@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Equipment\StoreEquipmentRequest;
 use App\Http\Requests\Equipment\UpdateEquipmentRequest;
+use App\Models\Area;
 use App\Models\Brand;
 use App\Models\Client;
 use App\Models\Equipment;
@@ -18,7 +19,7 @@ class EquipmentController extends Controller
     {
         $this->authorize('view equipment');
 
-        $equipment = Equipment::with(['client', 'brand', 'model'])->withTrashed()->latest()->paginate(15);
+        $equipment = Equipment::with(['client', 'area', 'brand', 'model'])->withTrashed()->latest()->paginate(15);
 
         return view('admin.equipment.index', compact('equipment'));
     }
@@ -42,7 +43,7 @@ class EquipmentController extends Controller
     {
         $this->authorize('view equipment');
 
-        $equipment->load(['client', 'brand', 'model']);
+        $equipment->load(['client', 'area', 'brand', 'model']);
 
         return view('admin.equipment.show', compact('equipment'));
     }
@@ -94,6 +95,7 @@ class EquipmentController extends Controller
     {
         return [
             'clients' => Client::orderBy('name')->pluck('name', 'id'),
+            'areas' => Area::orderBy('name')->get(['id', 'name', 'client_id']),
             'brands' => Brand::orderBy('name')->pluck('name', 'id'),
             'models' => EquipmentModel::orderBy('name')->get(['id', 'name', 'brand_id']),
         ];

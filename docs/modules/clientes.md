@@ -1,10 +1,16 @@
 # Módulo: Clientes (Client)
 
 - **Ref. plan**: §5.4 de `project.md`
-- **Estado**: ✅ implementado (solo empresa + login; contactos/áreas pendientes)
+- **Estado**: ✅ implementado (empresa + login + hub + áreas; contactos/adjuntos/recordatorios pendientes)
 - **Depende de**: Usuarios/roles ✅
 
-> Base del sistema: de Clientes cuelgan equipos, órdenes, mantenimientos y el panel cliente. "De menos a más": arrancamos con datos de empresa + login; contactos, áreas, adjuntos y recordatorios se añaden después.
+> Base del sistema: de Clientes cuelgan equipos, órdenes y el panel cliente. "De menos a más": empresa + login + hub con áreas ya implementados; contactos, adjuntos y recordatorios se añaden después.
+
+## Hub del cliente
+La ficha `clients/show` es un **tablero con pestañas** (Datos / Áreas / Equipos / Órdenes) que lista lo del cliente. La pestaña activa se puede fijar con `?tab=areas`. Desde Equipos/Órdenes se crea con `?client_id` precargado.
+
+## Áreas de trabajo (`Area`)
+Subdivisiones internas del cliente (UCI, Urgencias, Laboratorio…). `Area belongsTo Client`, `unique(client_id, name)`. Campos: `name`, `description?`, `is_active`. Se gestionan **en línea** en la pestaña «Áreas» del hub (rutas `clients/{client}/areas` store, `areas/{area}` update/destroy). Permiso `areas` (admin total; técnico/cliente `view`). El equipo se asigna a un área (`equipment.area_id`); distinto de `location` (sede/dirección de la instalación).
 
 ## Modelo
 `Client` → tabla `clients`. Cada cliente tiene una **cuenta de usuario vinculada** (rol `cliente`) para el panel cliente.

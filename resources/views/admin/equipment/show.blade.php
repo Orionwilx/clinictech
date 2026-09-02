@@ -10,6 +10,7 @@
                     @foreach ([
                         'Nombre' => $equipment->name,
                         'Cliente' => optional($equipment->client)->name ?? '—',
+                        'Área' => optional($equipment->area)->name ?: '—',
                         'Tipo' => $equipment->type ?: '—',
                         'Marca' => optional($equipment->brand)->name ?: '—',
                         'Modelo' => optional($equipment->model)->name ?: '—',
@@ -17,7 +18,7 @@
                         'Estado' => $equipment->statusLabel(),
                         'Fecha de compra' => optional($equipment->purchase_date)->format('Y-m-d') ?: '—',
                         'Vencimiento de garantía' => optional($equipment->warranty_expiry)->format('Y-m-d') ?: '—',
-                        'Ubicación' => $equipment->location ?: '—',
+                        'Ubicación / sede' => $equipment->location ?: '—',
                         'Observaciones' => $equipment->notes ?: '—',
                     ] as $label => $value)
                         <div class="py-3 grid grid-cols-3 gap-4">

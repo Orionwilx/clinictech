@@ -93,6 +93,13 @@ class DemoSeeder extends Seeder
             ]),
         ];
 
+        // Áreas de trabajo por cliente.
+        $uci = $clinicaValle->areas()->create(['name' => 'UCI', 'description' => 'Unidad de Cuidados Intensivos']);
+        $clinicaValle->areas()->create(['name' => 'Urgencias']);
+        $norteUrgencias = $hospitalNorte->areas()->create(['name' => 'Urgencias']);
+        $norteHosp = $hospitalNorte->areas()->create(['name' => 'Hospitalización']);
+        $imgSala = $centroImagen->areas()->create(['name' => 'Imagenología', 'description' => 'Sala 2']);
+
         // Resuelve [brand_id, model_id] a partir de los nombres del catálogo.
         $catalog = function (string $brandName, string $modelName): array {
             $model = EquipmentModel::whereHas('brand', fn ($q) => $q->where('name', $brandName))
@@ -103,42 +110,42 @@ class DemoSeeder extends Seeder
 
         // Equipos por cliente.
         $monitor = Equipment::create([
-            'client_id' => $clinicaValle->id,
+            'client_id' => $clinicaValle->id, 'area_id' => $uci->id,
             'name' => 'Monitor de signos vitales',
             'type' => 'Monitor', ...$catalog('Philips', 'IntelliVue MX450'),
-            'serial_number' => 'SN-VLL-0001', 'location' => 'UCI',
+            'serial_number' => 'SN-VLL-0001', 'location' => 'Sede Principal - Cali',
             'purchase_date' => '2023-03-10', 'warranty_expiry' => '2026-03-10',
             'status' => 'active',
         ]);
         $ventilador = Equipment::create([
-            'client_id' => $clinicaValle->id,
+            'client_id' => $clinicaValle->id, 'area_id' => $uci->id,
             'name' => 'Ventilador mecánico',
             'type' => 'Ventilador', ...$catalog('Dräger', 'Evita V300'),
-            'serial_number' => 'SN-VLL-0002', 'location' => 'UCI',
+            'serial_number' => 'SN-VLL-0002', 'location' => 'Sede Principal - Cali',
             'purchase_date' => '2022-07-01', 'warranty_expiry' => '2025-07-01',
             'status' => 'maintenance',
         ]);
         $desfibrilador = Equipment::create([
-            'client_id' => $hospitalNorte->id,
+            'client_id' => $hospitalNorte->id, 'area_id' => $norteUrgencias->id,
             'name' => 'Desfibrilador', 'type' => 'Desfibrilador',
             ...$catalog('Zoll', 'R Series'),
-            'serial_number' => 'SN-NOR-0001', 'location' => 'Urgencias',
+            'serial_number' => 'SN-NOR-0001', 'location' => 'Sede Norte - Barranquilla',
             'purchase_date' => '2021-11-20', 'warranty_expiry' => '2024-11-20',
             'status' => 'active',
         ]);
         $bomba = Equipment::create([
-            'client_id' => $hospitalNorte->id,
+            'client_id' => $hospitalNorte->id, 'area_id' => $norteHosp->id,
             'name' => 'Bomba de infusión', 'type' => 'Bomba de infusión',
             ...$catalog('B. Braun', 'Infusomat Space'),
-            'serial_number' => 'SN-NOR-0002', 'location' => 'Hospitalización',
+            'serial_number' => 'SN-NOR-0002', 'location' => 'Sede Norte - Barranquilla',
             'purchase_date' => '2020-05-15', 'warranty_expiry' => '2023-05-15',
             'status' => 'inactive',
         ]);
         $ecografo = Equipment::create([
-            'client_id' => $centroImagen->id,
+            'client_id' => $centroImagen->id, 'area_id' => $imgSala->id,
             'name' => 'Ecógrafo', 'type' => 'Imagenología',
             ...$catalog('GE Healthcare', 'Logiq E10'),
-            'serial_number' => 'SN-IMG-0001', 'location' => 'Sala 2',
+            'serial_number' => 'SN-IMG-0001', 'location' => 'Sede Medellín',
             'purchase_date' => '2024-01-05', 'warranty_expiry' => '2027-01-05',
             'status' => 'active',
         ]);

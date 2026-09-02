@@ -26,6 +26,7 @@ class Equipment extends Model
 
     protected $fillable = [
         'client_id',
+        'area_id',
         'name',
         'type',
         'brand_id',
@@ -49,6 +50,11 @@ class Equipment extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function area(): BelongsTo
+    {
+        return $this->belongsTo(Area::class);
     }
 
     public function brand(): BelongsTo
