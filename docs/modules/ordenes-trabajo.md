@@ -66,9 +66,9 @@
 ## Notas de UI
 - Vistas en `resources/views/admin/work_orders/` siguiendo `DESIGN.md`.
 - Selectores de cliente, equipo y técnico; selectores de tipo/prioridad/estado con etiquetas en español.
+- **Lista dependiente cliente→equipo** (Alpine): al elegir cliente se filtran solo sus equipos; al cambiar de cliente se limpia el equipo. Además validado en servidor (el equipo debe pertenecer al cliente).
 - Enlace en el sidebar con `@can('view work_orders')`.
 
 ## Pendiente (iteraciones futuras)
 - Adjuntos/evidencias de archivo (§5.2).
-- Filtrado dinámico de equipos por cliente en el formulario (hoy se validan en servidor).
 - Integración con hoja de vida de equipos y con Mantenimientos.

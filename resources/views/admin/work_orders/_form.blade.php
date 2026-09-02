@@ -2,29 +2,36 @@
 @php($editing = isset($workOrder) && $workOrder->exists)
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <div>
-        <x-input-label for="client_id" :value="__('Cliente')" />
-        <select id="client_id" name="client_id" required
-                class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-            <option value="">— Selecciona —</option>
-            @foreach ($clients as $id => $name)
-                <option value="{{ $id }}" @selected(old('client_id', $workOrder->client_id ?? request('client_id')) == $id)>{{ $name }}</option>
-            @endforeach
-        </select>
-        <x-input-error :messages="$errors->get('client_id')" class="mt-2" />
-    </div>
+    <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4"
+         x-data="{
+            client: '{{ old('client_id', $workOrder->client_id ?? request('client_id')) }}',
+            equipmentId: '{{ old('equipment_id', $workOrder->equipment_id ?? request('equipment_id')) }}',
+            equipment: {{ Illuminate\Support\Js::from($equipment->map->only('id', 'name', 'client_id')) }},
+            get filteredEquipment() { return this.equipment.filter(e => String(e.client_id) === String(this.client)); }
+         }">
+        <div>
+            <x-input-label for="client_id" :value="__('Cliente')" />
+            <select id="client_id" name="client_id" x-model="client" @change="equipmentId = ''" required
+                    class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                <option value="">— Selecciona —</option>
+                @foreach ($clients as $id => $name)
+                    <option value="{{ $id }}">{{ $name }}</option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('client_id')" class="mt-2" />
+        </div>
 
-    <div>
-        <x-input-label for="equipment_id" :value="__('Equipo (opcional)')" />
-        <select id="equipment_id" name="equipment_id"
-                class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-            <option value="">— Sin equipo —</option>
-            @foreach ($equipment as $item)
-                <option value="{{ $item->id }}" data-client="{{ $item->client_id }}"
-                        @selected(old('equipment_id', $workOrder->equipment_id ?? request('equipment_id')) == $item->id)>{{ $item->name }}</option>
-            @endforeach
-        </select>
-        <x-input-error :messages="$errors->get('equipment_id')" class="mt-2" />
+        <div>
+            <x-input-label for="equipment_id" :value="__('Equipo (opcional)')" />
+            <select id="equipment_id" name="equipment_id" x-model="equipmentId" :disabled="!client"
+                    class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
+                <option value="">{{ __('— Sin equipo —') }}</option>
+                <template x-for="e in filteredEquipment" :key="e.id">
+                    <option :value="e.id" x-text="e.name" :selected="String(e.id) === String(equipmentId)"></option>
+                </template>
+            </select>
+            <x-input-error :messages="$errors->get('equipment_id')" class="mt-2" />
+        </div>
     </div>
 
     <div>
