@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\EquipmentController;
 use App\Http\Controllers\Admin\TechnicianController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WorkOrderController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +42,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->withTrashed()
         ->name('technicians.restore');
     Route::resource('technicians', TechnicianController::class);
+
+    Route::put('work_orders/{id}/restore', [WorkOrderController::class, 'restore'])
+        ->withTrashed()
+        ->name('work_orders.restore');
+    Route::resource('work_orders', WorkOrderController::class);
 });
 
 require __DIR__.'/auth.php';

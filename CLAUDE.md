@@ -108,14 +108,15 @@ npm run dev                  # assets en watch
 - ✅ **Equipos** (`Admin/EquipmentController`): CRUD + inventario (`equipment` pertenece a `Client`); campos type/brand/model/serial(único)/compra/garantía/ubicación/notas; `status` con **valores en inglés en código y etiquetas en español en UI** (`Equipment::STATUSES`). Soft delete (equipos eliminados visibles solo admin). Spec en `docs/modules/equipos.md`.
 - ⏳ Pendiente en Clientes: contactos, áreas de trabajo, adjuntos, recordatorios (§5.4). Login por username (fase Panel Cliente).
 - ✅ **Técnicos** (`Admin/TechnicianController` + `TechnicianService`): ficha (name, document único, email, phone, specialty) con **cuenta vinculada** (`Technician belongsTo User` rol `tecnico`, login por email). Soft delete + restore. Spec en `docs/modules/tecnicos.md`.
-- ⏳ Pendiente en Equipos: hoja de vida/historial (requiere OT y Mantenimientos). Pendiente en Técnicos: capacitaciones (`Training`).
-- ⏳ Siguiente: Órdenes de trabajo → Mantenimientos → Reportes → Panel cliente + despliegue AWS.
+- ✅ **Órdenes de trabajo** (`Admin/WorkOrderController` + `WorkOrderService`): OT que relaciona `Client` (req.), `Equipment` (opcional, debe pertenecer al cliente) y `Technician` (opcional). `code` autogenerado (`OT-000001`) por el servicio; `type`/`priority`/`status` con **código EN y etiquetas ES** (`WorkOrder::TYPES/PRIORITIES/STATUSES`); sellos automáticos `started_at/completed_at/closed_at` según estado. Soft delete + restore. Spec en `docs/modules/ordenes-trabajo.md`, tests en `WorkOrderManagementTest`.
+- ⏳ Pendiente en Equipos: hoja de vida/historial (requiere Mantenimientos; ya cuenta con OT). Pendiente en Técnicos: capacitaciones (`Training`). Pendiente en OT: adjuntos/evidencias de archivo.
+- ⏳ Siguiente: Mantenimientos → Reportes → Panel cliente + despliegue AWS.
 
 ## Dominio (orden de implementación por fases — detalle en `project.md`)
 1. ✅ **Usuarios/roles y permisos** — admin, técnico, cliente. Base de seguridad y segregación por cliente.
 2. ✅ **Clientes** (`Client`) — empresa + cuenta de acceso vinculada. Pendiente: contactos, áreas, adjuntos, recordatorios.
 3. ✅ **Equipos e inventario** (`Equipment`) — pertenece a un cliente; estados (código EN/UI ES); equipos eliminados visibles solo a admin. Pendiente: hoja de vida/historial.
-4. **Órdenes de trabajo** (`WorkOrder`) — ciclo completo: creación → asignación a técnico → estados → diagnóstico/evidencias → cierre. Relaciona cliente y equipo.
+4. ✅ **Órdenes de trabajo** (`WorkOrder`) — ciclo: creación → asignación a técnico → estados → diagnóstico/actividades → cierre. Relaciona cliente y equipo. Pendiente: adjuntos/evidencias de archivo.
 5. ✅ **Técnicos** (`Technician`) — ficha + cuenta vinculada. Pendiente: capacitaciones (`Training`).
 6. **Mantenimientos** (`Maintenance`) — preventivo/correctivo; programación; recordatorios.
 7. **Reportes** — por cliente, equipo, OT, técnico, mantenimiento; filtros y exportaciones.

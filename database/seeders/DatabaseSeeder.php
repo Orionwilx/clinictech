@@ -21,5 +21,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Administrador',
             'email' => 'admin@ingsoln.com',
         ])->assignRole('admin');
+
+        $this->call(DemoSeeder::class);
     }
 }
