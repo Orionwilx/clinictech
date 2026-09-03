@@ -68,6 +68,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::post('export', [ReportController::class, 'export'])->name('export');
+        Route::get('{report}/download', [ReportController::class, 'download'])->name('download');
         Route::get('indicators', [ReportController::class, 'indicators'])->name('indicators');
     });
 });

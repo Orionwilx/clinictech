@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\EquipmentExport;
-use App\Exports\MaintenanceExport;
-use App\Exports\TechnicianExport;
-use App\Exports\WorkOrdersExport;
 use App\Http\Controllers\Controller;
+use App\Jobs\GenerateReportJob;
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\Report;
 use App\Models\Technician;
 use App\Models\WorkOrder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
-    /** Tipos de reporte disponibles con sus filtros adicionales. */
     public const TYPES = [
         'work_orders' => 'Órdenes de trabajo',
         'maintenance' => 'Mantenimientos',
@@ -24,17 +24,21 @@ class ReportController extends Controller
         'equipment'   => 'Por equipo',
     ];
 
-    public function index(Request $request): View
+    public function index(): View
     {
         $this->authorize('view reports');
 
         $clients     = Client::orderBy('name')->pluck('name', 'id');
         $technicians = Technician::orderBy('name')->pluck('name', 'id');
+        $history     = Report::with(['generator', 'downloader'])
+            ->latest()
+            ->limit(50)
+            ->get();
 
-        return view('admin.reports.index', compact('clients', 'technicians'));
+        return view('admin.reports.index', compact('clients', 'technicians', 'history'));
     }
 
-    public function export(Request $request)
+    public function export(Request $request): RedirectResponse
     {
         $this->authorize('view reports');
 
@@ -44,22 +48,42 @@ class ReportController extends Controller
             'date_to'     => ['nullable', 'date', 'after_or_equal:date_from'],
         ]);
 
-        $filters = $request->only([
+        $filters = array_filter($request->only([
             'date_from', 'date_to',
             'client_id', 'technician_id',
             'type', 'status',
+        ]));
+
+        $report = Report::create([
+            'type'         => $request->report_type,
+            'filters'      => $filters ?: null,
+            'status'       => 'pending',
+            'generated_by' => auth()->id(),
         ]);
 
-        [$export, $filename] = match ($request->report_type) {
-            'work_orders' => [new WorkOrdersExport($filters), 'ordenes-de-trabajo'],
-            'maintenance' => [new MaintenanceExport($filters), 'mantenimientos'],
-            'technicians' => [new TechnicianExport($filters), 'tecnicos'],
-            'equipment'   => [new EquipmentExport($filters),  'equipos'],
-        };
+        GenerateReportJob::dispatch($report);
 
-        $name = $filename . '_' . now()->format('Ymd_His') . '.xlsx';
+        return redirect()->route('admin.reports.index')
+            ->with('status', 'Reporte en cola. Estará disponible en unos segundos.');
+    }
 
-        return $export->download($name);
+    public function download(Report $report): StreamedResponse
+    {
+        $this->authorize('view reports');
+
+        abort_if($report->status !== 'done', 404, 'El reporte aún no está disponible.');
+        abort_if(! $report->file_path || ! Storage::disk('local')->exists($report->file_path), 404, 'Archivo no encontrado.');
+
+        if (! $report->downloaded_at) {
+            $report->update([
+                'downloaded_by' => auth()->id(),
+                'downloaded_at' => now(),
+            ]);
+        }
+
+        $filename = $report->type . '_' . $report->id . '.xlsx';
+
+        return Storage::disk('local')->download($report->file_path, $filename);
     }
 
     public function indicators(): View
