@@ -8,19 +8,38 @@ use App\Http\Requests\Technician\UpdateTechnicianRequest;
 use App\Models\Technician;
 use App\Services\TechnicianService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class TechnicianController extends Controller
 {
     public function __construct(private readonly TechnicianService $technicians) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('view technicians');
 
-        $technicians = Technician::withTrashed()->latest()->paginate(15);
+        $filters = $request->only(['search', 'status']);
 
-        return view('admin.technicians.index', compact('technicians'));
+        $technicians = Technician::withTrashed()
+            ->when($filters['search'] ?? null, fn ($q, $s) =>
+                $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
+                    ->orWhere('document', 'like', "%$s%")
+                    ->orWhere('specialty', 'like', "%$s%"))
+            )
+            ->when(isset($filters['status']), function ($q) use ($filters) {
+                match ($filters['status']) {
+                    'deleted'  => $q->onlyTrashed(),
+                    'inactive' => $q->where('is_active', false),
+                    'active'   => $q->where('is_active', true),
+                    default    => null,
+                };
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.technicians.index', compact('technicians', 'filters'));
     }
 
     public function create(): View

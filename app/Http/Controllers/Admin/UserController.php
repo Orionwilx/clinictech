@@ -7,6 +7,7 @@ use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
@@ -16,16 +17,35 @@ class UserController extends Controller
     /**
      * Listado de usuarios (incluye desactivados; los eliminados con withTrashed).
      */
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('view users');
 
+        $filters = $request->only(['search', 'role', 'status']);
+
         $users = User::with('roles')
             ->withTrashed()
+            ->when($filters['search'] ?? null, fn ($q, $s) =>
+                $q->where(fn ($q) => $q->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%"))
+            )
+            ->when($filters['role'] ?? null, fn ($q, $r) =>
+                $q->whereHas('roles', fn ($q) => $q->where('name', $r))
+            )
+            ->when(isset($filters['status']), function ($q) use ($filters) {
+                match ($filters['status']) {
+                    'deleted'  => $q->onlyTrashed(),
+                    'inactive' => $q->where('is_active', false),
+                    'active'   => $q->where('is_active', true),
+                    default    => null,
+                };
+            })
             ->latest()
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('admin.users.index', compact('users'));
+        $roles = Role::pluck('name');
+
+        return view('admin.users.index', compact('users', 'filters', 'roles'));
     }
 
     public function create(): View

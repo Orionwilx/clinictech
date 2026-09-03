@@ -8,19 +8,28 @@ use App\Http\Requests\EquipmentModel\UpdateEquipmentModelRequest;
 use App\Models\Brand;
 use App\Models\EquipmentModel;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class EquipmentModelController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('view equipment_models');
 
-        $models = EquipmentModel::with('brand')->withCount('equipment')
-            ->orderBy('brand_id')->orderBy('name')->paginate(20);
+        $filters = $request->only(['search', 'brand_id']);
 
-        return view('admin.equipment_models.index', compact('models'));
+        $models = EquipmentModel::with('brand')->withCount('equipment')
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('name', 'like', "%$s%"))
+            ->when($filters['brand_id'] ?? null, fn ($q, $b) => $q->where('brand_id', $b))
+            ->orderBy('brand_id')->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
+
+        $brands = Brand::orderBy('name')->pluck('name', 'id');
+
+        return view('admin.equipment_models.index', compact('models', 'filters', 'brands'));
     }
 
     public function create(): View

@@ -11,17 +11,37 @@ use App\Models\Client;
 use App\Models\Equipment;
 use App\Models\EquipmentModel;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class EquipmentController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('view equipment');
 
-        $equipment = Equipment::with(['client', 'area', 'brand', 'model'])->withTrashed()->latest()->paginate(15);
+        $filters = $request->only(['search', 'client_id', 'status']);
 
-        return view('admin.equipment.index', compact('equipment'));
+        $equipment = Equipment::with(['client', 'brand', 'model'])
+            ->withTrashed()
+            ->when($filters['search'] ?? null, fn ($q, $s) =>
+                $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
+                    ->orWhere('serial_number', 'like', "%$s%"))
+            )
+            ->when($filters['client_id'] ?? null, fn ($q, $c) => $q->where('client_id', $c))
+            ->when(isset($filters['status']), function ($q) use ($filters) {
+                match ($filters['status']) {
+                    'deleted' => $q->onlyTrashed(),
+                    default   => $q->where('status', $filters['status']),
+                };
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        $clients = Client::orderBy('name')->pluck('name', 'id');
+
+        return view('admin.equipment.index', compact('equipment', 'filters', 'clients'));
     }
 
     public function create(): View

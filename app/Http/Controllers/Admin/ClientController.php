@@ -9,6 +9,7 @@ use App\Models\Client;
 use App\Models\WorkOrder;
 use App\Services\ClientService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -16,13 +17,31 @@ class ClientController extends Controller
 {
     public function __construct(private readonly ClientService $clients) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('view clients');
 
-        $clients = Client::withTrashed()->latest()->paginate(15);
+        $filters = $request->only(['search', 'status']);
 
-        return view('admin.clients.index', compact('clients'));
+        $clients = Client::withTrashed()
+            ->when($filters['search'] ?? null, fn ($q, $s) =>
+                $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
+                    ->orWhere('nit', 'like', "%$s%")
+                    ->orWhere('city', 'like', "%$s%"))
+            )
+            ->when(isset($filters['status']), function ($q) use ($filters) {
+                match ($filters['status']) {
+                    'deleted'  => $q->onlyTrashed(),
+                    'inactive' => $q->where('is_active', false),
+                    'active'   => $q->where('is_active', true),
+                    default    => null,
+                };
+            })
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.clients.index', compact('clients', 'filters'));
     }
 
     public function create(): View

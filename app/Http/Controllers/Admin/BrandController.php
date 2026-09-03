@@ -7,17 +7,24 @@ use App\Http\Requests\Brand\StoreBrandRequest;
 use App\Http\Requests\Brand\UpdateBrandRequest;
 use App\Models\Brand;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BrandController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('view brands');
 
-        $brands = Brand::withCount(['models', 'equipment'])->orderBy('name')->paginate(20);
+        $filters = $request->only(['search']);
 
-        return view('admin.brands.index', compact('brands'));
+        $brands = Brand::withCount(['models', 'equipment'])
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('name', 'like', "%$s%"))
+            ->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.brands.index', compact('brands', 'filters'));
     }
 
     public function create(): View
