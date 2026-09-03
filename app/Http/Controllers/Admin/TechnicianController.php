@@ -61,7 +61,22 @@ class TechnicianController extends Controller
     {
         $this->authorize('view technicians');
 
-        return view('admin.technicians.show', compact('technician'));
+        $technician->load([
+            'workOrders.client',
+            'workOrders.equipment.brand',
+            'workOrders.equipment.model',
+            'workOrders.equipment.client',
+        ]);
+
+        $workedEquipment = $technician->workOrders
+            ->whereNotNull('equipment_id')
+            ->pluck('equipment')
+            ->unique('id')
+            ->filter()
+            ->sortBy('name')
+            ->values();
+
+        return view('admin.technicians.show', compact('technician', 'workedEquipment'));
     }
 
     public function edit(Technician $technician): View
