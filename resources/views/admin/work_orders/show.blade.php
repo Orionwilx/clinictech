@@ -60,7 +60,19 @@
                     </div>
                 @endif
 
+                @if ($workOrder->additional_observations)
+                    <div class="mt-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-1">Observaciones adicionales</h3>
+                        <p class="text-sm text-gray-700 whitespace-pre-line">{{ $workOrder->additional_observations }}</p>
+                    </div>
+                @endif
+
                 <div class="flex items-center gap-4 mt-6">
+                    <a href="{{ route('admin.work_orders.pdf', $workOrder) }}"
+                       target="_blank"
+                       class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                        Generar PDF
+                    </a>
                     @can('update work_orders')
                         <a href="{{ route('admin.work_orders.edit', $workOrder) }}"
                            class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">

@@ -10,8 +10,10 @@ use App\Models\Equipment;
 use App\Models\Technician;
 use App\Models\WorkOrder;
 use App\Services\WorkOrderService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class WorkOrderController extends Controller
@@ -95,6 +97,32 @@ class WorkOrderController extends Controller
 
         return redirect()->route('admin.work_orders.index')
             ->with('status', 'Orden de trabajo eliminada (recuperable).');
+    }
+
+    public function pdf(WorkOrder $workOrder): Response
+    {
+        $this->authorize('view work_orders');
+
+        $workOrder->load(['client', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician']);
+
+        $logoBase64 = null;
+        if ($workOrder->client?->logo_path) {
+            $path = storage_path('app/public/'.$workOrder->client->logo_path);
+            if (file_exists($path)) {
+                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                $mime = match ($ext) {
+                    'png' => 'image/png',
+                    'gif' => 'image/gif',
+                    default => 'image/jpeg',
+                };
+                $logoBase64 = "data:{$mime};base64,".base64_encode(file_get_contents($path));
+            }
+        }
+
+        $pdf = Pdf::loadView('admin.work_orders.pdf', compact('workOrder', 'logoBase64'))
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->download("OT-{$workOrder->code}.pdf");
     }
 
     public function restore(int $id): RedirectResponse

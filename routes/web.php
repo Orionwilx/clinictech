@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\TechnicianController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkOrderController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Client;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -16,7 +17,8 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    $clients = Client::orderBy('name')->get();
+    return view('dashboard', compact('clients'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -51,6 +53,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         ->name('technicians.restore');
     Route::resource('technicians', TechnicianController::class);
 
+    Route::get('work_orders/{work_order}/pdf', [WorkOrderController::class, 'pdf'])->name('work_orders.pdf');
     Route::put('work_orders/{id}/restore', [WorkOrderController::class, 'restore'])
         ->withTrashed()
         ->name('work_orders.restore');

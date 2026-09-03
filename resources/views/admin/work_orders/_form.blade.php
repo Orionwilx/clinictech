@@ -125,6 +125,13 @@
         <x-input-error :messages="$errors->get('work_performed')" class="mt-2" />
     </div>
 
+    <div class="sm:col-span-2">
+        <x-input-label for="additional_observations" :value="__('Observaciones adicionales')" />
+        <textarea id="additional_observations" name="additional_observations" rows="2"
+                  class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('additional_observations', $workOrder->additional_observations ?? '') }}</textarea>
+        <x-input-error :messages="$errors->get('additional_observations')" class="mt-2" />
+    </div>
+
     {{-- Checklist de mantenimiento (plantilla del equipo, ejecución en la OT) --}}
     <div class="sm:col-span-2 border-t border-gray-100 pt-4" x-show="equipmentId" x-cloak>
         <h3 class="text-sm font-semibold text-brand-900 mb-1">Checklist de mantenimiento</h3>

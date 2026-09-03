@@ -61,6 +61,7 @@ class WorkOrder extends Model
         'work_performed',
         'maintenance_tasks',
         'accessories_checked',
+        'additional_observations',
         'scheduled_at',
         'started_at',
         'completed_at',

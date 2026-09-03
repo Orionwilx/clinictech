@@ -36,6 +36,7 @@ class UpdateWorkOrderRequest extends FormRequest
             'maintenance_tasks.*' => [Rule::in(array_keys(Equipment::MAINTENANCE_TASKS))],
             'accessories_checked' => ['nullable', 'array'],
             'accessories_checked.*' => [Rule::in(array_keys(Equipment::ACCESSORIES))],
+            'additional_observations' => ['nullable', 'string'],
             'scheduled_at' => ['nullable', 'date'],
             'started_at' => ['nullable', 'date'],
             'completed_at' => ['nullable', 'date'],

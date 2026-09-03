@@ -26,6 +26,7 @@ return new class extends Migration
             $table->text('work_performed')->nullable();
             $table->json('maintenance_tasks')->nullable();   // subtareas ejecutadas (plantilla del equipo)
             $table->json('accessories_checked')->nullable();  // accesorios revisados
+            $table->text('additional_observations')->nullable();
             $table->dateTime('scheduled_at')->nullable();
             $table->dateTime('started_at')->nullable();
             $table->dateTime('completed_at')->nullable();
