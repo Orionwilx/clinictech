@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\EquipmentController;
 use App\Http\Controllers\Admin\EquipmentModelController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\TechnicianController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkOrderController;
@@ -62,6 +63,13 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     // Catálogo de equipos: marcas y modelos.
     Route::resource('brands', BrandController::class)->except('show');
     Route::resource('equipment_models', EquipmentModelController::class)->except('show');
+
+    // Reportes.
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::post('export', [ReportController::class, 'export'])->name('export');
+        Route::get('indicators', [ReportController::class, 'indicators'])->name('indicators');
+    });
 });
 
 require __DIR__.'/auth.php';
