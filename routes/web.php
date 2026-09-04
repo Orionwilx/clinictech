@@ -13,6 +13,8 @@ use App\Http\Controllers\Client\DashboardController as ClientDashboardController
 use App\Http\Controllers\Client\EquipmentController as ClientEquipmentController;
 use App\Http\Controllers\Client\WorkOrderController as ClientWorkOrderController;
 use App\Http\Controllers\Client\TechnicianController as ClientTechnicianController;
+use App\Http\Controllers\Technician\DashboardController as TechDashboardController;
+use App\Http\Controllers\Technician\WorkOrderController as TechWorkOrderController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Client;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +32,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/notifications/read-all', function () {
+        auth()->user()->unreadNotifications->markAsRead();
+        return response()->noContent();
+    })->name('notifications.read-all');
 });
 
 Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
@@ -62,6 +69,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::put('work_orders/{id}/restore', [WorkOrderController::class, 'restore'])
         ->withTrashed()
         ->name('work_orders.restore');
+    Route::post('work_orders/{work_order}/approve-request', [WorkOrderController::class, 'approveRequest'])->name('work_orders.approve-request');
+    Route::post('work_orders/{work_order}/reject-request', [WorkOrderController::class, 'rejectRequest'])->name('work_orders.reject-request');
+    Route::post('work_orders/{work_order}/approve-work', [WorkOrderController::class, 'approveWork'])->name('work_orders.approve-work');
+    Route::post('work_orders/{work_order}/reject-work', [WorkOrderController::class, 'rejectWork'])->name('work_orders.reject-work');
+    Route::post('work_orders/{work_order}/send-to-client', [WorkOrderController::class, 'sendToClient'])->name('work_orders.send-to-client');
     Route::resource('work_orders', WorkOrderController::class);
 
     // Catálogo de equipos: marcas y modelos.
@@ -86,8 +98,18 @@ Route::middleware(['auth', 'role:cliente', 'client.profile'])
         Route::get('dashboard', [ClientDashboardController::class, 'index'])->name('dashboard');
         Route::resource('equipment', ClientEquipmentController::class)->only(['index', 'show']);
         Route::get('work_orders/{work_order}/pdf', [ClientWorkOrderController::class, 'pdf'])->name('work_orders.pdf');
-        Route::resource('work_orders', ClientWorkOrderController::class)->only(['index', 'show']);
+        Route::resource('work_orders', ClientWorkOrderController::class)->only(['index', 'show', 'create', 'store']);
         Route::get('technicians', [ClientTechnicianController::class, 'index'])->name('technicians.index');
+    });
+
+// Panel técnico
+Route::middleware(['auth', 'role:tecnico', 'technician.profile'])
+    ->prefix('technician')
+    ->name('technician.')
+    ->group(function () {
+        Route::get('dashboard', [TechDashboardController::class, 'index'])->name('dashboard');
+        Route::post('work_orders/{work_order}/submit', [TechWorkOrderController::class, 'submit'])->name('work_orders.submit');
+        Route::resource('work_orders', TechWorkOrderController::class)->only(['index', 'show', 'update']);
     });
 
 require __DIR__.'/auth.php';

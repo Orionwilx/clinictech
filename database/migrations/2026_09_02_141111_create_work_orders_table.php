@@ -31,6 +31,9 @@ return new class extends Migration
             $table->dateTime('started_at')->nullable();
             $table->dateTime('completed_at')->nullable();
             $table->dateTime('closed_at')->nullable();
+            $table->boolean('visible_to_client')->default(false);
+            $table->boolean('requested_by_client')->default(false);
+            $table->text('rejection_reason')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

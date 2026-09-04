@@ -125,6 +125,62 @@ class WorkOrderController extends Controller
         return $pdf->download("OT-{$workOrder->code}.pdf");
     }
 
+    // ─── Transiciones del flujo colaborativo ─────────────────────────────────
+
+    public function approveRequest(Request $request, WorkOrder $workOrder): RedirectResponse
+    {
+        abort_if($workOrder->status !== 'draft', 403);
+
+        $request->validate(['technician_id' => ['nullable', 'exists:technicians,id']]);
+
+        $this->service->approveClientRequest($workOrder, $request->input('technician_id'));
+
+        return back()->with('status', 'Solicitud aprobada.');
+    }
+
+    public function rejectRequest(Request $request, WorkOrder $workOrder): RedirectResponse
+    {
+        abort_if($workOrder->status !== 'draft', 403);
+
+        $request->validate(['rejection_reason' => ['nullable', 'string', 'max:500']]);
+
+        $this->service->rejectClientRequest($workOrder, $request->input('rejection_reason'));
+
+        return back()->with('status', 'Solicitud rechazada.');
+    }
+
+    public function approveWork(WorkOrder $workOrder): RedirectResponse
+    {
+        abort_if($workOrder->status !== 'pending_review', 403);
+
+        $this->service->approveWork($workOrder);
+
+        return back()->with('status', 'Trabajo aprobado. Ahora puedes enviarlo al cliente.');
+    }
+
+    public function rejectWork(Request $request, WorkOrder $workOrder): RedirectResponse
+    {
+        abort_if($workOrder->status !== 'pending_review', 403);
+
+        $request->validate(['rejection_reason' => ['required', 'string', 'max:500']]);
+
+        $this->service->rejectWork($workOrder, $request->input('rejection_reason'));
+
+        return back()->with('status', 'Trabajo devuelto al técnico.');
+    }
+
+    public function sendToClient(WorkOrder $workOrder): RedirectResponse
+    {
+        abort_if($workOrder->status !== 'closed', 403);
+        abort_if($workOrder->visible_to_client, 403);
+
+        $this->service->sendToClient($workOrder);
+
+        return back()->with('status', 'OT enviada al cliente.');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+
     public function restore(int $id): RedirectResponse
     {
         $this->authorize('delete work_orders');

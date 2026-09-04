@@ -17,9 +17,11 @@ class WorkOrder extends Model
      * Estados: valor (código, EN) => etiqueta (UI, ES).
      */
     public const STATUSES = [
+        'draft' => 'Borrador',
         'open' => 'Abierta',
         'assigned' => 'Asignada',
         'in_progress' => 'En proceso',
+        'pending_review' => 'En revisión',
         'completed' => 'Completada',
         'closed' => 'Cerrada',
         'cancelled' => 'Cancelada',
@@ -28,7 +30,7 @@ class WorkOrder extends Model
     /**
      * Estados considerados "activos" (pendiente / en proceso).
      */
-    public const ACTIVE_STATUSES = ['open', 'assigned', 'in_progress'];
+    public const ACTIVE_STATUSES = ['open', 'assigned', 'in_progress', 'pending_review'];
 
     /**
      * Tipos: valor (código, EN) => etiqueta (UI, ES).
@@ -66,6 +68,9 @@ class WorkOrder extends Model
         'started_at',
         'completed_at',
         'closed_at',
+        'visible_to_client',
+        'requested_by_client',
+        'rejection_reason',
     ];
 
     protected function casts(): array
@@ -77,6 +82,8 @@ class WorkOrder extends Model
             'closed_at' => 'datetime',
             'maintenance_tasks' => 'array',
             'accessories_checked' => 'array',
+            'visible_to_client' => 'boolean',
+            'requested_by_client' => 'boolean',
         ];
     }
 

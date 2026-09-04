@@ -1,7 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Mis órdenes de trabajo"
-            :breadcrumbs="[['label' => 'Panel', 'href' => route('client.dashboard')], ['label' => 'Órdenes de trabajo']]" />
+            :breadcrumbs="[['label' => 'Panel', 'href' => route('client.dashboard')], ['label' => 'Órdenes de trabajo']]">
+            <x-slot:actions>
+                <a href="{{ route('client.work_orders.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                    Solicitar mantenimiento
+                </a>
+            </x-slot:actions>
+        </x-page-header>
     </x-slot>
 
     <div class="py-12">

@@ -51,6 +51,41 @@
                             @endisset
                         </div>
 
+                        {{-- Campana de notificaciones --}}
+                        @auth
+                        @php($unread = auth()->user()->unreadNotifications)
+                        <div x-data="{ open: false, count: {{ $unread->count() }} }" class="relative">
+                            <button @click="open = !open; if(open && count > 0) { fetch('{{ route('notifications.read-all') }}', {method:'POST', headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}','Content-Type':'application/json'}}); count = 0; }"
+                                    class="relative p-2 rounded-md text-gray-500 hover:bg-gray-100 focus:outline-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/>
+                                </svg>
+                                <span x-show="count > 0" x-text="count"
+                                      class="absolute -top-0.5 -right-0.5 min-w-[1.1rem] h-[1.1rem] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-0.5"></span>
+                            </button>
+
+                            <div x-show="open" x-cloak @click.outside="open = false"
+                                 class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+                                <div class="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-gray-600 uppercase">Notificaciones</span>
+                                </div>
+                                <ul class="max-h-72 overflow-y-auto divide-y divide-gray-100">
+                                    @forelse ($unread->take(10) as $notification)
+                                        <li>
+                                            <a href="{{ $notification->data['url'] ?? '#' }}"
+                                               class="block px-4 py-3 hover:bg-gray-50 text-sm text-gray-700">
+                                                {{ $notification->data['message'] ?? '' }}
+                                                <span class="block text-xs text-gray-400 mt-0.5">{{ $notification->created_at->diffForHumans() }}</span>
+                                            </a>
+                                        </li>
+                                    @empty
+                                        <li class="px-4 py-6 text-center text-sm text-gray-400">Sin notificaciones nuevas</li>
+                                    @endforelse
+                                </ul>
+                            </div>
+                        </div>
+                        @endauth
+
                         {{-- Menú de usuario --}}
                         <x-dropdown align="right" width="48">
                             <x-slot name="trigger">
