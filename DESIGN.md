@@ -47,5 +47,43 @@ El área autenticada usa un **sidebar colapsable** (estándar de software admini
 - **Botón "crear"** en el header a la derecha (patrón: ver `admin/users/index.blade.php`).
 - **Formularios**: extrae el cuerpo a un parcial `_form.blade.php` compartido entre `create` y `edit`.
 
+## Selector con búsqueda — Tom Select (`<x-searchable-select>`)
+
+Componente `resources/views/components/searchable-select.blade.php` para selects con búsqueda client-side.
+
+```blade
+<x-searchable-select
+    name="technician_id"
+    :options="$technicians"        {{-- array $value => $label --}}
+    :selected="old('technician_id', $workOrder->technician_id ?? '')"
+    placeholder="— Sin asignar —"  {{-- opcional, default "— Selecciona —" --}}
+/>
+```
+
+- Tom Select se inicializa automáticamente en `DOMContentLoaded` sobre `select[data-searchable]`.
+- El `placeholder` vive en el input de control (no como `<option>`); muestra texto gris cuando no hay selección.
+- Plugin `clear_button` activo: aparece `×` dentro del control cuando hay valor seleccionado.
+- Búsqueda sin distinción de acentos/mayúsculas (`window.normalize`).
+- `dropdownParent: 'body'` — el dropdown escapa overflow y z-index del contenedor padre.
+
+**Estados visuales** (alineados con `<x-text-input>`):
+
+| Estado | Efecto |
+|--------|--------|
+| Normal | Borde `gray-300` |
+| Hover  | Borde `brand-400` + fondo `brand-50` |
+| Focus  | Borde `brand-500` + `box-shadow 0 0 0 1px brand-500` |
+
+**Restricción importante:** Tom Select solo se aplica a selects:
+1. Visibles desde el inicio (fuera de `x-show` / `x-cloak`).
+2. Sin dependencia reactiva Alpine (`x-model` que dispare cambios en otros elementos).
+
+Para selects reactivos (ej. cliente → área, marca → modelo) usar `<select>` nativo con Alpine.
+
+**Archivos clave:**
+- `resources/views/components/searchable-select.blade.php` — componente Blade
+- `resources/js/app.js` — inicialización global (`initSearchableSelects`)
+- `resources/css/app.css` — estilos Tom Select (overrides del tema bootstrap5)
+
 ## Referencia viva
 Las vistas de **usuarios** (`resources/views/admin/users/`) son el patrón canónico. Copia su estructura al crear un módulo nuevo.

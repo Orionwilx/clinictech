@@ -22,11 +22,11 @@ function initSearchableSelects() {
     document.querySelectorAll('select[data-searchable]:not(.tomselected)').forEach(el => {
         const ts = new TomSelect(el, {
             maxOptions: null,
-            allowEmptyOption: true,
+            allowEmptyOption: false,
             selectOnTab: true,
             dropdownParent: 'body',
             placeholder: el.dataset.placeholder ?? '',
-            plugins: [],
+            plugins: ['clear_button'],
             score: function (search) {
                 const q = normalize(search);
                 return function (item) {
