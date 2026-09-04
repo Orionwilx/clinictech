@@ -113,7 +113,8 @@ npm run dev                  # assets en watch
 - ℹ️ **Mantenimiento = tipo de OT** (NO hay entidad separada): un mantenimiento es una `WorkOrder` con `type` preventivo/correctivo. Se crean/consultan desde el módulo de Órdenes y desde el hub del cliente. Tipos abiertos a ampliar (pendiente: hacerlos configurables por admin).
 - ✅ **Hub del cliente**: la ficha `clients/show` es un tablero con pestañas (Datos / Áreas / Equipos / Órdenes / OT pendientes) que lista lo del cliente y ofrece «+ Nuevo» con `?client_id` precargado (editable). En Órdenes hay accesos «+ OT preventiva» / «+ OT correctiva» que precargan `type`. «OT pendientes» lista equipos con OT activas (`WorkOrder::ACTIVE_STATUSES`). El cliente tiene **logo** (`logo_path`, disco `public`) mostrado en la cabecera.
 - ⏳ Pendiente en Técnicos: capacitaciones (`Training`). Pendiente en OT: adjuntos/evidencias, recordatorios (para preventivas), tipos configurables por admin.
-- ⏳ Siguiente: Reportes → Panel cliente (con Policies de segregación por `client_id`) + despliegue AWS.
+- ✅ **Panel cliente** (`Client/DashboardController`, `Client/EquipmentController`, `Client/WorkOrderController`, `Client/TechnicianController`): acceso segregado por `client_id`; rutas bajo `/client` con middleware `role:cliente` + `EnsureClientProfile`; redirección post-login al `client.dashboard`; sidebar condicional por rol. Vistas: dashboard (métricas + equipos con mantenimiento vencido), mis equipos (hoja de vida), mis OT (detalle + PDF), mis técnicos. Sin Policies de Laravel — segregación por dos capas: middleware + `abort_if` en controller.
+- ⏳ Siguiente: despliegue AWS.
 
 ## Dominio (orden de implementación por fases — detalle en `project.md`)
 1. ✅ **Usuarios/roles y permisos** — admin, técnico, cliente. Base de seguridad y segregación por cliente.
@@ -123,6 +124,6 @@ npm run dev                  # assets en watch
 5. ✅ **Técnicos** (`Technician`) — ficha + cuenta vinculada. Pendiente: capacitaciones (`Training`).
 6. ✅ **Mantenimientos** — NO es entidad propia: es una OT de `type` preventivo/correctivo (ver Fase 4). Pendiente: recordatorios/notificaciones para preventivas.
 7. **Reportes** — por cliente, equipo, OT, técnico, tipo de OT (mantenimiento); filtros y exportaciones.
-8. **Panel cliente** — acceso segregado a su propia información según permisos (requiere Policies por `client_id`).
+8. ✅ **Panel cliente** — acceso segregado por `client_id` (middleware `EnsureClientProfile` + `abort_if` en controller). Dashboard, equipos, OT, técnicos.
 
 > Nombres de modelo tentativos en inglés (convención del código). Confirma el mapeo negocio↔modelo en `project.md` antes de crear cada recurso.

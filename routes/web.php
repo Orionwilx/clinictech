@@ -9,6 +9,10 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\TechnicianController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkOrderController;
+use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
+use App\Http\Controllers\Client\EquipmentController as ClientEquipmentController;
+use App\Http\Controllers\Client\WorkOrderController as ClientWorkOrderController;
+use App\Http\Controllers\Client\TechnicianController as ClientTechnicianController;
 use App\Http\Controllers\ProfileController;
 use App\Models\Client;
 use Illuminate\Support\Facades\Route;
@@ -73,5 +77,17 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
         Route::get('indicators', [ReportController::class, 'indicators'])->name('indicators');
     });
 });
+
+// Panel cliente — acceso segregado por client_id
+Route::middleware(['auth', 'role:cliente', 'client.profile'])
+    ->prefix('client')
+    ->name('client.')
+    ->group(function () {
+        Route::get('dashboard', [ClientDashboardController::class, 'index'])->name('dashboard');
+        Route::resource('equipment', ClientEquipmentController::class)->only(['index', 'show']);
+        Route::get('work_orders/{work_order}/pdf', [ClientWorkOrderController::class, 'pdf'])->name('work_orders.pdf');
+        Route::resource('work_orders', ClientWorkOrderController::class)->only(['index', 'show']);
+        Route::get('technicians', [ClientTechnicianController::class, 'index'])->name('technicians.index');
+    });
 
 require __DIR__.'/auth.php';

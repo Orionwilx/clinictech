@@ -15,6 +15,39 @@
 
     {{-- Navegación --}}
     <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+
+        @if(auth()->user()->hasRole('cliente'))
+            {{-- Menú Panel Cliente --}}
+            <x-sidebar-link :href="route('client.dashboard')" :active="request()->routeIs('client.dashboard')" label="Panel">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9.75 12 3l9 6.75V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V9.75Z"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+            <x-sidebar-link :href="route('client.equipment.index')" :active="request()->routeIs('client.equipment.*')" label="Mis equipos">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 7v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7M4 7l2-3h12l2 3M9 12h6"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+            <x-sidebar-link :href="route('client.work_orders.index')" :active="request()->routeIs('client.work_orders.*')" label="Mis OT">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9 2 2 4-4"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+            <x-sidebar-link :href="route('client.technicians.index')" :active="request()->routeIs('client.technicians.*')" label="Mis técnicos">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM5 20a7 7 0 0 1 14 0M17 8l1.5-1.5M18.5 3.5 20 2"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+        @else
+        {{-- Menú Admin / Técnico --}}
         <x-sidebar-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" label="Dashboard">
             <x-slot:icon>
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -109,6 +142,7 @@
                 </x-slot:icon>
             </x-sidebar-link>
         @endcan
+        @endif
 
     </nav>
 
