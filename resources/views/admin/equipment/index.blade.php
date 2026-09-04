@@ -25,12 +25,12 @@
                         <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Nombre o serial…"
                                class="pl-9 pr-3 py-2 w-full text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
                     </div>
-                    <select name="client_id" class="py-2 pl-3 pr-8 text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-                        <option value="">Todos los clientes</option>
-                        @foreach ($clients as $id => $name)
-                            <option value="{{ $id }}" @selected(($filters['client_id'] ?? '') == $id)>{{ $name }}</option>
-                        @endforeach
-                    </select>
+                    <x-searchable-select name="client_id"
+                        :options="$clients"
+                        :selected="$filters['client_id'] ?? ''"
+                        placeholder="Todos los clientes"
+                        
+                        class="py-2 pl-3 pr-8 text-sm border-gray-300 rounded-md shadow-sm" />
                     <select name="status" class="py-2 pl-3 pr-8 text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
                         <option value="">Todos los estados</option>
                         @foreach (\App\Models\Equipment::STATUSES as $value => $label)

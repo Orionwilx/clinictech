@@ -12,6 +12,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('brand_id')->constrained()->cascadeOnDelete();
             $table->string('name');
+            // Defaults técnicos que se auto-completan al seleccionar el modelo en un equipo
+            $table->string('type')->nullable();
+            $table->string('manufacturer')->nullable();
+            $table->string('origin_country')->nullable();
+            $table->string('risk_class')->nullable();
+            $table->json('specialties')->nullable();
+            $table->string('invima_registry')->nullable();
+            $table->string('maintenance_frequency')->nullable();
+            $table->json('maintenance_tasks')->nullable();
+            $table->json('accessories')->nullable();
             $table->timestamps();
             $table->unique(['brand_id', 'name']);
         });

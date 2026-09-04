@@ -25,12 +25,10 @@
                         <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Buscar modelo…"
                                class="pl-9 pr-3 py-2 w-full text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
                     </div>
-                    <select name="brand_id" class="py-2 pl-3 pr-8 text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-                        <option value="">Todas las marcas</option>
-                        @foreach ($brands as $id => $name)
-                            <option value="{{ $id }}" @selected(($filters['brand_id'] ?? '') == $id)>{{ $name }}</option>
-                        @endforeach
-                    </select>
+                    <x-searchable-select name="brand_id"
+                        :options="$brands"
+                        :selected="$filters['brand_id'] ?? ''"
+                        placeholder="Todas las marcas" />
                     <button type="submit" class="px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700">Filtrar</button>
                     @if (array_filter($filters))
                         <a href="{{ route('admin.equipment_models.index') }}" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Limpiar</a>

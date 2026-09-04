@@ -21,7 +21,7 @@
                         class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
                     <option value="">— Selecciona —</option>
                     @foreach ($clients as $id => $name)
-                        <option value="{{ $id }}">{{ $name }}</option>
+                        <option value="{{ $id }}" @selected(old('client_id', $equipment->client_id ?? request('client_id')) == $id)>{{ $name }}</option>
                     @endforeach
                 </select>
                 <x-input-error :messages="$errors->get('client_id')" class="mt-2" />
@@ -119,7 +119,24 @@
                     brand: '{{ old('brand_id', $equipment->brand_id ?? '') }}',
                     model: '{{ old('model_id', $equipment->model_id ?? '') }}',
                     models: {{ Illuminate\Support\Js::from($models->map->only('id', 'name', 'brand_id')) }},
-                    get filtered() { return this.models.filter(m => String(m.brand_id) === String(this.brand)); }
+                    get filtered() { return this.models.filter(m => String(m.brand_id) === String(this.brand)); },
+                    async onModelChange(modelId) {
+                        if (!modelId) return;
+                        const res = await fetch(`/admin/equipment_models/${modelId}/data`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        if (!res.ok) return;
+                        const d = await res.json();
+                        if (d.type)                  document.getElementById('type').value = d.type;
+                        if (d.manufacturer)          document.getElementById('manufacturer').value = d.manufacturer;
+                        if (d.origin_country)        document.getElementById('origin_country').value = d.origin_country;
+                        if (d.risk_class)            document.getElementById('risk_class').value = d.risk_class;
+                        if (d.invima_registry)       document.getElementById('invima_registry').value = d.invima_registry;
+                        if (d.maintenance_frequency) document.getElementById('maintenance_frequency').value = d.maintenance_frequency;
+                        if (d.specialties?.length)   d.specialties.forEach(v => { const cb = document.querySelector(`input[name='specialties[]'][value='${v}']`); if(cb) cb.checked = true; });
+                        if (d.maintenance_tasks?.length) d.maintenance_tasks.forEach(v => { const cb = document.querySelector(`input[name='maintenance_tasks[]'][value='${v}']`); if(cb) cb.checked = true; });
+                        if (d.accessories?.length)   d.accessories.forEach(v => { const cb = document.querySelector(`input[name='accessories[]'][value='${v}']`); if(cb) cb.checked = true; });
+                    }
                  }">
                 <div>
                     <x-input-label for="brand_id" :value="__('Marca')" />
@@ -135,12 +152,14 @@
                 <div>
                     <x-input-label for="model_id" :value="__('Modelo')" />
                     <select id="model_id" name="model_id" x-model="model" :disabled="!brand"
+                            @change="onModelChange($event.target.value)"
                             class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
                         <option value="">{{ __('— Selecciona una marca primero —') }}</option>
                         <template x-for="m in filtered" :key="m.id">
                             <option :value="m.id" x-text="m.name" :selected="String(m.id) === String(model)"></option>
                         </template>
                     </select>
+                    <p class="mt-1 text-xs text-gray-400">Al seleccionar el modelo se auto-completan los campos técnicos.</p>
                     <x-input-error :messages="$errors->get('model_id')" class="mt-2" />
                 </div>
             </div>

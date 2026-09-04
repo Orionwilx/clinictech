@@ -26,7 +26,7 @@
                     class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
                 <option value="">— Selecciona —</option>
                 @foreach ($clients as $id => $name)
-                    <option value="{{ $id }}">{{ $name }}</option>
+                    <option value="{{ $id }}" @selected(old('client_id', $workOrder->client_id ?? request('client_id')) == $id)>{{ $name }}</option>
                 @endforeach
             </select>
             <x-input-error :messages="$errors->get('client_id')" class="mt-2" />
@@ -47,13 +47,10 @@
 
     <div>
         <x-input-label for="technician_id" :value="__('Técnico asignado (opcional)')" />
-        <select id="technician_id" name="technician_id"
-                class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-            <option value="">— Sin asignar —</option>
-            @foreach ($technicians as $id => $name)
-                <option value="{{ $id }}" @selected(old('technician_id', $workOrder->technician_id ?? '') == $id)>{{ $name }}</option>
-            @endforeach
-        </select>
+        <x-searchable-select name="technician_id" id="technician_id"
+            :options="$technicians"
+            :selected="old('technician_id', $workOrder->technician_id ?? request('technician_id'))"
+            placeholder="— Sin asignar —" />
         <x-input-error :messages="$errors->get('technician_id')" class="mt-2" />
     </div>
 

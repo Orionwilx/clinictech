@@ -65,6 +65,14 @@ class EquipmentModelController extends Controller
             ->with('status', 'Modelo actualizado correctamente.');
     }
 
+    /** Devuelve los defaults técnicos del modelo en JSON (para auto-fill en formulario de equipo). */
+    public function data(EquipmentModel $equipmentModel): \Illuminate\Http\JsonResponse
+    {
+        $this->authorize('view equipment_models');
+
+        return response()->json($equipmentModel->autoFillData());
+    }
+
     public function destroy(EquipmentModel $equipmentModel): RedirectResponse
     {
         $this->authorize('delete equipment_models');

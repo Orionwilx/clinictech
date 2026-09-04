@@ -62,6 +62,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
     // Catálogo de equipos: marcas y modelos.
     Route::resource('brands', BrandController::class)->except('show');
+    Route::get('equipment_models/{equipment_model}/data', [EquipmentModelController::class, 'data'])->name('equipment_models.data');
     Route::resource('equipment_models', EquipmentModelController::class)->except('show');
 
     // Reportes.
