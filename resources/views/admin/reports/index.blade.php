@@ -208,65 +208,46 @@
             {{-- ── Sección 2: Historial ── --}}
             <div>
                 <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Historial de reportes</h2>
-                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Creado por</th>
-                                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duración</th>
-                                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descargado por</th>
-                                <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @forelse ($history as $report)
-                                <tr>
-                                    <td class="px-5 py-4 whitespace-nowrap text-xs text-gray-400">{{ $report->id }}</td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-900">{{ $report->typeLabel() }}</td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm">
-                                        <span @class([
-                                            'inline-flex rounded-full px-2 text-xs font-semibold',
-                                            'bg-gray-100 text-gray-600'   => $report->status === 'pending',
-                                            'bg-amber-100 text-amber-800' => $report->status === 'processing',
-                                            'bg-green-100 text-green-800' => $report->status === 'done',
-                                            'bg-red-100 text-red-800'     => $report->status === 'failed',
-                                        ])>{{ $report->statusLabel() }}</span>
-                                    </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ optional($report->generator)->name ?? '—' }}</td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ $report->created_at->format('d/m/Y H:i') }}</td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">{{ $report->durationLabel() }}</td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        @if ($report->downloader)
-                                            {{ $report->downloader->name }}
-                                            <span class="block text-xs text-gray-400">{{ $report->downloaded_at->format('d/m/Y H:i') }}</span>
-                                        @else
-                                            <span class="text-gray-400">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-5 py-4 whitespace-nowrap text-right">
-                                        @if ($report->status === 'done')
-                                            <a href="{{ route('admin.reports.download', $report) }}"
-                                               class="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-600 text-white text-xs font-semibold rounded-md hover:bg-brand-700">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-                                                Descargar
-                                            </a>
-                                        @elseif ($report->status === 'failed')
-                                            <span class="text-xs text-red-500" title="{{ $report->error_message }}">Error</span>
-                                        @else
-                                            <span class="text-xs text-gray-400">—</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="8" class="px-5 py-6 text-center text-sm text-gray-500">No hay reportes generados aún.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
+                <x-data-table
+                    :cols="['w-14', 'w-40', 'w-32', 'w-40', 'w-36', 'w-28', 'w-44', 'w-36']"
+                    :heads="[['#'], ['Tipo'], ['Estado'], ['Creado por'], ['Fecha'], ['Duración'], ['Descargado por'], ['', 'right']]">
+                    @forelse ($history as $report)
+                        <tr class="bg-white">
+                            <x-td muted>{{ $report->id }}</x-td>
+                            <x-td :title="$report->typeLabel()">{{ $report->typeLabel() }}</x-td>
+                            <x-td plain>
+                                <span @class([
+                                    'inline-flex rounded-full px-2 text-xs font-semibold',
+                                    'bg-gray-100 text-gray-600'   => $report->status === 'pending',
+                                    'bg-amber-100 text-amber-800' => $report->status === 'processing',
+                                    'bg-green-100 text-green-800' => $report->status === 'done',
+                                    'bg-red-100 text-red-800'     => $report->status === 'failed',
+                                ])>{{ $report->statusLabel() }}</span>
+                            </x-td>
+                            <x-td :title="optional($report->generator)->name" muted>{{ optional($report->generator)->name ?? '—' }}</x-td>
+                            <x-td muted>{{ $report->created_at->format('d/m/Y H:i') }}</x-td>
+                            <x-td muted>{{ $report->durationLabel() }}</x-td>
+                            <x-td muted
+                                  :title="optional($report->downloader)->name"
+                                  :sub="$report->downloader ? $report->downloaded_at->format('d/m/Y H:i') : null">{{ optional($report->downloader)->name ?? '—' }}</x-td>
+                            <x-td-actions>
+                                @if ($report->status === 'done')
+                                    <a href="{{ route('admin.reports.download', $report) }}"
+                                       class="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-600 text-white text-xs font-semibold rounded-md hover:bg-brand-700">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+                                        Descargar
+                                    </a>
+                                @elseif ($report->status === 'failed')
+                                    <span class="text-xs text-red-500" title="{{ $report->error_message }}">Error</span>
+                                @else
+                                    <span class="text-xs text-gray-400">—</span>
+                                @endif
+                            </x-td-actions>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="px-5 py-6 text-center text-sm text-gray-500">No hay reportes generados aún.</td></tr>
+                    @endforelse
+                </x-data-table>
             </div>
 
         </div>

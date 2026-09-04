@@ -6,7 +6,6 @@ use App\Models\Technician;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Notifications\WorkOrderNotification;
-use Illuminate\Support\Facades\URL;
 
 class WorkOrderService
 {
@@ -48,12 +47,11 @@ class WorkOrderService
         $workOrder = WorkOrder::create($data);
 
         // Notificar a todos los admins
-        User::role('admin')->each(fn ($admin) =>
-            $admin->notify(new WorkOrderNotification(
-                $workOrder,
-                "Nueva solicitud de mantenimiento: {$workOrder->code} — {$workOrder->title}",
-                route('admin.work_orders.show', $workOrder),
-            ))
+        User::role('admin')->each(fn ($admin) => $admin->notify(new WorkOrderNotification(
+            $workOrder,
+            "Nueva solicitud de mantenimiento: {$workOrder->code} — {$workOrder->title}",
+            route('admin.work_orders.show', $workOrder),
+        ))
         );
 
         return $workOrder;
@@ -100,7 +98,7 @@ class WorkOrderService
         if ($workOrder->client?->user) {
             $workOrder->client->user->notify(new WorkOrderNotification(
                 $workOrder,
-                "Tu solicitud {$workOrder->code} fue rechazada." . ($reason ? " Motivo: {$reason}" : ''),
+                "Tu solicitud {$workOrder->code} fue rechazada.".($reason ? " Motivo: {$reason}" : ''),
                 route('client.dashboard'),
             ));
         }
@@ -114,12 +112,11 @@ class WorkOrderService
             'completed_at' => $workOrder->completed_at ?? now(),
         ]);
 
-        User::role('admin')->each(fn ($admin) =>
-            $admin->notify(new WorkOrderNotification(
-                $workOrder,
-                "La orden {$workOrder->code} está lista para revisión.",
-                route('admin.work_orders.show', $workOrder),
-            ))
+        User::role('admin')->each(fn ($admin) => $admin->notify(new WorkOrderNotification(
+            $workOrder,
+            "La orden {$workOrder->code} está lista para revisión.",
+            route('admin.work_orders.show', $workOrder),
+        ))
         );
     }
 
@@ -166,6 +163,109 @@ class WorkOrderService
                 route('client.work_orders.show', $workOrder),
             ));
         }
+    }
+
+    /**
+     * Avanza la OT al siguiente estado positivo según su punto de decisión.
+     * draft→aprueba solicitud · pending_review→aprueba trabajo · closed→envía al cliente.
+     * Devuelve false si la OT no estaba en un punto de decisión (batch la ignora).
+     */
+    public function advanceForAdmin(WorkOrder $workOrder, ?int $technicianId = null): bool
+    {
+        if ($workOrder->status === 'draft' && $workOrder->requested_by_client) {
+            $this->approveClientRequest($workOrder, $technicianId);
+
+            return true;
+        }
+
+        if ($workOrder->status === 'pending_review') {
+            $this->approveWork($workOrder);
+
+            return true;
+        }
+
+        if ($workOrder->status === 'closed' && ! $workOrder->visible_to_client) {
+            $this->sendToClient($workOrder);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Retrocede la OT (rechazo/devolución) según su punto de decisión.
+     * draft→rechaza solicitud · pending_review→devuelve al técnico.
+     */
+    public function regressForAdmin(WorkOrder $workOrder, ?string $reason = null): bool
+    {
+        if ($workOrder->status === 'draft' && $workOrder->requested_by_client) {
+            $this->rejectClientRequest($workOrder, $reason);
+
+            return true;
+        }
+
+        if ($workOrder->status === 'pending_review') {
+            $this->rejectWork($workOrder, $reason ?: 'Sin especificar');
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Asigna/reasigna técnico sin salir de la lista. Ajusta open⇆assigned.
+     */
+    public function assignTechnician(WorkOrder $workOrder, ?int $technicianId): void
+    {
+        $status = $workOrder->status;
+        if ($technicianId && $status === 'open') {
+            $status = 'assigned';
+        } elseif (! $technicianId && $status === 'assigned') {
+            $status = 'open';
+        }
+
+        $workOrder->update(['technician_id' => $technicianId, 'status' => $status]);
+
+        if ($technicianId) {
+            Technician::find($technicianId)?->user?->notify(new WorkOrderNotification(
+                $workOrder,
+                "Se te asignó la orden {$workOrder->code} — {$workOrder->title}.",
+                route('technician.work_orders.show', $workOrder),
+            ));
+        }
+    }
+
+    /**
+     * Aplica una acción masiva a varias OT. Devuelve cuántas se afectaron.
+     *
+     * @param  'approve'|'reject'|'assign'  $action
+     * @param  array<int>  $ids
+     */
+    public function batchForAdmin(string $action, array $ids, ?int $technicianId = null, ?string $reason = null): int
+    {
+        $orders = WorkOrder::whereIn('id', $ids)->get();
+        $affected = 0;
+
+        foreach ($orders as $order) {
+            if ($action === 'assign') {
+                $this->assignTechnician($order, $technicianId);
+                $affected++;
+
+                continue;
+            }
+
+            $ok = $action === 'approve'
+                ? $this->advanceForAdmin($order, $technicianId)
+                : $this->regressForAdmin($order, $reason);
+
+            if ($ok) {
+                $affected++;
+            }
+        }
+
+        return $affected;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

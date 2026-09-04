@@ -11,11 +11,11 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkOrderController;
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\EquipmentController as ClientEquipmentController;
-use App\Http\Controllers\Client\WorkOrderController as ClientWorkOrderController;
 use App\Http\Controllers\Client\TechnicianController as ClientTechnicianController;
+use App\Http\Controllers\Client\WorkOrderController as ClientWorkOrderController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Technician\DashboardController as TechDashboardController;
 use App\Http\Controllers\Technician\WorkOrderController as TechWorkOrderController;
-use App\Http\Controllers\ProfileController;
 use App\Models\Client;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +25,7 @@ Route::get('/', function () {
 
 Route::get('/dashboard', function () {
     $clients = Client::orderBy('name')->get();
+
     return view('dashboard', compact('clients'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -35,6 +36,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/notifications/read-all', function () {
         auth()->user()->unreadNotifications->markAsRead();
+
         return response()->noContent();
     })->name('notifications.read-all');
 });
@@ -74,6 +76,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('work_orders/{work_order}/approve-work', [WorkOrderController::class, 'approveWork'])->name('work_orders.approve-work');
     Route::post('work_orders/{work_order}/reject-work', [WorkOrderController::class, 'rejectWork'])->name('work_orders.reject-work');
     Route::post('work_orders/{work_order}/send-to-client', [WorkOrderController::class, 'sendToClient'])->name('work_orders.send-to-client');
+    // Acciones rápidas y masivas desde la lista.
+    Route::post('work_orders/batch', [WorkOrderController::class, 'batch'])->name('work_orders.batch');
+    Route::post('work_orders/{work_order}/advance', [WorkOrderController::class, 'advance'])->name('work_orders.advance');
+    Route::post('work_orders/{work_order}/regress', [WorkOrderController::class, 'regress'])->name('work_orders.regress');
+    Route::post('work_orders/{work_order}/assign', [WorkOrderController::class, 'assign'])->name('work_orders.assign');
     Route::resource('work_orders', WorkOrderController::class);
 
     // Catálogo de equipos: marcas y modelos.

@@ -25,60 +25,36 @@
                 </div>
             </form>
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nº / Asunto</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente / Equipo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @forelse ($workOrders as $order)
-                            <tr>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    {{ $order->code }}
-                                    <span class="block text-xs text-gray-400">{{ $order->title }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-500">
-                                    {{ optional($order->client)->name ?? '—' }}
-                                    <span class="block text-xs text-gray-400">{{ optional($order->equipment)->name ?? 'Sin equipo' }}</span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span @class([
-                                        'inline-flex rounded-full px-2 text-xs font-semibold',
-                                        'bg-sky-100 text-sky-800' => $order->type === 'preventive',
-                                        'bg-orange-100 text-orange-800' => $order->type === 'corrective',
-                                    ])>{{ $order->typeLabel() }}</span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span @class([
-                                        'inline-flex rounded-full px-2 text-xs font-semibold',
-                                        'bg-indigo-100 text-indigo-800' => $order->status === 'assigned',
-                                        'bg-amber-100 text-amber-800' => $order->status === 'in_progress',
-                                        'bg-purple-100 text-purple-800' => $order->status === 'pending_review',
-                                        'bg-green-100 text-green-800' => $order->status === 'completed',
-                                        'bg-brand-100 text-brand-800' => $order->status === 'closed',
-                                        'bg-gray-100 text-gray-800' => !in_array($order->status, ['assigned','in_progress','pending_review','completed','closed']),
-                                    ])>{{ $order->statusLabel() }}</span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <x-icon-btn :href="route('technician.work_orders.show', $order)" color="gray" label="Ver">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
-                                    </x-icon-btn>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No hay órdenes.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            <x-data-table
+                :cols="['w-[28%]', 'w-[28%]', 'w-36', 'w-36', 'w-24']"
+                :heads="[['Nº / Asunto'], ['Cliente / Equipo'], ['Tipo'], ['Estado'], ['Acción', 'right']]">
+                @forelse ($workOrders as $order)
+                    <tr class="bg-white">
+                        <x-td :title="$order->code" :sub="$order->title" :subTitle="$order->title">{{ $order->code }}</x-td>
+                        <x-td muted
+                              :title="optional($order->client)->name"
+                              :sub="optional($order->equipment)->name ?? 'Sin equipo'"
+                              :subTitle="optional($order->equipment)->name">{{ optional($order->client)->name ?? '—' }}</x-td>
+                        <x-td plain>
+                            <span @class([
+                                'inline-flex rounded-full px-2 text-xs font-semibold',
+                                'bg-sky-100 text-sky-800' => $order->type === 'preventive',
+                                'bg-orange-100 text-orange-800' => $order->type === 'corrective',
+                            ])>{{ $order->typeLabel() }}</span>
+                        </x-td>
+                        <x-td plain>
+                            <x-work-order-status-badge :order="$order" />
+                        </x-td>
+                        <x-td-actions>
+                            <x-icon-btn :href="route('technician.work_orders.show', $order)" color="gray" label="Ver">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+                            </x-icon-btn>
+                        </x-td-actions>
+                    </tr>
+                @empty
+                    <tr><td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No hay órdenes.</td></tr>
+                @endforelse
+            </x-data-table>
 
             <div class="mt-4">{{ $workOrders->links() }}</div>
         </div>

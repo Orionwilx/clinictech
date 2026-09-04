@@ -116,4 +116,54 @@ class WorkOrder extends Model
     {
         return self::PRIORITIES[$this->priority] ?? $this->priority;
     }
+
+    // ─── Flujo colaborativo: puntos de decisión del admin ─────────────────────
+
+    /**
+     * OT que esperan una decisión del admin: solicitud del cliente (draft),
+     * trabajo del técnico por revisar (pending_review) o cierre sin enviar.
+     */
+    public function scopeAwaitingAdminAction($query)
+    {
+        return $query->where(function ($q) {
+            $q->where(fn ($q) => $q->where('status', 'draft')->where('requested_by_client', true))
+                ->orWhere('status', 'pending_review')
+                ->orWhere(fn ($q) => $q->where('status', 'closed')->where('visible_to_client', false));
+        });
+    }
+
+    /**
+     * Acción primaria que el admin puede ejecutar sobre esta OT desde la lista,
+     * o null si no requiere decisión. Fat model: la vista solo pinta.
+     *
+     * @return array{key: string, label: string, color: string, can_reject: bool, reject_label: string, reject_required: bool, needs_technician: bool}|null
+     */
+    public function primaryAdminAction(): ?array
+    {
+        if ($this->status === 'draft' && $this->requested_by_client) {
+            return [
+                'key' => 'approve', 'label' => 'Aprobar', 'color' => 'green',
+                'can_reject' => true, 'reject_label' => 'Rechazar', 'reject_required' => false,
+                'needs_technician' => true,
+            ];
+        }
+
+        if ($this->status === 'pending_review') {
+            return [
+                'key' => 'approve', 'label' => 'Aprobar', 'color' => 'green',
+                'can_reject' => true, 'reject_label' => 'Devolver', 'reject_required' => true,
+                'needs_technician' => false,
+            ];
+        }
+
+        if ($this->status === 'closed' && ! $this->visible_to_client) {
+            return [
+                'key' => 'send', 'label' => 'Enviar', 'color' => 'brand',
+                'can_reject' => false, 'reject_label' => '', 'reject_required' => false,
+                'needs_technician' => false,
+            ];
+        }
+
+        return null;
+    }
 }

@@ -13,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'client.profile' => \App\Http\Middleware\EnsureClientProfile::class,
+            'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission'         => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'client.profile'     => \App\Http\Middleware\EnsureClientProfile::class,
             'technician.profile' => \App\Http\Middleware\EnsureTechnicianProfile::class,
         ]);
     })

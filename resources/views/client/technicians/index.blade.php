@@ -6,46 +6,20 @@
 
     <div class="py-12">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Técnico</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Especialidad</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contacto</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">OT atendidas</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @forelse ($technicians as $tech)
-                            <tr>
-                                <td class="px-6 py-4 text-sm text-gray-900">
-                                    {{ $tech->name }}
-                                    @if ($tech->document)
-                                        <span class="block text-xs text-gray-400">{{ $tech->document }}</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-500">{{ $tech->specialty ?: '—' }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500">
-                                    {{ $tech->email ?: '—' }}
-                                    @if ($tech->phone)
-                                        <span class="block text-xs text-gray-400">{{ $tech->phone }}</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-semibold text-gray-900">
-                                    {{ $tech->orders_count }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">
-                                    Aún no hay técnicos asociados a tus órdenes de trabajo.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+            <x-data-table :sticky-last="false"
+                :cols="['w-[30%]', 'w-[24%]', 'w-[30%]', 'w-40']"
+                :heads="[['Técnico'], ['Especialidad'], ['Contacto'], ['OT atendidas', 'right']]">
+                @forelse ($technicians as $tech)
+                    <tr class="bg-white">
+                        <x-td :title="$tech->name" :sub="$tech->document ?: null">{{ $tech->name }}</x-td>
+                        <x-td :title="$tech->specialty" muted>{{ $tech->specialty ?: '—' }}</x-td>
+                        <x-td :title="$tech->email" muted :sub="$tech->phone ?: null">{{ $tech->email ?: '—' }}</x-td>
+                        <x-td plain align="right"><span class="text-sm font-semibold text-gray-900">{{ $tech->orders_count }}</span></x-td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">Aún no hay técnicos asociados a tus órdenes de trabajo.</td></tr>
+                @endforelse
+            </x-data-table>
         </div>
     </div>
 </x-app-layout>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Report\ExportReportRequest;
 use App\Jobs\GenerateReportJob;
 use App\Models\Client;
 use App\Models\Equipment;
@@ -10,7 +11,6 @@ use App\Models\Report;
 use App\Models\Technician;
 use App\Models\WorkOrder;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,16 +21,16 @@ class ReportController extends Controller
         'work_orders' => 'Órdenes de trabajo',
         'maintenance' => 'Mantenimientos',
         'technicians' => 'Por técnico',
-        'equipment'   => 'Por equipo',
+        'equipment' => 'Por equipo',
     ];
 
     public function index(): View
     {
         $this->authorize('view reports');
 
-        $clients     = Client::orderBy('name')->pluck('name', 'id');
+        $clients = Client::orderBy('name')->pluck('name', 'id');
         $technicians = Technician::orderBy('name')->pluck('name', 'id');
-        $history     = Report::with(['generator', 'downloader'])
+        $history = Report::with(['generator', 'downloader'])
             ->latest()
             ->limit(50)
             ->get();
@@ -38,16 +38,8 @@ class ReportController extends Controller
         return view('admin.reports.index', compact('clients', 'technicians', 'history'));
     }
 
-    public function export(Request $request): RedirectResponse
+    public function export(ExportReportRequest $request): RedirectResponse
     {
-        $this->authorize('view reports');
-
-        $request->validate([
-            'report_type' => ['required', 'in:' . implode(',', array_keys(self::TYPES))],
-            'date_from'   => ['nullable', 'date'],
-            'date_to'     => ['nullable', 'date', 'after_or_equal:date_from'],
-        ]);
-
         $filters = array_filter($request->only([
             'date_from', 'date_to',
             'client_id', 'technician_id',
@@ -55,9 +47,9 @@ class ReportController extends Controller
         ]));
 
         $report = Report::create([
-            'type'         => $request->report_type,
-            'filters'      => $filters ?: null,
-            'status'       => 'pending',
+            'type' => $request->report_type,
+            'filters' => $filters ?: null,
+            'status' => 'pending',
             'generated_by' => auth()->id(),
         ]);
 
@@ -81,7 +73,7 @@ class ReportController extends Controller
             ]);
         }
 
-        $filename = $report->type . '_' . $report->id . '.xlsx';
+        $filename = $report->type.'_'.$report->id.'.xlsx';
 
         return Storage::disk('local')->download($report->file_path, $filename);
     }
@@ -91,13 +83,13 @@ class ReportController extends Controller
         $this->authorize('view reports');
 
         $stats = [
-            'clients'     => Client::count(),
-            'equipment'   => Equipment::count(),
+            'clients' => Client::count(),
+            'equipment' => Equipment::count(),
             'work_orders' => WorkOrder::count(),
             'open_orders' => WorkOrder::whereIn('status', WorkOrder::ACTIVE_STATUSES)->count(),
             'technicians' => Technician::where('is_active', true)->count(),
-            'preventive'  => WorkOrder::where('type', 'preventive')->count(),
-            'corrective'  => WorkOrder::where('type', 'corrective')->count(),
+            'preventive' => WorkOrder::where('type', 'preventive')->count(),
+            'corrective' => WorkOrder::where('type', 'corrective')->count(),
         ];
 
         return view('admin.reports.indicators', compact('stats'));

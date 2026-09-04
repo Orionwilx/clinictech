@@ -73,7 +73,12 @@ Para el recurso `Clinic` (singular PascalCase), los archivos SIEMPRE están aqu�
 - Archivos cortos (guía: ~150 líneas). Una responsabilidad por archivo.
 - `User` usa `SoftDeletes` — usa `withTrashed()`/`restore()` cuando aplique; borra con `delete()` (soft), no `forceDelete()` salvo intención explícita.
 - Para crear un CRUD nuevo usa el comando `/nuevo-recurso {Recurso}` (ver `.claude/commands/nuevo-recurso.md`).
-- Antes de cerrar una tarea: `./vendor/bin/pint` y `php artisan test`.
+- Antes de cerrar una tarea, ejecutar en orden:
+  1. `./vendor/bin/pint` — formateo
+  2. `php artisan test` — suite completa
+  3. `php artisan route:list` — verifica que rutas, middlewares y controllers resuelvan sin error
+  4. Verificar en navegador si se tocó: middleware, `bootstrap/app.php`, layouts o bindings
+- **Middlewares de Spatie NO se auto-registran en Laravel 11.** Siempre declararlos en `bootstrap/app.php` → `$middleware->alias([...])`: `role`, `permission`, `role_or_permission`.
 
 ## Estrategia de migraciones (desarrollo temprano — "de menos a más")
 El esquema evoluciona constantemente; se añaden campos de forma incremental. Para NO acumular migraciones basura:
@@ -109,7 +114,7 @@ npm run dev                  # assets en watch
 - ✅ **Áreas de trabajo** (`Area` + `Admin/AreaController`): subdivisiones internas del cliente (UCI, Urgencias…), `Area belongsTo Client`, únicas por cliente. Se gestionan **en línea** en la pestaña «Áreas» del hub del cliente (rutas anidadas `clients/{client}/areas`). El equipo enlaza a un área (`equipment.area_id`, selector dependiente del cliente); `location` se conserva como **sede/dirección de la instalación** (concepto distinto del área). Permiso `areas`. Tests en `AreaManagementTest`.
 - ⏳ Pendiente en Clientes: contactos, adjuntos, recordatorios (§5.4). Login por username (fase Panel Cliente).
 - ✅ **Técnicos** (`Admin/TechnicianController` + `TechnicianService`): ficha (name, document único, email, phone, specialty) con **cuenta vinculada** (`Technician belongsTo User` rol `tecnico`, login por email). Soft delete + restore. Spec en `docs/modules/tecnicos.md`.
-- ✅ **Órdenes de trabajo** (`Admin/WorkOrderController` + `WorkOrderService`): OT que relaciona `Client` (req.), `Equipment` (opcional, debe pertenecer al cliente) y `Technician` (opcional). `code` autogenerado (`OT-000001`) por el servicio; `type`/`priority`/`status` con **código EN y etiquetas ES** (`WorkOrder::TYPES/PRIORITIES/STATUSES`); sellos automáticos `started_at/completed_at/closed_at` según estado. Soft delete + restore. Spec en `docs/modules/ordenes-trabajo.md`, tests en `WorkOrderManagementTest`.
+- ✅ **Órdenes de trabajo** (`Admin/WorkOrderController` + `WorkOrderService`): OT que relaciona `Client` (req.), `Equipment` (opcional, debe pertenecer al cliente) y `Technician` (opcional). `code` autogenerado (`OT-000001`) por el servicio; `type`/`priority`/`status` con **código EN y etiquetas ES** (`WorkOrder::TYPES/PRIORITIES/STATUSES`); sellos automáticos `started_at/completed_at/closed_at` según estado. Soft delete + restore. **Centro de operación en el índice**: pestañas/bandejas (`?tab=action|active|all|trashed`, «Requieren tu acción» con badge de conteo vía `scopeAwaitingAdminAction`), **acción primaria contextual por fila** en 1 clic (`WorkOrder::primaryAdminAction()` → rutas `advance`/`regress`/`assign`) y **acciones masivas** (checkbox + barra flotante → ruta `batch`, `WorkOrderService::batchForAdmin`). Badge centralizado en `<x-work-order-status-badge>`. Spec en `docs/modules/ordenes-trabajo.md`, tests en `WorkOrderManagementTest`.
 - ℹ️ **Mantenimiento = tipo de OT** (NO hay entidad separada): un mantenimiento es una `WorkOrder` con `type` preventivo/correctivo. Se crean/consultan desde el módulo de Órdenes y desde el hub del cliente. Tipos abiertos a ampliar (pendiente: hacerlos configurables por admin).
 - ✅ **Hub del cliente**: la ficha `clients/show` es un tablero con pestañas (Datos / Áreas / Equipos / Órdenes / OT pendientes) que lista lo del cliente y ofrece «+ Nuevo» con `?client_id` precargado (editable). En Órdenes hay accesos «+ OT preventiva» / «+ OT correctiva» que precargan `type`. «OT pendientes» lista equipos con OT activas (`WorkOrder::ACTIVE_STATUSES`). El cliente tiene **logo** (`logo_path`, disco `public`) mostrado en la cabecera.
 - ⏳ Pendiente en Técnicos: capacitaciones (`Training`). Pendiente en OT: adjuntos/evidencias, recordatorios (para preventivas), tipos configurables por admin.
