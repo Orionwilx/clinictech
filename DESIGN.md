@@ -47,7 +47,8 @@ El área autenticada usa un **sidebar colapsable** (estándar de software admini
 - Estructura en `layouts/app.blade.php` (shell + topbar + menú de usuario) y `layouts/sidebar.blade.php` (menú).
 - Estado en Alpine: `collapsed` (recordado en `localStorage` como `sb_collapsed`) y `mobileOpen` (off-canvas en móvil).
 - Sidebar oscuro `bg-brand-900`; ítem activo `bg-brand-600`. Colapsa a solo-iconos (`w-64` ↔ `w-20`).
-- **Para añadir un módulo al menú**: agrega un `<x-sidebar-link>` en `layouts/sidebar.blade.php` protegido con `@can('view {modulo}')`, con su icono SVG (stroke, `w-5 h-5`).
+- **Menú agrupado por secciones**: los ítems del admin se agrupan bajo encabezados `<x-sidebar-section label="...">` (Operación · Catálogo maestro · Análisis · Sistema). Expandido muestra la etiqueta en mayúsculas tenue; colapsado, un separador fino. Cada sección se envuelve en `@canany([...])` para que el encabezado no aparezca huérfano cuando el rol no tiene ninguno de sus permisos.
+- **Para añadir un módulo al menú**: agrega un `<x-sidebar-link>` en `layouts/sidebar.blade.php` **dentro de la sección que corresponda** (y suma su permiso al `@canany` de esa sección), protegido con `@can('view {modulo}')`, con su icono SVG (stroke, `w-5 h-5`).
 - Topbar `sticky` con toggle móvil, el slot `header` de la página y el dropdown de usuario.
 
 ## Estándar de vistas

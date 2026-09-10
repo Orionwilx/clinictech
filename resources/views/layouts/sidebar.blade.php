@@ -72,97 +72,100 @@
             </x-slot:icon>
         </x-sidebar-link>
 
-        @can('view users')
-            <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" label="Usuarios">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.5a3 3 0 0 0-6 0M18 21a3 3 0 0 0-3-3M6 21a3 3 0 0 1 3-3m3-3a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+        {{-- Operación --}}
+        @canany(['view clients', 'view equipment', 'view work_orders', 'view technicians'])
+            <x-sidebar-section label="Operación" />
 
-        @can('view clients')
-            <x-sidebar-link :href="route('admin.clients.index')" :active="request()->routeIs('admin.clients.*')" label="Clientes">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 21V9h3a1 1 0 0 1 1 1v11M8 8h1m-1 4h1m3-4h1m-1 4h1"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+            @can('view clients')
+                <x-sidebar-link :href="route('admin.clients.index')" :active="request()->routeIs('admin.clients.*')" label="Clientes">
+                    <x-slot:icon>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 21h18M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 21V9h3a1 1 0 0 1 1 1v11M8 8h1m-1 4h1m3-4h1m-1 4h1"/>
+                        </svg>
+                    </x-slot:icon>
+                </x-sidebar-link>
+            @endcan
 
-        @can('view equipment')
-            <x-sidebar-link :href="route('admin.equipment.index')" :active="request()->routeIs('admin.equipment.*')" label="Equipos">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 7v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7M4 7l2-3h12l2 3M9 12h6"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+            @can('view equipment')
+                <x-sidebar-link :href="route('admin.equipment.index')" :active="request()->routeIs('admin.equipment.*')" label="Equipos">
+                    <x-slot:icon>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 7v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7M4 7l2-3h12l2 3M9 12h6"/>
+                        </svg>
+                    </x-slot:icon>
+                </x-sidebar-link>
+            @endcan
 
-        @can('view equipment_categories')
-            <x-sidebar-link :href="route('admin.equipment_categories.index')" :active="request()->routeIs('admin.equipment_categories.*')" label="Categorías">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.5h6v6h-6zM14.25 4.5h6v6h-6zM3.75 13.5h6v6h-6zM17.25 13.5v6M14.25 16.5h6"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+            @can('view work_orders')
+                <x-sidebar-link :href="route('admin.work_orders.index')" :active="request()->routeIs('admin.work_orders.*')" label="Órdenes de trabajo">
+                    <x-slot:icon>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9 2 2 4-4"/>
+                        </svg>
+                    </x-slot:icon>
+                </x-sidebar-link>
+            @endcan
 
-        @can('view brands')
-            <x-sidebar-link :href="route('admin.brands.index')" :active="request()->routeIs('admin.brands.*')" label="Marcas">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5M7.5 20.25H6A2.25 2.25 0 0 1 3.75 18v-1.5M16.5 20.25H18A2.25 2.25 0 0 0 20.25 18v-1.5M9 12h6"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+            @can('view technicians')
+                <x-sidebar-link :href="route('admin.technicians.index')" :active="request()->routeIs('admin.technicians.*')" label="Técnicos">
+                    <x-slot:icon>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM5 20a7 7 0 0 1 14 0M17 8l1.5-1.5M18.5 3.5 20 2"/>
+                        </svg>
+                    </x-slot:icon>
+                </x-sidebar-link>
+            @endcan
+        @endcanany
 
-        @can('view equipment_models')
-            <x-sidebar-link :href="route('admin.equipment_models.index')" :active="request()->routeIs('admin.equipment_models.*')" label="Modelos">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+        {{-- Catálogo maestro --}}
+        @canany(['view equipment_categories', 'view brands', 'view equipment_models', 'view equipment_catalogs'])
+            <x-sidebar-section label="Catálogo maestro" />
 
-        @can('view equipment_catalogs')
-            <x-sidebar-link :href="route('admin.equipment_catalogs.index')" :active="request()->routeIs('admin.equipment_catalogs.*')" label="Catálogos">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 5.25h15M4.5 9.75h15M4.5 14.25h9M4.5 18.75h6"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+            @can('view equipment_categories')
+                <x-sidebar-link :href="route('admin.equipment_categories.index')" :active="request()->routeIs('admin.equipment_categories.*')" label="Categorías">
+                    <x-slot:icon>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.5h6v6h-6zM14.25 4.5h6v6h-6zM3.75 13.5h6v6h-6zM17.25 13.5v6M14.25 16.5h6"/>
+                        </svg>
+                    </x-slot:icon>
+                </x-sidebar-link>
+            @endcan
 
-        @can('view technicians')
-            <x-sidebar-link :href="route('admin.technicians.index')" :active="request()->routeIs('admin.technicians.*')" label="Técnicos">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM5 20a7 7 0 0 1 14 0M17 8l1.5-1.5M18.5 3.5 20 2"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+            @can('view brands')
+                <x-sidebar-link :href="route('admin.brands.index')" :active="request()->routeIs('admin.brands.*')" label="Marcas">
+                    <x-slot:icon>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5M7.5 20.25H6A2.25 2.25 0 0 1 3.75 18v-1.5M16.5 20.25H18A2.25 2.25 0 0 0 20.25 18v-1.5M9 12h6"/>
+                        </svg>
+                    </x-slot:icon>
+                </x-sidebar-link>
+            @endcan
 
-        @can('view work_orders')
-            <x-sidebar-link :href="route('admin.work_orders.index')" :active="request()->routeIs('admin.work_orders.*')" label="Órdenes de trabajo">
-                <x-slot:icon>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9 2 2 4-4"/>
-                    </svg>
-                </x-slot:icon>
-            </x-sidebar-link>
-        @endcan
+            @can('view equipment_models')
+                <x-sidebar-link :href="route('admin.equipment_models.index')" :active="request()->routeIs('admin.equipment_models.*')" label="Modelos">
+                    <x-slot:icon>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/>
+                        </svg>
+                    </x-slot:icon>
+                </x-sidebar-link>
+            @endcan
 
+            @can('view equipment_catalogs')
+                <x-sidebar-link :href="route('admin.equipment_catalogs.index')" :active="request()->routeIs('admin.equipment_catalogs.*')" label="Catálogos">
+                    <x-slot:icon>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 5.25h15M4.5 9.75h15M4.5 14.25h9M4.5 18.75h6"/>
+                        </svg>
+                    </x-slot:icon>
+                </x-sidebar-link>
+            @endcan
+        @endcanany
+
+        {{-- Análisis --}}
         @can('view reports')
+            <x-sidebar-section label="Análisis" />
+
             <x-sidebar-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.index') || request()->routeIs('admin.reports.export')" label="Reportes">
                 <x-slot:icon>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -174,6 +177,19 @@
                 <x-slot:icon>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+        @endcan
+
+        {{-- Sistema --}}
+        @can('view users')
+            <x-sidebar-section label="Sistema" />
+
+            <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" label="Usuarios">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.5a3 3 0 0 0-6 0M18 21a3 3 0 0 0-3-3M6 21a3 3 0 0 1 3-3m3-3a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/>
                     </svg>
                 </x-slot:icon>
             </x-sidebar-link>
