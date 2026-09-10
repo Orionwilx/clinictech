@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Models\WorkOrder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class WorkOrderManagementTest extends TestCase
@@ -63,7 +65,7 @@ class WorkOrderManagementTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->post(route('admin.work_orders.store'), $this->validPayload())
-            ->assertRedirect(route('admin.work_orders.index'));
+            ->assertRedirect(route('admin.work_orders.show', WorkOrder::firstOrFail()));
 
         $order = WorkOrder::firstOrFail();
         $this->assertNotNull($order->code);
@@ -108,7 +110,7 @@ class WorkOrderManagementTest extends TestCase
                 'client_id' => $order->client_id,
                 'status' => 'in_progress',
             ]))
-            ->assertRedirect(route('admin.work_orders.index'));
+            ->assertRedirect(route('admin.work_orders.show', $order));
 
         $this->assertNotNull($order->fresh()->started_at);
     }
@@ -124,7 +126,7 @@ class WorkOrderManagementTest extends TestCase
                 'technician_id' => $technician->id,
                 'status' => 'assigned',
             ]))
-            ->assertRedirect(route('admin.work_orders.index'));
+            ->assertRedirect(route('admin.work_orders.show', $order));
 
         $this->assertSame($technician->id, $order->fresh()->technician_id);
     }
@@ -170,7 +172,7 @@ class WorkOrderManagementTest extends TestCase
                 'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma'],
                 'accessories_checked' => ['Cable de AC', 'Batería'],
             ]))
-            ->assertRedirect(route('admin.work_orders.index'));
+            ->assertRedirect(route('admin.work_orders.show', WorkOrder::firstOrFail()));
 
         $order = WorkOrder::firstOrFail();
         $this->assertEqualsCanonicalizing(['Prueba de funcionamiento', 'Revisión de alarma'], $order->maintenance_tasks);
@@ -196,7 +198,7 @@ class WorkOrderManagementTest extends TestCase
                 'maintenance_tasks' => ['Prueba de funcionamiento', 'Prueba de fugas'],
                 'accessories_checked' => ['Cable de AC'],
             ]))
-            ->assertRedirect(route('admin.work_orders.index'));
+            ->assertRedirect(route('admin.work_orders.show', WorkOrder::firstOrFail()));
 
         $equipment->refresh();
         // Las características y el checklist editados desde la OT persisten en la ficha del equipo.
@@ -227,6 +229,42 @@ class WorkOrderManagementTest extends TestCase
                 'maintenance_tasks' => [['array' => 'no válido']],
             ]))
             ->assertSessionHasErrors(['maintenance_tasks.0']);
+    }
+
+    public function test_admin_can_upload_and_delete_photo_on_a_work_order(): void
+    {
+        Storage::fake('public');
+        $order = WorkOrder::factory()->create();
+
+        $response = $this->actingAs($this->admin())
+            ->postJson(route('admin.work_orders.photos.store', $order), [
+                'photo' => UploadedFile::fake()->image('evidencia.jpg', 3000, 2000),
+            ])
+            ->assertCreated()
+            ->assertJsonStructure(['id', 'url', 'name']);
+
+        $photo = $order->photos()->firstOrFail();
+        Storage::disk('public')->assertExists($photo->path);
+        // Comprimida por ImageService.
+        [$width, $height] = getimagesizefromstring(Storage::disk('public')->get($photo->path));
+        $this->assertLessThanOrEqual(1600, max($width, $height));
+
+        $this->actingAs($this->admin())
+            ->deleteJson(route('admin.work_orders.photos.destroy', [$order, $photo->id]))
+            ->assertOk();
+        $this->assertDatabaseMissing('work_order_photos', ['id' => $photo->id]);
+    }
+
+    public function test_client_cannot_upload_photo_to_work_order(): void
+    {
+        $order = WorkOrder::factory()->create();
+        $cliente = User::factory()->create()->assignRole('cliente');
+
+        $this->actingAs($cliente)
+            ->postJson(route('admin.work_orders.photos.store', $order), [
+                'photo' => UploadedFile::fake()->image('x.jpg'),
+            ])
+            ->assertForbidden();
     }
 
     public function test_admin_can_soft_delete_and_restore_work_order(): void

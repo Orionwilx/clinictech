@@ -7,6 +7,7 @@ use App\Http\Requests\WorkOrder\AssignWorkOrderRequest;
 use App\Http\Requests\WorkOrder\BatchWorkOrderRequest;
 use App\Http\Requests\WorkOrder\RejectWorkOrderRequest;
 use App\Http\Requests\WorkOrder\ReturnWorkOrderRequest;
+use App\Http\Requests\WorkOrder\StoreWorkOrderPhotoRequest;
 use App\Http\Requests\WorkOrder\StoreWorkOrderRequest;
 use App\Http\Requests\WorkOrder\UpdateWorkOrderRequest;
 use App\Models\Accessory;
@@ -15,11 +16,15 @@ use App\Models\Equipment;
 use App\Models\MaintenanceTask;
 use App\Models\Technician;
 use App\Models\WorkOrder;
+use App\Models\WorkOrderPhoto;
+use App\Services\ImageService;
 use App\Services\WorkOrderService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class WorkOrderController extends Controller
@@ -81,15 +86,16 @@ class WorkOrderController extends Controller
         $workOrder = $this->service->create($orderData);
         $this->service->syncEquipmentData($workOrder, $equipmentData, $orderData);
 
-        return redirect()->route('admin.work_orders.index')
-            ->with('status', 'Orden de trabajo creada correctamente.');
+        // Redirige a la ficha para poder anexar evidencias fotográficas de inmediato.
+        return redirect()->route('admin.work_orders.show', $workOrder)
+            ->with('status', 'Orden de trabajo creada correctamente. Puedes anexar fotos abajo.');
     }
 
     public function show(WorkOrder $workOrder): View
     {
         $this->authorize('view work_orders');
 
-        $workOrder->load(['client', 'equipment', 'technician']);
+        $workOrder->load(['client', 'equipment', 'technician', 'photos']);
 
         return view('admin.work_orders.show', compact('workOrder'));
     }
@@ -110,7 +116,7 @@ class WorkOrderController extends Controller
         $this->service->update($workOrder, $orderData);
         $this->service->syncEquipmentData($workOrder, $equipmentData, $orderData);
 
-        return redirect()->route('admin.work_orders.index')
+        return redirect()->route('admin.work_orders.show', $workOrder)
             ->with('status', 'Orden de trabajo actualizada correctamente.');
     }
 
@@ -122,6 +128,39 @@ class WorkOrderController extends Controller
 
         return redirect()->route('admin.work_orders.index')
             ->with('status', 'Orden de trabajo eliminada (recuperable).');
+    }
+
+    /**
+     * Sube una evidencia fotográfica a la OT (el admin llena OT en cualquier estado).
+     * Comprimida por ImageService; subida AJAX inmediata desde la ficha.
+     */
+    public function storePhoto(StoreWorkOrderPhotoRequest $request, WorkOrder $workOrder, ImageService $images): JsonResponse
+    {
+        $file = $request->file('photo');
+        $stored = $images->storeCompressed($file, "work_order_photos/{$workOrder->id}");
+
+        $photo = $workOrder->photos()->create([
+            'path' => $stored['path'],
+            'original_name' => $file->getClientOriginalName(),
+            'size' => $stored['size'],
+        ]);
+
+        return response()->json([
+            'id' => $photo->id,
+            'url' => $photo->url(),
+            'name' => $photo->original_name,
+        ], 201);
+    }
+
+    public function destroyPhoto(WorkOrder $workOrder, WorkOrderPhoto $photo): JsonResponse
+    {
+        $this->authorize('update work_orders');
+        abort_if($photo->work_order_id !== $workOrder->id, 404);
+
+        Storage::disk('public')->delete($photo->path);
+        $photo->delete();
+
+        return response()->json(['deleted' => true]);
     }
 
     public function pdf(WorkOrder $workOrder): Response

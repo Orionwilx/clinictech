@@ -67,18 +67,72 @@
                     </div>
                 @endif
 
-                @if ($workOrder->photos->isNotEmpty())
-                    <div class="mt-6">
-                        <h3 class="text-sm font-semibold text-gray-900 mb-2">Evidencias fotográficas</h3>
-                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                            @foreach ($workOrder->photos as $photo)
-                                <a href="{{ $photo->url() }}" target="_blank">
-                                    <img src="{{ $photo->url() }}" alt="{{ $photo->original_name }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
-                                </a>
-                            @endforeach
-                        </div>
+                {{-- Evidencias fotográficas: el admin puede anexar/quitar (llena OT del técnico) --}}
+                <div class="mt-6"
+                     x-data="{
+                        photos: {{ Illuminate\Support\Js::from($workOrder->photos->map(fn ($p) => ['id' => $p->id, 'url' => $p->url(), 'name' => $p->original_name])) }},
+                        uploading: 0, error: '',
+                        async upload(files) {
+                            this.error = '';
+                            for (const file of files) {
+                                this.uploading++;
+                                const data = new FormData();
+                                data.append('photo', file);
+                                try {
+                                    const res = await fetch('{{ route('admin.work_orders.photos.store', $workOrder) }}', {
+                                        method: 'POST',
+                                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                                        body: data,
+                                    });
+                                    if (res.status === 201) this.photos.push(await res.json());
+                                    else if (res.status === 422) this.error = Object.values((await res.json()).errors ?? {}).flat()[0] ?? 'Archivo inválido.';
+                                    else this.error = 'No se pudo subir la foto.';
+                                } catch { this.error = 'Sin conexión: la foto no se subió, inténtalo de nuevo.'; }
+                                this.uploading--;
+                            }
+                            this.$refs.fileInput.value = '';
+                        },
+                        async remove(photo) {
+                            if (!await window.appConfirm('¿Eliminar esta foto?', { title: 'Eliminar foto', confirmLabel: 'Eliminar' })) return;
+                            const res = await fetch(`{{ url('admin/work_orders/'.$workOrder->id.'/photos') }}/${photo.id}`, {
+                                method: 'DELETE',
+                                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                            });
+                            if (res.ok) this.photos = this.photos.filter(p => p.id !== photo.id);
+                        }
+                     }">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-semibold text-gray-900">Evidencias fotográficas</h3>
+                        <span class="text-xs text-gray-400" x-show="uploading > 0" x-cloak>Subiendo y comprimiendo…</span>
                     </div>
-                @endif
+
+                    <div class="grid grid-cols-3 sm:grid-cols-6 gap-3" x-show="photos.length" x-cloak>
+                        <template x-for="photo in photos" :key="photo.id">
+                            <div class="relative group">
+                                <a :href="photo.url" target="_blank">
+                                    <img :src="photo.url" :alt="photo.name" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                </a>
+                                @can('update work_orders')
+                                    <button type="button" @click="remove(photo)"
+                                            class="absolute -top-2 -right-2 hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white text-xs shadow"
+                                            title="Eliminar foto">✕</button>
+                                @endcan
+                            </div>
+                        </template>
+                    </div>
+                    <p x-show="!photos.length" x-cloak class="text-sm text-gray-400">Sin evidencias fotográficas.</p>
+
+                    @can('update work_orders')
+                        <label class="mt-3 inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-brand-700 bg-brand-50 rounded-md hover:bg-brand-100 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316ZM16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z"/></svg>
+                            Agregar fotos
+                            <input type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden"
+                                   x-ref="fileInput" @change="upload($event.target.files)">
+                        </label>
+                        <p class="mt-1 text-xs text-gray-400">Se comprimen automáticamente al subir.</p>
+                        <p class="mt-1 text-xs text-red-600" x-show="error" x-text="error" x-cloak></p>
+                    @endcan
+                </div>
 
                 {{-- Acciones según estado del flujo colaborativo --}}
                 <div class="mt-6 space-y-3">

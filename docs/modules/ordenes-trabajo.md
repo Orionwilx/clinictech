@@ -91,9 +91,10 @@ El índice de OT es un **centro de operación** orientado a reducir clics del ad
 
 **Servicio** (`WorkOrderService`): `advanceForAdmin` / `regressForAdmin` (despachan la transición correcta según estado), `assignTechnician` (ajusta `open⇆assigned` y notifica) y `batchForAdmin` (itera y devuelve cuántas afectó; omite las que no aplican). **Rutas**: `advance`, `regress`, `assign` (por OT) y `batch` (colección, declarada **antes** del `Route::resource` para no colisionar con `{work_order}`).
 
-## Evidencias fotográficas (técnico)
+## Evidencias fotográficas (técnico y admin)
 - `WorkOrderPhoto` (tabla `work_order_photos`: `work_order_id`, `path`, `original_name`, `size`) · `WorkOrder hasMany photos`.
 - El técnico dueño de la OT (estado `assigned`/`in_progress`) sube fotos desde el diligenciamiento; **subida AJAX inmediata** (rutas `technician.work_orders.photos.{store,destroy}`) — no dependen del envío del formulario, así no se pierden con mala conexión.
+- **El admin también anexa/quita fotos** desde la ficha de la OT (`admin/work_orders/show`, galería interactiva; rutas `admin.work_orders.photos.{store,destroy}`, permiso `update work_orders`, **cualquier estado**). Es habitual que el admin llene las OT que ejecutó el técnico y suba las fotos que este tomó. Por eso `store`/`update` de OT ahora **redirigen a la ficha** (show) para poder anexar fotos de inmediato.
 - **Compresión en servidor** (`ImageService`, GD): lado mayor ≤ 1600 px, re-codificado JPEG calidad 72, orientación EXIF corregida, transparencias aplanadas en blanco. Límite de subida 15 MB.
 - Galería visible en el show del admin, del cliente (cuando la OT le es visible) y en el **PDF de la OT**.
 

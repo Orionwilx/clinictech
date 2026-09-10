@@ -84,6 +84,9 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('work_orders/{work_order}/approve-work', [WorkOrderController::class, 'approveWork'])->name('work_orders.approve-work');
     Route::post('work_orders/{work_order}/reject-work', [WorkOrderController::class, 'rejectWork'])->name('work_orders.reject-work');
     Route::post('work_orders/{work_order}/send-to-client', [WorkOrderController::class, 'sendToClient'])->name('work_orders.send-to-client');
+    // Evidencias fotográficas (el admin llena OT y anexa fotos que tomó el técnico).
+    Route::post('work_orders/{work_order}/photos', [WorkOrderController::class, 'storePhoto'])->name('work_orders.photos.store');
+    Route::delete('work_orders/{work_order}/photos/{photo}', [WorkOrderController::class, 'destroyPhoto'])->name('work_orders.photos.destroy');
     // Acciones rápidas y masivas desde la lista.
     Route::post('work_orders/batch', [WorkOrderController::class, 'batch'])->name('work_orders.batch');
     Route::post('work_orders/{work_order}/advance', [WorkOrderController::class, 'advance'])->name('work_orders.advance');
