@@ -118,6 +118,9 @@
             </div>
         </div>
 
+        {{-- Modal de confirmación estándar (reemplaza confirm() del navegador) --}}
+        <x-confirm-modal />
+
         @stack('scripts')
     </body>
 </html>

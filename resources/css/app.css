@@ -10,6 +10,30 @@
     display: none !important;
 }
 
+/* ── Scrollbars sutiles (reemplazan las barras por defecto del navegador) ── */
+* {
+    scrollbar-width: thin;                                   /* Firefox */
+    scrollbar-color: theme('colors.gray.300') transparent;
+}
+
+*::-webkit-scrollbar {                                       /* Chrome/Edge/Safari */
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: theme('colors.gray.300');
+    border-radius: 9999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: theme('colors.gray.400');
+}
+
 .ts-wrapper {
     @apply w-full;
 }

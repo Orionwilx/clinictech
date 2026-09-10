@@ -168,7 +168,7 @@
                                 this.$refs.fileInput.value = '';
                             },
                             async remove(photo) {
-                                if (!confirm('¿Eliminar esta foto?')) return;
+                                if (!await window.appConfirm('¿Eliminar esta foto?', { title: 'Eliminar foto', confirmLabel: 'Eliminar' })) return;
                                 const res = await fetch(`{{ url('technician/work_orders/'.$workOrder->id.'/photos') }}/${photo.id}`, {
                                     method: 'DELETE',
                                     headers: {
@@ -211,7 +211,7 @@
                     @if ($workOrder->status === 'in_progress')
                         <div class="mt-4 pt-4 border-t border-gray-100">
                             <form method="POST" action="{{ route('technician.work_orders.submit', $workOrder) }}"
-                                  onsubmit="return confirm('¿Confirmas que el formulario está completo y listo para revisión del administrador?')">
+                                  data-confirm="¿Confirmas que el formulario está completo y listo para revisión del administrador?">
                                 @csrf
                                 <button type="submit"
                                         class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">

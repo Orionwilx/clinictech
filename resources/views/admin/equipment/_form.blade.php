@@ -24,7 +24,6 @@
             this.brand = ''; this.model = '';
             const t = this.categories.find(c => String(c.id) === String(this.category));
             if (!t) return;
-            if (this.editing && !confirm('¿Aplicar la plantilla de esta categoría al equipo? Se reemplazarán los valores prediligenciados.')) return;
             this.applyTemplate(t);
         },
         onBrandChange() {

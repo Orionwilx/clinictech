@@ -141,7 +141,7 @@
                                         @endcan
                                         @can('delete areas')
                                             <form action="{{ route('admin.areas.destroy', $area) }}" method="POST" class="inline"
-                                                  onsubmit="return confirm('¿Eliminar esta área? Los equipos quedarán sin área.');">
+                                                  data-confirm="¿Eliminar esta área? Los equipos quedarán sin área.">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>

@@ -29,6 +29,18 @@ Reutiliza SIEMPRE estos; no escribas clases sueltas para lo que ya existe:
 - `<x-breadcrumbs :items>` — migas de pan. `items` = array de `['label' => ..., 'href' => ...]`; el primer nivel "Inicio" (dashboard) se antepone solo; el último ítem se muestra como actual (sin enlace, en `brand-700`).
 - `<x-page-header :title :breadcrumbs>` con slot `actions` — cabecera de página estándar (migas + título prominente `text-2xl font-bold` + botones a la derecha). Va SIEMPRE dentro del `<x-slot name="header">`.
 - `<x-data-table :heads :cols>` + `<x-td>` + `<x-td-actions>` — **data table estándar** de cualquier listado admin (truncado+tooltip, columna de acciones fija). Ver sección «Componentes de data table» más abajo. `<x-icon-btn>` para los botones de acción.
+- `<x-catalog-checkboxes name catalog :options :selected>` — checkboxes alimentados por un catálogo configurable, con alta rápida inline.
+- `<x-confirm-modal>` — **modal de confirmación estándar** (ver sección abajo). PROHIBIDO usar `confirm()` nativo del navegador.
+
+## Modal de confirmación (estándar obligatorio)
+Nunca uses `confirm()`/`alert()` del navegador. El layout `app` incluye una única instancia global de `<x-confirm-modal>` con dos APIs:
+- **Formularios** (el caso típico de eliminar): agrega `data-confirm="¿Eliminar este cliente?"` al `<form>`; opcionales `data-confirm-title` y `data-confirm-button` (texto del botón rojo, default «Confirmar»). El submit se intercepta y solo continúa si el usuario confirma.
+- **Programática (Alpine/JS)**: `const ok = await window.appConfirm('¿Eliminar esta foto?', { title: 'Eliminar foto', confirmLabel: 'Eliminar' });`
+
+Estilo: overlay `bg-gray-900/50`, panel blanco `rounded-xl`, icono de advertencia ámbar, botones Cancelar (secundario) + Confirmar (rojo). Escape y clic en el overlay cancelan.
+
+## Scrollbars
+Las barras de scroll por defecto del navegador se reemplazan globalmente (en `resources/css/app.css`): finas (8px), pulgar `gray-300` redondeado (hover `gray-400`), track transparente; `scrollbar-width: thin` en Firefox. No agregues estilos de scrollbar por vista.
 
 ## Shell administrativo (layout con sidebar)
 El área autenticada usa un **sidebar colapsable** (estándar de software administrativo):

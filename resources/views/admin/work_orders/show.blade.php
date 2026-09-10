@@ -102,14 +102,14 @@
                                             Aprobar solicitud
                                         </button>
                                     </form>
-                                    <form method="POST" action="{{ route('admin.work_orders.reject-request', $workOrder) }}" class="flex items-end gap-2">
+                                    <form method="POST" action="{{ route('admin.work_orders.reject-request', $workOrder) }}" class="flex items-end gap-2"
+                                          data-confirm="¿Rechazar esta solicitud?" data-confirm-title="Rechazar solicitud" data-confirm-button="Rechazar">
                                         @csrf
                                         <div>
                                             <label class="block text-xs text-blue-700 mb-1">Motivo del rechazo</label>
                                             <x-text-input name="rejection_reason" type="text" class="block" placeholder="Opcional…" />
                                         </div>
                                         <button type="submit"
-                                                onclick="return confirm('¿Rechazar esta solicitud?')"
                                                 class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 shrink-0">
                                             Rechazar
                                         </button>
