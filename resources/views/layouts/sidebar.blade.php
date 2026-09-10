@@ -13,8 +13,24 @@
         </a>
     </div>
 
+    {{-- Sección abierta por defecto según la ruta activa (acordeón del menú admin) --}}
+    @php
+        $activeSection = 'operacion';
+        if (request()->routeIs('admin.equipment_categories.*', 'admin.brands.*', 'admin.equipment_models.*', 'admin.equipment_catalogs.*')) {
+            $activeSection = 'catalogo';
+        } elseif (request()->routeIs('admin.reports.*')) {
+            $activeSection = 'analisis';
+        } elseif (request()->routeIs('admin.users.*')) {
+            $activeSection = 'sistema';
+        }
+    @endphp
+
     {{-- Navegación --}}
-    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1"
+         x-data="{
+            openSection: @js($activeSection),
+            setSection(key) { this.openSection = this.openSection === key ? '' : key; }
+         }">
 
         @if(auth()->user()->hasRole('cliente'))
             {{-- Menú Panel Cliente --}}
@@ -74,7 +90,8 @@
 
         {{-- Operación --}}
         @canany(['view clients', 'view equipment', 'view work_orders', 'view technicians'])
-            <x-sidebar-section label="Operación" />
+            <x-sidebar-section label="Operación" section="operacion" />
+            <div x-show="collapsed || openSection === 'operacion'" x-cloak class="space-y-1">
 
             @can('view clients')
                 <x-sidebar-link :href="route('admin.clients.index')" :active="request()->routeIs('admin.clients.*')" label="Clientes">
@@ -115,11 +132,13 @@
                     </x-slot:icon>
                 </x-sidebar-link>
             @endcan
+            </div>
         @endcanany
 
         {{-- Catálogo maestro --}}
         @canany(['view equipment_categories', 'view brands', 'view equipment_models', 'view equipment_catalogs'])
-            <x-sidebar-section label="Catálogo maestro" />
+            <x-sidebar-section label="Catálogo maestro" section="catalogo" />
+            <div x-show="collapsed || openSection === 'catalogo'" x-cloak class="space-y-1">
 
             @can('view equipment_categories')
                 <x-sidebar-link :href="route('admin.equipment_categories.index')" :active="request()->routeIs('admin.equipment_categories.*')" label="Categorías">
@@ -160,11 +179,13 @@
                     </x-slot:icon>
                 </x-sidebar-link>
             @endcan
+            </div>
         @endcanany
 
         {{-- Análisis --}}
         @can('view reports')
-            <x-sidebar-section label="Análisis" />
+            <x-sidebar-section label="Análisis" section="analisis" />
+            <div x-show="collapsed || openSection === 'analisis'" x-cloak class="space-y-1">
 
             <x-sidebar-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.index') || request()->routeIs('admin.reports.export')" label="Reportes">
                 <x-slot:icon>
@@ -180,11 +201,13 @@
                     </svg>
                 </x-slot:icon>
             </x-sidebar-link>
+            </div>
         @endcan
 
         {{-- Sistema --}}
         @can('view users')
-            <x-sidebar-section label="Sistema" />
+            <x-sidebar-section label="Sistema" section="sistema" />
+            <div x-show="collapsed || openSection === 'sistema'" x-cloak class="space-y-1">
 
             <x-sidebar-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" label="Usuarios">
                 <x-slot:icon>
@@ -193,6 +216,7 @@
                     </svg>
                 </x-slot:icon>
             </x-sidebar-link>
+            </div>
         @endcan
         @endif
 
