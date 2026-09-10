@@ -5,6 +5,7 @@ namespace Tests\Feature\Admin;
 use App\Models\Brand;
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
 use App\Models\EquipmentModel;
 use App\Models\User;
 use App\Models\WorkOrder;
@@ -33,12 +34,13 @@ class EquipmentManagementTest extends TestCase
     private function validPayload(array $overrides = []): array
     {
         $brand = Brand::factory()->create();
-        $model = EquipmentModel::factory()->create(['brand_id' => $brand->id]);
+        $category = EquipmentCategory::factory()->create();
+        $model = EquipmentModel::factory()->create(['brand_id' => $brand->id, 'category_id' => $category->id]);
 
         return array_merge([
             'client_id' => Client::factory()->create()->id,
             'name' => 'Monitor de signos vitales',
-            'type' => 'Monitor',
+            'category_id' => $category->id,
             'brand_id' => $brand->id,
             'model_id' => $model->id,
             'serial_number' => 'SN-12345678',
@@ -55,6 +57,16 @@ class EquipmentManagementTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('admin.equipment.index'))
             ->assertOk();
+    }
+
+    public function test_admin_can_view_create_form_with_category_templates(): void
+    {
+        EquipmentCategory::factory()->create(['name' => 'Compresor']);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.equipment.create'))
+            ->assertOk()
+            ->assertSee('Compresor');
     }
 
     public function test_non_admin_cannot_create_equipment(): void
@@ -133,7 +145,7 @@ class EquipmentManagementTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->post(route('admin.equipment.store'), [])
-            ->assertSessionHasErrors(['client_id', 'name', 'serial_number', 'status']);
+            ->assertSessionHasErrors(['client_id', 'name', 'category_id', 'serial_number', 'status']);
     }
 
     public function test_admin_can_store_extended_equipment_fields(): void
@@ -145,9 +157,9 @@ class EquipmentManagementTest extends TestCase
                 'acquisition_type' => 'comodato',
                 'maintenance_frequency' => 'quarterly',
                 'warranty_status' => 'en_garantia',
-                'specialties' => ['prevention', 'treatment'],
-                'maintenance_tasks' => ['functional_test', 'leak_test'],
-                'accessories' => ['ac_cable', 'battery'],
+                'specialties' => ['Prevención', 'Tratamiento'],
+                'maintenance_tasks' => ['Prueba de funcionamiento', 'Prueba de fugas'],
+                'accessories' => ['Cable de AC', 'Batería'],
                 'voltage' => '110V',
             ]))
             ->assertRedirect(route('admin.equipment.index'));
@@ -155,9 +167,9 @@ class EquipmentManagementTest extends TestCase
         $equipment = Equipment::where('serial_number', 'SN-EXT-001')->firstOrFail();
         $this->assertSame('IIB', $equipment->risk_class);
         $this->assertSame('comodato', $equipment->acquisition_type);
-        $this->assertEqualsCanonicalizing(['prevention', 'treatment'], $equipment->specialties);
-        $this->assertEqualsCanonicalizing(['functional_test', 'leak_test'], $equipment->maintenance_tasks);
-        $this->assertEqualsCanonicalizing(['ac_cable', 'battery'], $equipment->accessories);
+        $this->assertEqualsCanonicalizing(['Prevención', 'Tratamiento'], $equipment->specialties);
+        $this->assertEqualsCanonicalizing(['Prueba de funcionamiento', 'Prueba de fugas'], $equipment->maintenance_tasks);
+        $this->assertEqualsCanonicalizing(['Cable de AC', 'Batería'], $equipment->accessories);
     }
 
     public function test_extended_enum_fields_are_validated(): void
@@ -167,9 +179,19 @@ class EquipmentManagementTest extends TestCase
                 'serial_number' => 'SN-EXT-002',
                 'risk_class' => 'IV',
                 'acquisition_type' => 'robo',
-                'maintenance_tasks' => ['inexistente'],
             ]))
-            ->assertSessionHasErrors(['risk_class', 'acquisition_type', 'maintenance_tasks.0']);
+            ->assertSessionHasErrors(['risk_class', 'acquisition_type']);
+    }
+
+    public function test_model_must_belong_to_selected_category(): void
+    {
+        $otherCategory = EquipmentCategory::factory()->create();
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.equipment.store'), $this->validPayload([
+                'category_id' => $otherCategory->id,
+            ]))
+            ->assertSessionHasErrors('model_id');
     }
 
     public function test_equipment_life_sheet_shows_work_order_history(): void

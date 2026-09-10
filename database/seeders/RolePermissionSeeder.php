@@ -19,6 +19,8 @@ class RolePermissionSeeder extends Seeder
         'equipment',
         'brands',
         'equipment_models',
+        'equipment_categories',
+        'equipment_catalogs',
         'work_orders',
         'technicians',
         'trainings',

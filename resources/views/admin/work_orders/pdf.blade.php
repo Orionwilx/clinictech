@@ -243,7 +243,7 @@
                             <div class="checklist">
                                 @foreach ($workOrder->maintenance_tasks as $key)
                                     <div class="checklist-item">
-                                        <span class="check-icon">&#10003;</span>{{ \App\Models\Equipment::MAINTENANCE_TASKS[$key] ?? $key }}
+                                        <span class="check-icon">&#10003;</span>{{ $key }}
                                     </div>
                                 @endforeach
                             </div>
@@ -257,7 +257,7 @@
                             <div class="checklist">
                                 @foreach ($workOrder->accessories_checked as $key)
                                     <div class="checklist-item">
-                                        <span class="check-icon">&#10003;</span>{{ \App\Models\Equipment::ACCESSORIES[$key] ?? $key }}
+                                        <span class="check-icon">&#10003;</span>{{ $key }}
                                     </div>
                                 @endforeach
                             </div>

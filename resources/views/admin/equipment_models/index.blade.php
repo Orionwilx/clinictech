@@ -26,6 +26,10 @@
                         :options="$brands"
                         :selected="$filters['brand_id'] ?? ''"
                         placeholder="Todas las marcas" />
+                    <x-searchable-select name="category_id"
+                        :options="$categories"
+                        :selected="$filters['category_id'] ?? ''"
+                        placeholder="Todas las categorías" />
                     <button type="submit" class="px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-md hover:bg-brand-700">Filtrar</button>
                     @if (array_filter($filters))
                         <a href="{{ route('admin.equipment_models.index') }}" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">Limpiar</a>
@@ -34,10 +38,11 @@
             </form>
 
             <x-data-table
-                :cols="['w-[30%]', 'w-auto', 'w-32', 'w-28']"
-                :heads="[['Marca'], ['Modelo'], ['Equipos'], ['Acciones', 'right']]">
+                :cols="['w-[22%]', 'w-[22%]', 'w-auto', 'w-32', 'w-28']"
+                :heads="[['Categoría'], ['Marca'], ['Modelo'], ['Equipos'], ['Acciones', 'right']]">
                 @forelse ($models as $model)
                     <tr class="bg-white">
+                        <x-td :title="optional($model->category)->name" muted>{{ optional($model->category)->name ?? '—' }}</x-td>
                         <x-td :title="optional($model->brand)->name" muted>{{ optional($model->brand)->name ?? '—' }}</x-td>
                         <x-td :title="$model->name">{{ $model->name }}</x-td>
                         <x-td muted>{{ $model->equipment_count }}</x-td>
@@ -59,7 +64,7 @@
                         </x-td-actions>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No hay modelos.</td></tr>
+                    <tr><td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No hay modelos.</td></tr>
                 @endforelse
             </x-data-table>
 

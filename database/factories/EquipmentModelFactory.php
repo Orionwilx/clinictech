@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Brand;
+use App\Models\EquipmentCategory;
 use App\Models\EquipmentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,6 +19,7 @@ class EquipmentModelFactory extends Factory
     {
         return [
             'brand_id' => Brand::factory(),
+            'category_id' => EquipmentCategory::factory(),
             'name' => $this->faker->unique()->bothify('MOD-###??'),
         ];
     }

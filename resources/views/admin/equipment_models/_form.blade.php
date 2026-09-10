@@ -1,7 +1,19 @@
-{{-- Espera: $equipmentModel (nullable), $brands (id=>nombre) --}}
+{{-- Espera: $equipmentModel (nullable), $brands (id=>nombre), $categories (id=>nombre) --}}
 @php($editing = isset($equipmentModel) && $equipmentModel->exists)
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+        <x-input-label for="category_id" :value="__('Categoría')" />
+        <select id="category_id" name="category_id" required
+                class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+            <option value="">— Selecciona —</option>
+            @foreach ($categories as $id => $name)
+                <option value="{{ $id }}" @selected(old('category_id', $equipmentModel->category_id ?? request('category_id')) == $id)>{{ $name }}</option>
+            @endforeach
+        </select>
+        <x-input-error :messages="$errors->get('category_id')" class="mt-2" />
+    </div>
+
     <div>
         <x-input-label for="brand_id" :value="__('Marca')" />
         <select id="brand_id" name="brand_id" required

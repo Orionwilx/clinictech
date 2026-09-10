@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\EquipmentModel\StoreEquipmentModelRequest;
 use App\Http\Requests\EquipmentModel\UpdateEquipmentModelRequest;
 use App\Models\Brand;
+use App\Models\EquipmentCategory;
 use App\Models\EquipmentModel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,25 +19,30 @@ class EquipmentModelController extends Controller
     {
         $this->authorize('view equipment_models');
 
-        $filters = $request->only(['search', 'brand_id']);
+        $filters = $request->only(['search', 'brand_id', 'category_id']);
 
-        $models = EquipmentModel::with('brand')->withCount('equipment')
+        $models = EquipmentModel::with(['brand', 'category'])->withCount('equipment')
             ->when($filters['search'] ?? null, fn ($q, $s) => $q->where('name', 'like', "%$s%"))
             ->when($filters['brand_id'] ?? null, fn ($q, $b) => $q->where('brand_id', $b))
+            ->when($filters['category_id'] ?? null, fn ($q, $c) => $q->where('category_id', $c))
             ->orderBy('brand_id')->orderBy('name')
             ->paginate(20)
             ->withQueryString();
 
         $brands = Brand::orderBy('name')->pluck('name', 'id');
+        $categories = EquipmentCategory::orderBy('name')->pluck('name', 'id');
 
-        return view('admin.equipment_models.index', compact('models', 'filters', 'brands'));
+        return view('admin.equipment_models.index', compact('models', 'filters', 'brands', 'categories'));
     }
 
     public function create(): View
     {
         $this->authorize('create equipment_models');
 
-        return view('admin.equipment_models.create', ['brands' => $this->brandOptions()]);
+        return view('admin.equipment_models.create', [
+            'brands' => $this->brandOptions(),
+            'categories' => $this->categoryOptions(),
+        ]);
     }
 
     public function store(StoreEquipmentModelRequest $request): RedirectResponse
@@ -54,6 +60,7 @@ class EquipmentModelController extends Controller
         return view('admin.equipment_models.edit', [
             'equipmentModel' => $equipmentModel,
             'brands' => $this->brandOptions(),
+            'categories' => $this->categoryOptions(),
         ]);
     }
 
@@ -63,14 +70,6 @@ class EquipmentModelController extends Controller
 
         return redirect()->route('admin.equipment_models.index')
             ->with('status', 'Modelo actualizado correctamente.');
-    }
-
-    /** Devuelve los defaults técnicos del modelo en JSON (para auto-fill en formulario de equipo). */
-    public function data(EquipmentModel $equipmentModel): \Illuminate\Http\JsonResponse
-    {
-        $this->authorize('view equipment_models');
-
-        return response()->json($equipmentModel->autoFillData());
     }
 
     public function destroy(EquipmentModel $equipmentModel): RedirectResponse
@@ -89,5 +88,13 @@ class EquipmentModelController extends Controller
     private function brandOptions()
     {
         return Brand::orderBy('name')->pluck('name', 'id');
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    private function categoryOptions()
+    {
+        return EquipmentCategory::orderBy('name')->pluck('name', 'id');
     }
 }

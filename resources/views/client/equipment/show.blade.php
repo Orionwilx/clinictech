@@ -36,14 +36,14 @@
                 <dl class="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3">
                     @foreach ([
                         'Área' => optional($equipment->area)->name ?: '—',
-                        'Tipo' => $equipment->type ?: '—',
+                        'Categoría' => optional($equipment->category)->name ?: '—',
                         'Ubicación / sede' => $equipment->location ?: '—',
                         'Clasificación por riesgo' => $equipment->riskClassLabel() ?: '—',
                         'Registro INVIMA' => $equipment->invima_registry ?: '—',
                         'Fabricante' => $equipment->manufacturer ?: '—',
                         'País de origen' => $equipment->origin_country ?: '—',
                         'Periodicidad' => $equipment->frequencyLabel() ?: '—',
-                        'Especialidad' => $equipment->specialtyLabels() ? implode(', ', $equipment->specialtyLabels()) : '—',
+                        'Especialidad' => $equipment->specialties ? implode(', ', $equipment->specialties) : '—',
                     ] as $label => $value)
                         <div>
                             <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>

@@ -38,7 +38,7 @@
                             @if ($workOrder->maintenance_tasks)
                                 <ul class="grid grid-cols-1 gap-1 text-sm text-gray-700">
                                     @foreach ($workOrder->maintenance_tasks as $key)
-                                        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ \App\Models\Equipment::MAINTENANCE_TASKS[$key] ?? $key }}</li>
+                                        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ $key }}</li>
                                     @endforeach
                                 </ul>
                             @else
@@ -50,7 +50,7 @@
                             @if ($workOrder->accessories_checked)
                                 <ul class="grid grid-cols-1 gap-1 text-sm text-gray-700">
                                     @foreach ($workOrder->accessories_checked as $key)
-                                        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ \App\Models\Equipment::ACCESSORIES[$key] ?? $key }}</li>
+                                        <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ $key }}</li>
                                     @endforeach
                                 </ul>
                             @else

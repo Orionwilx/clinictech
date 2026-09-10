@@ -23,7 +23,7 @@ trait InteractsWithEquipmentRules
             'client_id' => ['required', 'exists:clients,id'],
             'area_id' => ['nullable', 'exists:areas,id'],
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['nullable', 'string', 'max:255'],
+            'category_id' => ['required', 'exists:equipment_categories,id'],
             'brand_id' => ['nullable', 'exists:brands,id'],
             'model_id' => ['nullable', 'exists:equipment_models,id'],
             'purchase_date' => ['nullable', 'date'],
@@ -39,7 +39,7 @@ trait InteractsWithEquipmentRules
             // Identificación
             'risk_class' => ['nullable', Rule::in(array_keys(Equipment::RISK_CLASSES))],
             'specialties' => ['nullable', 'array'],
-            'specialties.*' => [Rule::in(array_keys(Equipment::SPECIALTIES))],
+            'specialties.*' => ['string', 'max:255'],
             'invima_registry' => ['nullable', 'string', 'max:255'],
             'manufacturer' => ['nullable', 'string', 'max:255'],
             'origin_country' => ['nullable', 'string', 'max:255'],
@@ -61,25 +61,30 @@ trait InteractsWithEquipmentRules
 
             // Plantilla de mantenimiento / accesorios
             'maintenance_tasks' => ['nullable', 'array'],
-            'maintenance_tasks.*' => [Rule::in(array_keys(Equipment::MAINTENANCE_TASKS))],
+            'maintenance_tasks.*' => ['string', 'max:255'],
             'accessories' => ['nullable', 'array'],
-            'accessories.*' => [Rule::in(array_keys(Equipment::ACCESSORIES))],
+            'accessories.*' => ['string', 'max:255'],
             'components' => ['nullable', 'string'],
             'default_ot_observations' => ['nullable', 'string'],
         ];
     }
 
     /**
-     * Validaciones cruzadas: el modelo pertenece a la marca y el área al cliente.
+     * Validaciones cruzadas: el modelo pertenece a la marca y a la categoría,
+     * y el área al cliente.
      */
     protected function applyCrossFieldChecks(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
             $modelId = $this->input('model_id');
             $brandId = $this->input('brand_id');
+            $categoryId = $this->input('category_id');
 
-            if ($modelId && ! EquipmentModel::where('id', $modelId)->where('brand_id', $brandId)->exists()) {
-                $validator->errors()->add('model_id', 'El modelo seleccionado no pertenece a la marca.');
+            if ($modelId && ! EquipmentModel::where('id', $modelId)
+                ->where('brand_id', $brandId)
+                ->where('category_id', $categoryId)
+                ->exists()) {
+                $validator->errors()->add('model_id', 'El modelo seleccionado no pertenece a la marca o a la categoría.');
             }
 
             $areaId = $this->input('area_id');

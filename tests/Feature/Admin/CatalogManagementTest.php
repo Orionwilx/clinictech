@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Brand;
 use App\Models\Client;
+use App\Models\EquipmentCategory;
 use App\Models\EquipmentModel;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
@@ -62,12 +63,21 @@ class CatalogManagementTest extends TestCase
     public function test_admin_can_create_model_for_a_brand(): void
     {
         $brand = Brand::factory()->create();
+        $category = EquipmentCategory::factory()->create();
 
         $this->actingAs($this->admin())
-            ->post(route('admin.equipment_models.store'), ['brand_id' => $brand->id, 'name' => 'MX450'])
+            ->post(route('admin.equipment_models.store'), [
+                'brand_id' => $brand->id,
+                'category_id' => $category->id,
+                'name' => 'MX450',
+            ])
             ->assertRedirect(route('admin.equipment_models.index'));
 
-        $this->assertDatabaseHas('equipment_models', ['brand_id' => $brand->id, 'name' => 'MX450']);
+        $this->assertDatabaseHas('equipment_models', [
+            'brand_id' => $brand->id,
+            'category_id' => $category->id,
+            'name' => 'MX450',
+        ]);
     }
 
     public function test_model_name_unique_per_brand(): void

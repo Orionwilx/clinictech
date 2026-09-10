@@ -160,6 +160,8 @@ migración de datos y cambios de alcance.
 
 -   Hoja de vida e historial de intervenciones, OT y mantenimientos.
 
+-   **Catálogo maestro por categoría** (solicitud del cliente): las categorías (compresores, pantallas, autoclaves…) actúan como plantilla completa del equipo — características técnicas, riesgo, especialidades, subtareas de mantenimiento, accesorios y observaciones se prediligencian al registrar una unidad (copia editable; solo se capturan por unidad los datos únicos: serial, registro INVIMA, fechas, garantía, cliente). Los listados de subtareas/accesorios/especialidades son catálogos configurables por el admin (con alta rápida desde los formularios). Cascada categoría → marca → modelo.
+
 ## 5.4 Módulo de Clientes
 
 -   Datos y contactos.

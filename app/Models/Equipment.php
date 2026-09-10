@@ -44,16 +44,6 @@ class Equipment extends Model
     ];
 
     /**
-     * Clasificación por especialidad (multi-selección).
-     */
-    public const SPECIALTIES = [
-        'prevention' => 'Prevención',
-        'rehabilitation' => 'Rehabilitación',
-        'treatment' => 'Tratamiento',
-        'lab_analysis' => 'Análisis de laboratorio',
-    ];
-
-    /**
      * Periodicidad de mantenimiento.
      */
     public const FREQUENCIES = [
@@ -74,53 +64,11 @@ class Equipment extends Model
         'donation' => 'Donación',
     ];
 
-    /**
-     * Subtareas de mantenimiento que pueden aplicar al equipo (plantilla).
-     */
-    public const MAINTENANCE_TASKS = [
-        'functional_test' => 'Prueba de funcionamiento',
-        'disassembly_cleaning' => 'Desarmado y limpieza',
-        'leak_test' => 'Prueba de fugas',
-        'alarm_check' => 'Revisión de alarma',
-        'connectors_check' => 'Revisión de conectores',
-        'electronic_adjustment' => 'Ajuste sistema electrónico',
-        'electrical_adjustment' => 'Ajuste sistema eléctrico',
-        'boards_cleaning' => 'Limpieza de tarjetas',
-        'extractors_adjustment' => 'Ajuste de extractores',
-        'mechanical_adjustment' => 'Ajustes mecánicos',
-        'control_panel_check' => 'Revisión panel de control',
-        'filters_cleaning' => 'Limpieza de filtros',
-        'pneumatic_cleaning' => 'Limpieza neumático',
-        'handpiece_adjustment' => 'Ajuste pieza de mano',
-        'accessories_change' => 'Cambio de accesorios',
-    ];
-
-    /**
-     * Accesorios cuyo estado puede aplicar al equipo (plantilla).
-     */
-    public const ACCESSORIES = [
-        'ac_cable' => 'Cable de AC',
-        'transducer' => 'Transductor',
-        'ecg_cable' => 'Cable ECG',
-        'temp_sensor' => 'Sensor de temperatura',
-        'spo2_sensor' => 'Sensor SpO2',
-        'oxygen_sensor' => 'Sensor de oxígeno',
-        'nibp_hose' => 'Manguera NIBP',
-        'oxygen_hose' => 'Manguera de oxígeno',
-        'cuff' => 'Brazalete',
-        'air_hose' => 'Manguera de aire',
-        'control' => 'Control',
-        'ekg_paddle' => 'Pala EKG',
-        'precordial_cups' => 'Chupas precordiales',
-        'battery' => 'Batería',
-        'handpiece' => 'Pieza de mano',
-    ];
-
     protected $fillable = [
         'client_id',
         'area_id',
         'name',
-        'type',
+        'category_id',
         'brand_id',
         'model_id',
         'serial_number',
@@ -181,6 +129,11 @@ class Equipment extends Model
         return $this->belongsTo(Area::class);
     }
 
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(EquipmentCategory::class, 'category_id');
+    }
+
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
@@ -222,17 +175,5 @@ class Equipment extends Model
     public function acquisitionTypeLabel(): ?string
     {
         return self::ACQUISITION_TYPES[$this->acquisition_type] ?? $this->acquisition_type;
-    }
-
-    /**
-     * Etiquetas ES de las especialidades seleccionadas.
-     *
-     * @return array<int, string>
-     */
-    public function specialtyLabels(): array
-    {
-        return collect($this->specialties ?? [])
-            ->map(fn ($key) => self::SPECIALTIES[$key] ?? $key)
-            ->all();
     }
 }

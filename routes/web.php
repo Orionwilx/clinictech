@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\AreaController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\EquipmentCatalogController;
+use App\Http\Controllers\Admin\EquipmentCategoryController;
 use App\Http\Controllers\Admin\EquipmentController;
 use App\Http\Controllers\Admin\EquipmentModelController;
 use App\Http\Controllers\Admin\ReportController;
@@ -83,10 +85,20 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('work_orders/{work_order}/assign', [WorkOrderController::class, 'assign'])->name('work_orders.assign');
     Route::resource('work_orders', WorkOrderController::class);
 
-    // Catálogo de equipos: marcas y modelos.
+    // Catálogo maestro de equipos: categorías, marcas y modelos.
+    Route::resource('equipment_categories', EquipmentCategoryController::class)->except('show');
     Route::resource('brands', BrandController::class)->except('show');
-    Route::get('equipment_models/{equipment_model}/data', [EquipmentModelController::class, 'data'])->name('equipment_models.data');
     Route::resource('equipment_models', EquipmentModelController::class)->except('show');
+
+    // Catálogos de opciones (subtareas / accesorios / especialidades).
+    Route::prefix('equipment_catalogs')->name('equipment_catalogs.')
+        ->whereIn('catalog', array_keys(EquipmentCatalogController::CATALOGS))
+        ->group(function () {
+            Route::get('{catalog?}', [EquipmentCatalogController::class, 'index'])->name('index');
+            Route::post('{catalog}', [EquipmentCatalogController::class, 'store'])->name('store');
+            Route::put('{catalog}/{item}', [EquipmentCatalogController::class, 'update'])->name('update');
+            Route::delete('{catalog}/{item}', [EquipmentCatalogController::class, 'destroy'])->name('destroy');
+        });
 
     // Reportes.
     Route::prefix('reports')->name('reports.')->group(function () {

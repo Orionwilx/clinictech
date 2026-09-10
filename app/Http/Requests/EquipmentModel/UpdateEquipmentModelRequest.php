@@ -20,6 +20,7 @@ class UpdateEquipmentModelRequest extends FormRequest
     {
         return [
             'brand_id' => ['required', 'exists:brands,id'],
+            'category_id' => ['required', 'exists:equipment_categories,id'],
             'name' => [
                 'required', 'string', 'max:255',
                 Rule::unique('equipment_models', 'name')

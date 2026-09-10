@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Equipment\StoreEquipmentRequest;
 use App\Http\Requests\Equipment\UpdateEquipmentRequest;
+use App\Models\Accessory;
 use App\Models\Area;
 use App\Models\Brand;
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
 use App\Models\EquipmentModel;
+use App\Models\MaintenanceTask;
+use App\Models\Specialty;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,17 +26,16 @@ class EquipmentController extends Controller
 
         $filters = $request->only(['search', 'client_id', 'status']);
 
-        $equipment = Equipment::with(['client', 'brand', 'model'])
+        $equipment = Equipment::with(['client', 'category', 'brand', 'model'])
             ->withTrashed()
-            ->when($filters['search'] ?? null, fn ($q, $s) =>
-                $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
-                    ->orWhere('serial_number', 'like', "%$s%"))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
+                ->orWhere('serial_number', 'like', "%$s%"))
             )
             ->when($filters['client_id'] ?? null, fn ($q, $c) => $q->where('client_id', $c))
             ->when(isset($filters['status']), function ($q) use ($filters) {
                 match ($filters['status']) {
                     'deleted' => $q->onlyTrashed(),
-                    default   => $q->where('status', $filters['status']),
+                    default => $q->where('status', $filters['status']),
                 };
             })
             ->latest()
@@ -64,7 +67,7 @@ class EquipmentController extends Controller
         $this->authorize('view equipment');
 
         $equipment->load([
-            'client', 'area', 'brand', 'model',
+            'client', 'area', 'category', 'brand', 'model',
             'workOrders' => fn ($q) => $q->with('technician')->latest(),
         ]);
 
@@ -120,7 +123,13 @@ class EquipmentController extends Controller
             'clients' => Client::orderBy('name')->pluck('name', 'id'),
             'areas' => Area::orderBy('name')->get(['id', 'name', 'client_id']),
             'brands' => Brand::orderBy('name')->pluck('name', 'id'),
-            'models' => EquipmentModel::orderBy('name')->get(['id', 'name', 'brand_id']),
+            'models' => EquipmentModel::orderBy('name')->get(['id', 'name', 'brand_id', 'category_id']),
+            // Plantillas por categoría, embebidas para el prediligenciado (Alpine).
+            'categories' => EquipmentCategory::orderBy('name')->get()
+                ->map(fn ($c) => ['id' => $c->id, ...$c->templateData()]),
+            'specialtyOptions' => Specialty::active()->orderBy('name')->pluck('name'),
+            'taskOptions' => MaintenanceTask::active()->orderBy('name')->pluck('name'),
+            'accessoryOptions' => Accessory::active()->orderBy('name')->pluck('name'),
         ];
     }
 }

@@ -167,24 +167,23 @@ class WorkOrderManagementTest extends TestCase
                 'client_id' => $client->id,
                 'equipment_id' => $equipment->id,
                 'type' => 'preventive',
-                'maintenance_tasks' => ['functional_test', 'alarm_check'],
-                'accessories_checked' => ['ac_cable', 'battery'],
+                'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma'],
+                'accessories_checked' => ['Cable de AC', 'Batería'],
             ]))
             ->assertRedirect(route('admin.work_orders.index'));
 
         $order = WorkOrder::firstOrFail();
-        $this->assertEqualsCanonicalizing(['functional_test', 'alarm_check'], $order->maintenance_tasks);
-        $this->assertEqualsCanonicalizing(['ac_cable', 'battery'], $order->accessories_checked);
+        $this->assertEqualsCanonicalizing(['Prueba de funcionamiento', 'Revisión de alarma'], $order->maintenance_tasks);
+        $this->assertEqualsCanonicalizing(['Cable de AC', 'Batería'], $order->accessories_checked);
     }
 
-    public function test_work_order_checklist_values_are_validated(): void
+    public function test_work_order_checklist_rejects_non_string_values(): void
     {
         $this->actingAs($this->admin())
             ->post(route('admin.work_orders.store'), $this->validPayload([
-                'maintenance_tasks' => ['inexistente'],
-                'accessories_checked' => ['nope'],
+                'maintenance_tasks' => [['array' => 'no válido']],
             ]))
-            ->assertSessionHasErrors(['maintenance_tasks.0', 'accessories_checked.0']);
+            ->assertSessionHasErrors(['maintenance_tasks.0']);
     }
 
     public function test_admin_can_soft_delete_and_restore_work_order(): void

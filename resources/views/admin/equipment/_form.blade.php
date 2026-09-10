@@ -1,10 +1,50 @@
-{{-- Espera: $equipment (nullable), $clients, $areas, $brands, $models --}}
+{{-- Espera: $equipment (nullable), $clients, $areas, $brands, $models, $categories (plantillas), $specialtyOptions, $taskOptions, $accessoryOptions --}}
 @php($editing = isset($equipment) && $equipment->exists)
 @php($specialties = (array) old('specialties', $equipment->specialties ?? []))
 @php($tasks = (array) old('maintenance_tasks', $equipment->maintenance_tasks ?? []))
 @php($accessories = (array) old('accessories', $equipment->accessories ?? []))
 
-<div class="space-y-8">
+<div class="space-y-8"
+     x-data="{
+        editing: @js($editing),
+        category: '{{ old('category_id', $equipment->category_id ?? '') }}',
+        brand: '{{ old('brand_id', $equipment->brand_id ?? '') }}',
+        model: '{{ old('model_id', $equipment->model_id ?? '') }}',
+        categories: {{ Illuminate\Support\Js::from($categories) }},
+        brandNames: {{ Illuminate\Support\Js::from($brands) }},
+        models: {{ Illuminate\Support\Js::from($models->map->only('id', 'name', 'brand_id', 'category_id')) }},
+        get filteredBrands() {
+            const ids = [...new Set(this.models.filter(m => String(m.category_id) === String(this.category)).map(m => m.brand_id))];
+            return ids.map(id => ({ id, name: this.brandNames[id] })).filter(b => b.name).sort((a, b) => a.name.localeCompare(b.name));
+        },
+        get filteredModels() {
+            return this.models.filter(m => String(m.brand_id) === String(this.brand) && String(m.category_id) === String(this.category));
+        },
+        onCategoryChange() {
+            this.brand = ''; this.model = '';
+            const t = this.categories.find(c => String(c.id) === String(this.category));
+            if (!t) return;
+            if (this.editing && !confirm('¿Aplicar la plantilla de esta categoría al equipo? Se reemplazarán los valores prediligenciados.')) return;
+            this.applyTemplate(t);
+        },
+        applyTemplate(t) {
+            const nameInput = document.getElementById('name');
+            if (nameInput && (!this.editing || !nameInput.value)) nameInput.value = t.name ?? '';
+            ['risk_class', 'maintenance_frequency', 'manufacturer', 'origin_country',
+             'voltage', 'amperage', 'current', 'power', 'temperature', 'pressure', 'weight', 'speed',
+             'predominant_technology', 'technical_observations', 'general_observations',
+             'components', 'default_ot_observations'].forEach(f => {
+                const el = document.getElementById(f);
+                if (el) el.value = t[f] ?? '';
+            });
+            this.setChecks('specialties', t.specialties ?? []);
+            this.setChecks('maintenance_tasks', t.maintenance_tasks ?? []);
+            this.setChecks('accessories', t.accessories ?? []);
+        },
+        setChecks(field, values) {
+            document.querySelectorAll(`input[name='${field}[]']`).forEach(cb => cb.checked = values.includes(cb.value));
+        }
+     }">
     {{-- Inventario --}}
     <div>
         <h3 class="text-sm font-semibold text-brand-900 border-b border-gray-100 pb-2 mb-4">Inventario</h3>
@@ -36,6 +76,99 @@
                     </template>
                 </select>
                 <x-input-error :messages="$errors->get('area_id')" class="mt-2" />
+            </div>
+        </div>
+    </div>
+
+    {{-- Identificación del equipo: categoría → marca → modelo --}}
+    <div>
+        <h3 class="text-sm font-semibold text-brand-900 border-b border-gray-100 pb-2 mb-4">Identificación del equipo</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+                <x-input-label for="category_id" :value="__('Categoría')" />
+                <select id="category_id" name="category_id" x-model="category" @change="onCategoryChange()" required
+                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                    <option value="">— Selecciona —</option>
+                    @foreach ($categories as $cat)
+                        <option value="{{ $cat['id'] }}" @selected(old('category_id', $equipment->category_id ?? '') == $cat['id'])>{{ $cat['name'] }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-400">Al elegir la categoría se prediligencia la plantilla; puedes ajustar cualquier campo.</p>
+                <x-input-error :messages="$errors->get('category_id')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="brand_id" :value="__('Marca')" />
+                <select id="brand_id" name="brand_id" x-model="brand" @change="model = ''" :disabled="!category"
+                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
+                    <option value="">{{ __('— Selecciona una categoría primero —') }}</option>
+                    <template x-for="b in filteredBrands" :key="b.id">
+                        <option :value="b.id" x-text="b.name" :selected="String(b.id) === String(brand)"></option>
+                    </template>
+                </select>
+                <x-input-error :messages="$errors->get('brand_id')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="model_id" :value="__('Modelo')" />
+                <select id="model_id" name="model_id" x-model="model" :disabled="!brand"
+                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
+                    <option value="">{{ __('— Selecciona una marca primero —') }}</option>
+                    <template x-for="m in filteredModels" :key="m.id">
+                        <option :value="m.id" x-text="m.name" :selected="String(m.id) === String(model)"></option>
+                    </template>
+                </select>
+                <x-input-error :messages="$errors->get('model_id')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="name" :value="__('Equipo (p. ej. Autoclave)')" />
+                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
+                              :value="old('name', $equipment->name ?? '')" required />
+                <x-input-error :messages="$errors->get('name')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="risk_class" :value="__('Clasificación por riesgo (INVIMA)')" />
+                <select id="risk_class" name="risk_class"
+                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                    <option value="">— Selecciona —</option>
+                    @foreach (\App\Models\Equipment::RISK_CLASSES as $value => $label)
+                        <option value="{{ $value }}" @selected(old('risk_class', $equipment->risk_class ?? '') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('risk_class')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="maintenance_frequency" :value="__('Periodicidad de mantenimiento')" />
+                <select id="maintenance_frequency" name="maintenance_frequency"
+                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                    <option value="">— Selecciona —</option>
+                    @foreach (\App\Models\Equipment::FREQUENCIES as $value => $label)
+                        <option value="{{ $value }}" @selected(old('maintenance_frequency', $equipment->maintenance_frequency ?? '') === $value)>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('maintenance_frequency')" class="mt-2" />
+            </div>
+            <div class="sm:col-span-3">
+                <x-input-label :value="__('Clasificación por especialidad')" />
+                <x-catalog-checkboxes name="specialties" catalog="specialties" columns="sm:grid-cols-4"
+                    :options="$specialtyOptions" :selected="$specialties" />
+                <x-input-error :messages="$errors->get('specialties')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="invima_registry" :value="__('Registro INVIMA')" />
+                <x-text-input id="invima_registry" name="invima_registry" type="text" class="mt-1 block w-full"
+                              :value="old('invima_registry', $equipment->invima_registry ?? '')" />
+                <x-input-error :messages="$errors->get('invima_registry')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="manufacturer" :value="__('Fabricante')" />
+                <x-text-input id="manufacturer" name="manufacturer" type="text" class="mt-1 block w-full"
+                              :value="old('manufacturer', $equipment->manufacturer ?? '')" />
+                <x-input-error :messages="$errors->get('manufacturer')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="origin_country" :value="__('País de origen')" />
+                <x-text-input id="origin_country" name="origin_country" type="text" class="mt-1 block w-full"
+                              :value="old('origin_country', $equipment->origin_country ?? '')" />
+                <x-input-error :messages="$errors->get('origin_country')" class="mt-2" />
             </div>
         </div>
     </div>
@@ -89,134 +222,6 @@
                               :value="old('warranty_expiry', optional($equipment->warranty_expiry ?? null)->format('Y-m-d'))" />
                 <x-input-error :messages="$errors->get('warranty_expiry')" class="mt-2" />
             </div>
-            <div class="sm:col-span-2">
-                <x-input-label for="location" :value="__('Ubicación / sede (dirección de la instalación)')" />
-                <x-text-input id="location" name="location" type="text" class="mt-1 block w-full"
-                              :value="old('location', $equipment->location ?? '')" />
-                <x-input-error :messages="$errors->get('location')" class="mt-2" />
-            </div>
-        </div>
-    </div>
-
-    {{-- Identificación del equipo --}}
-    <div>
-        <h3 class="text-sm font-semibold text-brand-900 border-b border-gray-100 pb-2 mb-4">Identificación del equipo</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <x-input-label for="name" :value="__('Equipo (p. ej. Autoclave)')" />
-                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
-                              :value="old('name', $equipment->name ?? '')" required autofocus />
-                <x-input-error :messages="$errors->get('name')" class="mt-2" />
-            </div>
-            <div>
-                <x-input-label for="type" :value="__('Tipo')" />
-                <x-text-input id="type" name="type" type="text" class="mt-1 block w-full"
-                              :value="old('type', $equipment->type ?? '')" />
-                <x-input-error :messages="$errors->get('type')" class="mt-2" />
-            </div>
-            <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4"
-                 x-data="{
-                    brand: '{{ old('brand_id', $equipment->brand_id ?? '') }}',
-                    model: '{{ old('model_id', $equipment->model_id ?? '') }}',
-                    models: {{ Illuminate\Support\Js::from($models->map->only('id', 'name', 'brand_id')) }},
-                    get filtered() { return this.models.filter(m => String(m.brand_id) === String(this.brand)); },
-                    async onModelChange(modelId) {
-                        if (!modelId) return;
-                        const res = await fetch(`/admin/equipment_models/${modelId}/data`, {
-                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                        });
-                        if (!res.ok) return;
-                        const d = await res.json();
-                        if (d.type)                  document.getElementById('type').value = d.type;
-                        if (d.manufacturer)          document.getElementById('manufacturer').value = d.manufacturer;
-                        if (d.origin_country)        document.getElementById('origin_country').value = d.origin_country;
-                        if (d.risk_class)            document.getElementById('risk_class').value = d.risk_class;
-                        if (d.invima_registry)       document.getElementById('invima_registry').value = d.invima_registry;
-                        if (d.maintenance_frequency) document.getElementById('maintenance_frequency').value = d.maintenance_frequency;
-                        if (d.specialties?.length)   d.specialties.forEach(v => { const cb = document.querySelector(`input[name='specialties[]'][value='${v}']`); if(cb) cb.checked = true; });
-                        if (d.maintenance_tasks?.length) d.maintenance_tasks.forEach(v => { const cb = document.querySelector(`input[name='maintenance_tasks[]'][value='${v}']`); if(cb) cb.checked = true; });
-                        if (d.accessories?.length)   d.accessories.forEach(v => { const cb = document.querySelector(`input[name='accessories[]'][value='${v}']`); if(cb) cb.checked = true; });
-                    }
-                 }">
-                <div>
-                    <x-input-label for="brand_id" :value="__('Marca')" />
-                    <select id="brand_id" name="brand_id" x-model="brand" @change="model = ''"
-                            class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-                        <option value="">— Selecciona —</option>
-                        @foreach ($brands as $id => $name)
-                            <option value="{{ $id }}">{{ $name }}</option>
-                        @endforeach
-                    </select>
-                    <x-input-error :messages="$errors->get('brand_id')" class="mt-2" />
-                </div>
-                <div>
-                    <x-input-label for="model_id" :value="__('Modelo')" />
-                    <select id="model_id" name="model_id" x-model="model" :disabled="!brand"
-                            @change="onModelChange($event.target.value)"
-                            class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
-                        <option value="">{{ __('— Selecciona una marca primero —') }}</option>
-                        <template x-for="m in filtered" :key="m.id">
-                            <option :value="m.id" x-text="m.name" :selected="String(m.id) === String(model)"></option>
-                        </template>
-                    </select>
-                    <p class="mt-1 text-xs text-gray-400">Al seleccionar el modelo se auto-completan los campos técnicos.</p>
-                    <x-input-error :messages="$errors->get('model_id')" class="mt-2" />
-                </div>
-            </div>
-            <div>
-                <x-input-label for="risk_class" :value="__('Clasificación por riesgo (INVIMA)')" />
-                <select id="risk_class" name="risk_class"
-                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-                    <option value="">— Selecciona —</option>
-                    @foreach (\App\Models\Equipment::RISK_CLASSES as $value => $label)
-                        <option value="{{ $value }}" @selected(old('risk_class', $equipment->risk_class ?? '') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('risk_class')" class="mt-2" />
-            </div>
-            <div>
-                <x-input-label for="maintenance_frequency" :value="__('Periodicidad de mantenimiento')" />
-                <select id="maintenance_frequency" name="maintenance_frequency"
-                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-                    <option value="">— Selecciona —</option>
-                    @foreach (\App\Models\Equipment::FREQUENCIES as $value => $label)
-                        <option value="{{ $value }}" @selected(old('maintenance_frequency', $equipment->maintenance_frequency ?? '') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('maintenance_frequency')" class="mt-2" />
-            </div>
-            <div class="sm:col-span-2">
-                <x-input-label :value="__('Clasificación por especialidad')" />
-                <div class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    @foreach (\App\Models\Equipment::SPECIALTIES as $value => $label)
-                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                            <input type="checkbox" name="specialties[]" value="{{ $value }}"
-                                   @checked(in_array($value, $specialties))
-                                   class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                            {{ $label }}
-                        </label>
-                    @endforeach
-                </div>
-                <x-input-error :messages="$errors->get('specialties')" class="mt-2" />
-            </div>
-            <div>
-                <x-input-label for="invima_registry" :value="__('Registro INVIMA')" />
-                <x-text-input id="invima_registry" name="invima_registry" type="text" class="mt-1 block w-full"
-                              :value="old('invima_registry', $equipment->invima_registry ?? '')" />
-                <x-input-error :messages="$errors->get('invima_registry')" class="mt-2" />
-            </div>
-            <div>
-                <x-input-label for="manufacturer" :value="__('Fabricante')" />
-                <x-text-input id="manufacturer" name="manufacturer" type="text" class="mt-1 block w-full"
-                              :value="old('manufacturer', $equipment->manufacturer ?? '')" />
-                <x-input-error :messages="$errors->get('manufacturer')" class="mt-2" />
-            </div>
-            <div>
-                <x-input-label for="origin_country" :value="__('País de origen')" />
-                <x-text-input id="origin_country" name="origin_country" type="text" class="mt-1 block w-full"
-                              :value="old('origin_country', $equipment->origin_country ?? '')" />
-                <x-input-error :messages="$errors->get('origin_country')" class="mt-2" />
-            </div>
             <div>
                 <x-input-label for="acquisition_type" :value="__('Tipo de adquisición')" />
                 <select id="acquisition_type" name="acquisition_type"
@@ -227,6 +232,12 @@
                     @endforeach
                 </select>
                 <x-input-error :messages="$errors->get('acquisition_type')" class="mt-2" />
+            </div>
+            <div>
+                <x-input-label for="location" :value="__('Ubicación / sede (dirección de la instalación)')" />
+                <x-text-input id="location" name="location" type="text" class="mt-1 block w-full"
+                              :value="old('location', $equipment->location ?? '')" />
+                <x-input-error :messages="$errors->get('location')" class="mt-2" />
             </div>
         </div>
     </div>
@@ -268,37 +279,21 @@
         </div>
     </div>
 
-    {{-- Subtareas de mantenimiento (plantilla) --}}
+    {{-- Subtareas de mantenimiento (snapshot de la plantilla) --}}
     <div>
         <h3 class="text-sm font-semibold text-brand-900 border-b border-gray-100 pb-2 mb-4">Subtareas de mantenimiento</h3>
         <p class="text-xs text-gray-400 mb-3">Marca las subtareas que aplican a este equipo. Se propondrán al crear una orden de mantenimiento.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            @foreach (\App\Models\Equipment::MAINTENANCE_TASKS as $value => $label)
-                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" name="maintenance_tasks[]" value="{{ $value }}"
-                           @checked(in_array($value, $tasks))
-                           class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                    {{ $label }}
-                </label>
-            @endforeach
-        </div>
+        <x-catalog-checkboxes name="maintenance_tasks" catalog="maintenance_tasks"
+            :options="$taskOptions" :selected="$tasks" />
         <x-input-error :messages="$errors->get('maintenance_tasks')" class="mt-2" />
     </div>
 
-    {{-- Estado de accesorios (plantilla) --}}
+    {{-- Estado de accesorios (snapshot de la plantilla) --}}
     <div>
         <h3 class="text-sm font-semibold text-brand-900 border-b border-gray-100 pb-2 mb-4">Estado de accesorios</h3>
         <p class="text-xs text-gray-400 mb-3">Marca los accesorios con los que cuenta este equipo.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            @foreach (\App\Models\Equipment::ACCESSORIES as $value => $label)
-                <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" name="accessories[]" value="{{ $value }}"
-                           @checked(in_array($value, $accessories))
-                           class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                    {{ $label }}
-                </label>
-            @endforeach
-        </div>
+        <x-catalog-checkboxes name="accessories" catalog="accessories"
+            :options="$accessoryOptions" :selected="$accessories" />
         <x-input-error :messages="$errors->get('accessories')" class="mt-2" />
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">

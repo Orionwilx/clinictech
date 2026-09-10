@@ -253,7 +253,7 @@
                             @forelse ($pendingEquipment as $item)
                                 <tr>
                                     <td class="px-4 py-4 text-sm text-gray-900">{{ $item->name }}
-                                        <span class="block text-xs text-gray-400">{{ $item->type }}</span>
+                                        <span class="block text-xs text-gray-400">{{ optional($item->category)->name }}</span>
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-500">{{ optional($item->area)->name ?: '—' }}</td>
                                     <td class="px-4 py-4 text-sm text-gray-500">{{ optional($item->brand)->name }} {{ optional($item->model)->name }}</td>

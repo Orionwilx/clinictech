@@ -11,17 +11,9 @@ return new class extends Migration
         Schema::create('equipment_models', function (Blueprint $table) {
             $table->id();
             $table->foreignId('brand_id')->constrained()->cascadeOnDelete();
+            // Los defaults del equipo viven en la categoría, no en el modelo
+            $table->foreignId('category_id')->constrained('equipment_categories')->restrictOnDelete();
             $table->string('name');
-            // Defaults técnicos que se auto-completan al seleccionar el modelo en un equipo
-            $table->string('type')->nullable();
-            $table->string('manufacturer')->nullable();
-            $table->string('origin_country')->nullable();
-            $table->string('risk_class')->nullable();
-            $table->json('specialties')->nullable();
-            $table->string('invima_registry')->nullable();
-            $table->string('maintenance_frequency')->nullable();
-            $table->json('maintenance_tasks')->nullable();
-            $table->json('accessories')->nullable();
             $table->timestamps();
             $table->unique(['brand_id', 'name']);
         });

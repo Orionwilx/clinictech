@@ -102,6 +102,16 @@
             </x-sidebar-link>
         @endcan
 
+        @can('view equipment_categories')
+            <x-sidebar-link :href="route('admin.equipment_categories.index')" :active="request()->routeIs('admin.equipment_categories.*')" label="Categorías">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.5h6v6h-6zM14.25 4.5h6v6h-6zM3.75 13.5h6v6h-6zM17.25 13.5v6M14.25 16.5h6"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+        @endcan
+
         @can('view brands')
             <x-sidebar-link :href="route('admin.brands.index')" :active="request()->routeIs('admin.brands.*')" label="Marcas">
                 <x-slot:icon>
@@ -117,6 +127,16 @@
                 <x-slot:icon>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
+        @endcan
+
+        @can('view equipment_catalogs')
+            <x-sidebar-link :href="route('admin.equipment_catalogs.index')" :active="request()->routeIs('admin.equipment_catalogs.*')" label="Catálogos">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 5.25h15M4.5 9.75h15M4.5 14.25h9M4.5 18.75h6"/>
                     </svg>
                 </x-slot:icon>
             </x-sidebar-link>

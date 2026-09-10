@@ -72,27 +72,33 @@
 
                             @if ($workOrder->equipment)
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 border-t border-gray-100">
+                                @php($taskOptions = collect($workOrder->equipment->maintenance_tasks ?? [])->merge((array) $workOrder->maintenance_tasks)->unique())
+                                @php($accessoryOptions = collect($workOrder->equipment->accessories ?? [])->merge((array) $workOrder->accessories_checked)->unique())
                                 <div>
                                     <p class="text-xs font-medium text-gray-500 uppercase mb-2">Subtareas ejecutadas</p>
-                                    @foreach (\App\Models\Equipment::MAINTENANCE_TASKS as $value => $label)
+                                    @forelse ($taskOptions as $value)
                                         <label class="flex items-center gap-2 text-sm text-gray-700 mb-1">
                                             <input type="checkbox" name="maintenance_tasks[]" value="{{ $value }}"
                                                    @checked(in_array($value, (array) $workOrder->maintenance_tasks))
                                                    class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                                            {{ $label }}
+                                            {{ $value }}
                                         </label>
-                                    @endforeach
+                                    @empty
+                                        <p class="text-xs text-gray-400">El equipo no tiene subtareas definidas.</p>
+                                    @endforelse
                                 </div>
                                 <div>
                                     <p class="text-xs font-medium text-gray-500 uppercase mb-2">Accesorios revisados</p>
-                                    @foreach (\App\Models\Equipment::ACCESSORIES as $value => $label)
+                                    @forelse ($accessoryOptions as $value)
                                         <label class="flex items-center gap-2 text-sm text-gray-700 mb-1">
                                             <input type="checkbox" name="accessories_checked[]" value="{{ $value }}"
                                                    @checked(in_array($value, (array) $workOrder->accessories_checked))
                                                    class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                                            {{ $label }}
+                                            {{ $value }}
                                         </label>
-                                    @endforeach
+                                    @empty
+                                        <p class="text-xs text-gray-400">El equipo no tiene accesorios definidos.</p>
+                                    @endforelse
                                 </div>
                             </div>
                             @endif

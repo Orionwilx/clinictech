@@ -48,7 +48,7 @@
                     @foreach ([
                         'Cliente' => optional($equipment->client)->name ?: '—',
                         'Área' => optional($equipment->area)->name ?: '—',
-                        'Tipo' => $equipment->type ?: '—',
+                        'Categoría' => optional($equipment->category)->name ?: '—',
                         'Ubicación / sede' => $equipment->location ?: '—',
                         'Fecha de ingreso' => optional($equipment->entry_date)->format('Y-m-d') ?: '—',
                         'Fecha de compra' => optional($equipment->purchase_date)->format('Y-m-d') ?: '—',
@@ -60,7 +60,7 @@
                         'País de origen' => $equipment->origin_country ?: '—',
                         'Periodicidad' => $equipment->frequencyLabel() ?: '—',
                         'Tipo de adquisición' => $equipment->acquisitionTypeLabel() ?: '—',
-                        'Especialidad' => $equipment->specialtyLabels() ? implode(', ', $equipment->specialtyLabels()) : '—',
+                        'Especialidad' => $equipment->specialties ? implode(', ', $equipment->specialties) : '—',
                     ] as $label => $value)
                         <div>
                             <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>
@@ -116,7 +116,7 @@
                         @if ($equipment->maintenance_tasks)
                             <ul class="grid grid-cols-1 gap-1 text-sm text-gray-700">
                                 @foreach ($equipment->maintenance_tasks as $key)
-                                    <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ \App\Models\Equipment::MAINTENANCE_TASKS[$key] ?? $key }}</li>
+                                    <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ $key }}</li>
                                 @endforeach
                             </ul>
                         @else
@@ -128,7 +128,7 @@
                         @if ($equipment->accessories)
                             <ul class="grid grid-cols-1 gap-1 text-sm text-gray-700">
                                 @foreach ($equipment->accessories as $key)
-                                    <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ \App\Models\Equipment::ACCESSORIES[$key] ?? $key }}</li>
+                                    <li class="flex items-center gap-2"><span class="text-brand-600">✓</span>{{ $key }}</li>
                                 @endforeach
                             </ul>
                         @else

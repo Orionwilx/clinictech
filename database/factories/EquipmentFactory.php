@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Brand;
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +21,7 @@ class EquipmentFactory extends Factory
         return [
             'client_id' => Client::factory(),
             'name' => $this->faker->words(2, true),
-            'type' => $this->faker->randomElement(['Monitor', 'Ventilador', 'Desfibrilador', 'Bomba de infusión']),
+            'category_id' => EquipmentCategory::factory(),
             'brand_id' => Brand::factory(),
             'model_id' => null,
             'serial_number' => $this->faker->unique()->bothify('SN-########'),

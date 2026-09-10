@@ -10,6 +10,9 @@
         selectedTasks: {{ Illuminate\Support\Js::from((array) old('maintenance_tasks', $workOrder->maintenance_tasks ?? [])) }},
         selectedAccessories: {{ Illuminate\Support\Js::from((array) old('accessories_checked', $workOrder->accessories_checked ?? [])) }},
         get filteredEquipment() { return this.equipment.filter(e => String(e.client_id) === String(this.client)); },
+        get selectedEquipment() { return this.equipment.find(e => String(e.id) === String(this.equipmentId)); },
+        get availableTasks() { return [...new Set([...(this.selectedEquipment?.maintenance_tasks ?? []), ...this.selectedTasks])]; },
+        get availableAccessories() { return [...new Set([...(this.selectedEquipment?.accessories ?? []), ...this.selectedAccessories])]; },
         init() { if (!this.editing && this.equipmentId && this.selectedTasks.length === 0 && this.selectedAccessories.length === 0) this.applyTemplate(); },
         onClientChange() { this.equipmentId = ''; if (!this.editing) { this.selectedTasks = []; this.selectedAccessories = []; } },
         applyTemplate() {
@@ -137,25 +140,27 @@
             <div>
                 <p class="text-xs font-medium text-gray-500 uppercase mb-2">Subtareas ejecutadas</p>
                 <div class="grid grid-cols-1 gap-1.5">
-                    @foreach (\App\Models\Equipment::MAINTENANCE_TASKS as $value => $label)
+                    <template x-for="task in availableTasks" :key="task">
                         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                            <input type="checkbox" name="maintenance_tasks[]" value="{{ $value }}" x-model="selectedTasks"
+                            <input type="checkbox" name="maintenance_tasks[]" :value="task" x-model="selectedTasks"
                                    class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                            {{ $label }}
+                            <span x-text="task"></span>
                         </label>
-                    @endforeach
+                    </template>
+                    <p x-show="availableTasks.length === 0" class="text-xs text-gray-400">El equipo no tiene subtareas definidas.</p>
                 </div>
             </div>
             <div>
                 <p class="text-xs font-medium text-gray-500 uppercase mb-2">Accesorios revisados</p>
                 <div class="grid grid-cols-1 gap-1.5">
-                    @foreach (\App\Models\Equipment::ACCESSORIES as $value => $label)
+                    <template x-for="accessory in availableAccessories" :key="accessory">
                         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                            <input type="checkbox" name="accessories_checked[]" value="{{ $value }}" x-model="selectedAccessories"
+                            <input type="checkbox" name="accessories_checked[]" :value="accessory" x-model="selectedAccessories"
                                    class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                            {{ $label }}
+                            <span x-text="accessory"></span>
                         </label>
-                    @endforeach
+                    </template>
+                    <p x-show="availableAccessories.length === 0" class="text-xs text-gray-400">El equipo no tiene accesorios definidos.</p>
                 </div>
             </div>
         </div>

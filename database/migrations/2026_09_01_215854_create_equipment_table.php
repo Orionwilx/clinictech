@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
             $table->foreignId('area_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
-            $table->string('type')->nullable();
+            // Categoría/plantilla; el equipo conserva su snapshot si se elimina
+            $table->foreignId('category_id')->nullable()->constrained('equipment_categories')->nullOnDelete();
             $table->foreignId('brand_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('model_id')->nullable()->constrained('equipment_models')->nullOnDelete();
             $table->string('serial_number')->unique();

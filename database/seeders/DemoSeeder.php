@@ -28,6 +28,7 @@ class DemoSeeder extends Seeder
     {
         if (Client::exists()) {
             $this->command?->warn('DemoSeeder omitido: ya existen clientes.');
+
             return;
         }
 
@@ -70,8 +71,8 @@ class DemoSeeder extends Seeder
             'phone' => '6042227788',
         ]);
 
-        $userValle  = $clinicaValle->user;
-        $userNorte  = $hospitalNorte->user;
+        $userValle = $clinicaValle->user;
+        $userNorte = $hospitalNorte->user;
         $userImagen = $centroImagen->user;
 
         // ─── Técnicos ─────────────────────────────────────────────────────────
@@ -103,23 +104,28 @@ class DemoSeeder extends Seeder
         ]);
 
         // ─── Áreas ────────────────────────────────────────────────────────────
-        $uci         = $clinicaValle->areas()->create(['name' => 'UCI',          'description' => 'Unidad de Cuidados Intensivos']);
-        $urgValle    = $clinicaValle->areas()->create(['name' => 'Urgencias']);
-        $urgNorte    = $hospitalNorte->areas()->create(['name' => 'Urgencias']);
-        $hospNorte   = $hospitalNorte->areas()->create(['name' => 'Hospitalización']);
-        $imgSala     = $centroImagen->areas()->create(['name' => 'Imagenología', 'description' => 'Sala 2']);
+        $uci = $clinicaValle->areas()->create(['name' => 'UCI',          'description' => 'Unidad de Cuidados Intensivos']);
+        $urgValle = $clinicaValle->areas()->create(['name' => 'Urgencias']);
+        $urgNorte = $hospitalNorte->areas()->create(['name' => 'Urgencias']);
+        $hospNorte = $hospitalNorte->areas()->create(['name' => 'Hospitalización']);
+        $imgSala = $centroImagen->areas()->create(['name' => 'Imagenología', 'description' => 'Sala 2']);
 
-        // ─── Helper catálogo ──────────────────────────────────────────────────
+        // ─── Helper catálogo (marca/modelo/categoría sembrados por EquipmentCatalogSeeder) ───
         $catalog = function (string $brandName, string $modelName): array {
             $model = EquipmentModel::whereHas('brand', fn ($q) => $q->where('name', $brandName))
                 ->where('name', $modelName)->first();
-            return ['brand_id' => optional($model)->brand_id, 'model_id' => optional($model)->id];
+
+            return [
+                'brand_id' => optional($model)->brand_id,
+                'model_id' => optional($model)->id,
+                'category_id' => optional($model)->category_id,
+            ];
         };
 
         // ─── Equipos ──────────────────────────────────────────────────────────
         $monitor = Equipment::create([
             'client_id' => $clinicaValle->id, 'area_id' => $uci->id,
-            'name' => 'Monitor de signos vitales', 'type' => 'Monitor',
+            'name' => 'Monitor de signos vitales',
             ...$catalog('Philips', 'IntelliVue MX450'),
             'serial_number' => 'SN-VLL-0001', 'location' => 'Sede Principal - Cali',
             'entry_date' => '2023-03-15', 'purchase_date' => '2023-03-10',
@@ -128,26 +134,26 @@ class DemoSeeder extends Seeder
             'manufacturer' => 'Philips Medical', 'origin_country' => 'Países Bajos',
             'maintenance_frequency' => 'quarterly', 'acquisition_type' => 'purchase',
             'voltage' => '110-240V', 'power' => '150W',
-            'specialties' => ['prevention', 'treatment'],
-            'maintenance_tasks' => ['functional_test', 'alarm_check', 'connectors_check', 'boards_cleaning'],
-            'accessories' => ['ac_cable', 'spo2_sensor', 'nibp_hose', 'cuff', 'battery'],
+            'specialties' => ['Prevención', 'Tratamiento'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma', 'Revisión de conectores', 'Limpieza de tarjetas'],
+            'accessories' => ['Cable de AC', 'Sensor SpO2', 'Manguera NIBP', 'Brazalete', 'Batería'],
             'status' => 'active',
         ]);
 
         $ventilador = Equipment::create([
             'client_id' => $clinicaValle->id, 'area_id' => $uci->id,
-            'name' => 'Ventilador mecánico', 'type' => 'Ventilador',
+            'name' => 'Ventilador mecánico',
             ...$catalog('Dräger', 'Evita V300'),
             'serial_number' => 'SN-VLL-0002', 'location' => 'Sede Principal - Cali',
             'purchase_date' => '2022-07-01', 'warranty_expiry' => '2025-07-01',
             'maintenance_frequency' => 'quarterly',
-            'maintenance_tasks' => ['functional_test', 'filters_cleaning', 'connections_check'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Limpieza de filtros', 'Revisión de conectores'],
             'status' => 'maintenance',
         ]);
 
         $desfibrilador = Equipment::create([
             'client_id' => $hospitalNorte->id, 'area_id' => $urgNorte->id,
-            'name' => 'Desfibrilador', 'type' => 'Desfibrilador',
+            'name' => 'Desfibrilador',
             ...$catalog('Zoll', 'R Series'),
             'serial_number' => 'SN-NOR-0001', 'location' => 'Sede Norte - Barranquilla',
             'purchase_date' => '2021-11-20', 'warranty_expiry' => '2024-11-20',
@@ -157,7 +163,7 @@ class DemoSeeder extends Seeder
 
         $bomba = Equipment::create([
             'client_id' => $hospitalNorte->id, 'area_id' => $hospNorte->id,
-            'name' => 'Bomba de infusión', 'type' => 'Bomba de infusión',
+            'name' => 'Bomba de infusión',
             ...$catalog('B. Braun', 'Infusomat Space'),
             'serial_number' => 'SN-NOR-0002', 'location' => 'Sede Norte - Barranquilla',
             'purchase_date' => '2020-05-15', 'warranty_expiry' => '2023-05-15',
@@ -166,7 +172,7 @@ class DemoSeeder extends Seeder
 
         $ecografo = Equipment::create([
             'client_id' => $centroImagen->id, 'area_id' => $imgSala->id,
-            'name' => 'Ecógrafo', 'type' => 'Imagenología',
+            'name' => 'Ecógrafo',
             ...$catalog('GE Healthcare', 'Logiq E10'),
             'serial_number' => 'SN-IMG-0001', 'location' => 'Sede Medellín',
             'purchase_date' => '2024-01-05', 'warranty_expiry' => '2027-01-05',
@@ -224,8 +230,8 @@ class DemoSeeder extends Seeder
             'completed_at' => now()->subHours(1),
             'diagnosis' => 'Sensor de flujo espiratorio con drift del 8%. Dentro del rango aceptable.',
             'work_performed' => 'Recalibración de sensores, limpieza de filtros internos y prueba funcional completa.',
-            'maintenance_tasks' => ['functional_test', 'filters_cleaning', 'connections_check'],
-            'accessories_checked' => ['ac_cable'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Limpieza de filtros', 'Revisión de conectores'],
+            'accessories_checked' => ['Cable de AC'],
             'additional_observations' => 'Equipo opera correctamente. Próximo mantenimiento en 3 meses.',
         ]);
         // Notificar al admin que hay trabajo pendiente de revisión
@@ -249,7 +255,7 @@ class DemoSeeder extends Seeder
             'closed_at' => now()->subDay(),
             'diagnosis' => 'Equipo en perfectas condiciones.',
             'work_performed' => 'Inspección visual, prueba funcional y verificación de alarmas.',
-            'maintenance_tasks' => ['functional_test', 'alarm_check'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma'],
         ]);
 
         // A6) closed + visible_to_client — Flujo admin completo, cliente puede verlo
@@ -266,7 +272,7 @@ class DemoSeeder extends Seeder
             'closed_at' => now()->subDays(7),
             'diagnosis' => 'Batería al 18% de capacidad. Reemplazo necesario.',
             'work_performed' => 'Reemplazo de batería interna, prueba de autonomía (4h sin falla).',
-            'maintenance_tasks' => ['functional_test', 'connectors_check'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de conectores'],
             'additional_observations' => 'Se instaló batería de marca original. Garantía 1 año.',
         ]);
         $userValle->notify(new WorkOrderNotification(
@@ -332,7 +338,7 @@ class DemoSeeder extends Seeder
             'completed_at' => now()->subHours(4),
             'diagnosis' => 'Electrodos y batería en buen estado. Energía de descarga nominal.',
             'work_performed' => 'Prueba de descarga a 200J y 360J. Limpieza general. Verificación de alarmas.',
-            'maintenance_tasks' => ['functional_test', 'alarm_check', 'connectors_check'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma', 'Revisión de conectores'],
             'additional_observations' => 'Batería al 85%. Próximo reemplazo estimado en 18 meses.',
         ]);
         $admin->notify(new WorkOrderNotification(
@@ -356,7 +362,7 @@ class DemoSeeder extends Seeder
             'closed_at' => now()->subDays(12),
             'diagnosis' => 'Sensor de presión con falla intermitente. Umbral de detección desviado +40mmHg.',
             'work_performed' => 'Reemplazo del sensor de presión por parte original. Calibración y prueba funcional con solución salina.',
-            'maintenance_tasks' => ['functional_test', 'connectors_check'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de conectores'],
             'additional_observations' => 'Equipo entregado en perfectas condiciones. Se recomienda revisión en 6 meses.',
         ]);
         $userNorte->notify(new WorkOrderNotification(
