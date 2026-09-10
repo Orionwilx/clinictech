@@ -8,6 +8,7 @@
 
 ## Hoja de vida en PDF
 Botón «Hoja de vida (PDF)» en `equipment/show` (admin y panel cliente): genera con dompdf (`admin.equipment.pdf`, vista compartida) la ficha técnica completa + historial de OT. Rutas `admin.equipment.pdf` y `client.equipment.pdf` (cliente solo sus equipos). Logo del cliente embebido vía `Client::logoBase64()`.
+**Visibilidad**: en la hoja de vida (web y PDF) del **cliente** solo aparecen OT aprobadas y enviadas por el admin (`WorkOrder::scopeSentToClient`); el admin ve el historial completo.
 
 ## Hoja de vida (`equipment/show`)
 La ficha del equipo es su **hoja de vida**: identidad (cliente, área, marca/modelo, serial, compra/garantía, ubicación, observaciones) + **resumen** (nº de intervenciones, preventivas, correctivas, última intervención) + **historial cronológico** de sus `WorkOrder` (código enlazado, tipo, estado, título, diagnóstico, trabajo realizado, técnico, fecha), ordenado del más reciente al más antiguo. El controlador (`EquipmentController::show`) carga `workOrders.technician` con `latest()`. Botón «+ Nueva orden» precarga `client_id` + `equipment_id` en el form de OT.

@@ -102,6 +102,9 @@ El formulario de diligenciamiento se **autoguarda** cada 20 s cuando hay cambios
 ## Fechas sin horas (regla de producto)
 Todas las vistas de producto (admin/cliente/técnico) muestran **solo fechas, nunca horas** (`Y-m-d` / `d/m/Y`); `scheduled_at` se captura con input `date`. Los timestamps completos se conservan en BD para auditoría de los devs.
 
+## Visibilidad para el cliente (regla dura)
+El cliente SOLO ve OT **aprobadas y enviadas** por el admin (`visible_to_client = true`, scope `sentToClient`): aplica a su listado, detalle, PDF de OT, hoja de vida del equipo (web/PDF) y métricas del dashboard. OT en proceso, sin aprobar o eliminadas jamás se muestran. Excepción: sus **propias solicitudes** (`requested_by_client` en draft/cancelled) sí aparecen en su listado para seguimiento (`scopeListableForClient`). Tests en `ClientVisibilityTest`.
+
 ## Pendiente (iteraciones futuras)
 - Adjuntos de archivo no fotográficos (§5.2).
 - Integración con hoja de vida de equipos y con Mantenimientos.

@@ -46,9 +46,8 @@ class WorkOrderController extends ClientPanelController
                 ->orWhere(fn ($q) => $q->where('requested_by_client', true)
                     ->whereIn('status', ['draft', 'cancelled']))
             )
-            ->when($filters['search'] ?? null, fn ($q, $s) =>
-                $q->where(fn ($q) => $q->where('code', 'like', "%$s%")
-                    ->orWhere('title', 'like', "%$s%"))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q->where('code', 'like', "%$s%")
+                ->orWhere('title', 'like', "%$s%"))
             )
             ->when($filters['type'] ?? null, fn ($q, $v) => $q->where('type', $v))
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
@@ -81,6 +80,8 @@ class WorkOrderController extends ClientPanelController
     public function pdf(WorkOrder $workOrder): Response
     {
         abort_if($workOrder->client_id !== $this->client()->id, 403);
+        // Solo OT aprobadas y enviadas por el admin.
+        abort_unless($workOrder->visible_to_client, 403);
 
         $workOrder->load(['client', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician']);
 

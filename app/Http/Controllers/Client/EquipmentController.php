@@ -37,7 +37,8 @@ class EquipmentController extends ClientPanelController
 
         $equipment->load([
             'brand', 'model', 'area', 'category',
-            'workOrders' => fn ($q) => $q->with('technician')->latest(),
+            // Solo OT aprobadas y enviadas por el admin.
+            'workOrders' => fn ($q) => $q->sentToClient()->with('technician')->latest(),
         ]);
 
         return view('client.equipment.show', compact('equipment'));
@@ -52,7 +53,8 @@ class EquipmentController extends ClientPanelController
 
         $equipment->load([
             'client', 'area', 'category', 'brand', 'model',
-            'workOrders' => fn ($q) => $q->with('technician')->latest(),
+            // Solo OT aprobadas y enviadas por el admin.
+            'workOrders' => fn ($q) => $q->sentToClient()->with('technician')->latest(),
         ]);
 
         $pdf = Pdf::loadView('admin.equipment.pdf', [

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Client;
 
-use App\Models\WorkOrder;
 use Illuminate\View\View;
 
 class DashboardController extends ClientPanelController
@@ -13,15 +12,20 @@ class DashboardController extends ClientPanelController
 
         $equipmentCount = $client->equipment()->count();
 
-        $openOrdersCount = $client->workOrders()
-            ->whereIn('status', WorkOrder::ACTIVE_STATUSES)
+        // El cliente solo ve OT aprobadas y enviadas por el admin (+ sus solicitudes).
+        $receivedOrdersCount = $client->workOrders()->sentToClient()->count();
+
+        $pendingRequestsCount = $client->workOrders()
+            ->where('requested_by_client', true)
+            ->where('status', 'draft')
             ->count();
 
         $lastOrder = $client->workOrders()
+            ->listableForClient()
             ->with('equipment')
             ->latest()
             ->first();
 
-        return view('client.dashboard', compact('client', 'equipmentCount', 'openOrdersCount', 'lastOrder'));
+        return view('client.dashboard', compact('client', 'equipmentCount', 'receivedOrdersCount', 'pendingRequestsCount', 'lastOrder'));
     }
 }

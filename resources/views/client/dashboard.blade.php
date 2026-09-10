@@ -30,8 +30,8 @@
                     <p class="text-xs text-gray-500 uppercase mt-1">Equipos</p>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-5">
-                    <p class="text-3xl font-bold text-brand-600">{{ $openOrdersCount }}</p>
-                    <p class="text-xs text-gray-500 uppercase mt-1">Órdenes activas</p>
+                    <p class="text-3xl font-bold text-brand-600">{{ $receivedOrdersCount }}</p>
+                    <p class="text-xs text-gray-500 uppercase mt-1">Órdenes recibidas</p>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-5">
                     <p class="text-sm font-bold text-gray-900">
@@ -40,10 +40,10 @@
                     <p class="text-xs text-gray-500 uppercase mt-1">Última OT</p>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg p-5">
-                    <p class="text-3xl font-bold {{ $overdue->count() > 0 ? 'text-red-600' : 'text-gray-900' }}">
-                        {{ $overdue->count() }}
+                    <p class="text-3xl font-bold {{ $pendingRequestsCount > 0 ? 'text-amber-600' : 'text-gray-900' }}">
+                        {{ $pendingRequestsCount }}
                     </p>
-                    <p class="text-xs text-gray-500 uppercase mt-1">Mant. vencidos</p>
+                    <p class="text-xs text-gray-500 uppercase mt-1">Solicitudes pendientes</p>
                 </div>
             </div>
 

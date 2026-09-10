@@ -123,6 +123,30 @@ class WorkOrder extends Model
         return self::PRIORITIES[$this->priority] ?? $this->priority;
     }
 
+    // ─── Visibilidad para el cliente ───────────────────────────────────────────
+
+    /**
+     * OT aprobadas y enviadas por el admin: lo ÚNICO que el cliente ve en
+     * hojas de vida, PDFs y métricas. En proceso, sin aprobar o eliminadas
+     * jamás se muestran.
+     */
+    public function scopeSentToClient($query)
+    {
+        return $query->where('visible_to_client', true);
+    }
+
+    /**
+     * Lo listable en el panel del cliente: OT enviadas + sus propias
+     * solicitudes (draft/cancelled), para que pueda seguirlas.
+     */
+    public function scopeListableForClient($query)
+    {
+        return $query->where(fn ($q) => $q
+            ->where('visible_to_client', true)
+            ->orWhere(fn ($q) => $q->where('requested_by_client', true)
+                ->whereIn('status', ['draft', 'cancelled'])));
+    }
+
     // ─── Flujo colaborativo: puntos de decisión del admin ─────────────────────
 
     /**
