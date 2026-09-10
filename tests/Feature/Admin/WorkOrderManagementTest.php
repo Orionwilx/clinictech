@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Brand;
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\EquipmentCategory;
+use App\Models\EquipmentModel;
 use App\Models\Technician;
 use App\Models\User;
 use App\Models\WorkOrder;
@@ -71,6 +74,30 @@ class WorkOrderManagementTest extends TestCase
         $this->assertNotNull($order->code);
         $this->assertStringStartsWith('OT-', $order->code);
         $this->assertSame('Falla en monitor', $order->title);
+    }
+
+    public function test_create_form_prefilled_from_equipment_includes_its_details(): void
+    {
+        $brand = Brand::factory()->create(['name' => 'MarcaPrueba']);
+        $category = EquipmentCategory::factory()->create(['name' => 'CategoríaPrueba']);
+        $model = EquipmentModel::factory()->create(['brand_id' => $brand->id, 'category_id' => $category->id, 'name' => 'ModeloPrueba']);
+        $client = Client::factory()->create();
+        $equipment = Equipment::factory()->create([
+            'client_id' => $client->id,
+            'brand_id' => $brand->id,
+            'model_id' => $model->id,
+            'category_id' => $category->id,
+            'voltage' => '220V',
+        ]);
+
+        // El form embebe marca/modelo/categoría/características del equipo para el prellenado.
+        $this->actingAs($this->admin())
+            ->get(route('admin.work_orders.create', ['client_id' => $client->id, 'equipment_id' => $equipment->id]))
+            ->assertOk()
+            ->assertSee('MarcaPrueba')
+            ->assertSee('ModeloPrueba')
+            ->assertSee('CategoríaPrueba')
+            ->assertSee('220V');
     }
 
     public function test_store_validates_required_fields(): void

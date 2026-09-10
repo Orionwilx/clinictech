@@ -39,7 +39,7 @@ class WorkOrderController extends TechnicianPanelController
     {
         abort_if($workOrder->technician_id !== $this->technician()->id, 403);
 
-        $workOrder->load('client', 'equipment.brand', 'equipment.model', 'photos');
+        $workOrder->load('client', 'equipment.brand', 'equipment.model', 'equipment.category', 'equipment.area', 'photos');
 
         return view('technician.work_orders.show', [
             'workOrder' => $workOrder,

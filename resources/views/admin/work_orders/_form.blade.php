@@ -8,6 +8,7 @@
         repopulate: {{ old() ? 'true' : 'false' }},
         client: '{{ old('client_id', $workOrder->client_id ?? request('client_id')) }}',
         equipmentId: '{{ old('equipment_id', $workOrder->equipment_id ?? request('equipment_id')) }}',
+        preEquipmentId: '{{ old('equipment_id', $workOrder->equipment_id ?? request('equipment_id')) }}',
         equipment: {{ Illuminate\Support\Js::from($equipment) }},
         taskCatalog: {{ Illuminate\Support\Js::from($taskOptions) }},
         accessoryCatalog: {{ Illuminate\Support\Js::from($accessoryOptions) }},
@@ -19,7 +20,18 @@
         get selectedEquipment() { return this.equipment.find(e => String(e.id) === String(this.equipmentId)); },
         get allTasks() { return [...new Set([...this.taskCatalog, ...this.selectedTasks])]; },
         get allAccessories() { return [...new Set([...this.accessoryCatalog, ...this.selectedAccessories])]; },
-        init() { if (this.equipmentId && !this.repopulate) this.loadFromEquipment(); },
+        init() {
+            // Espera a que el <select> (x-for) tenga sus opciones antes de fijar el equipo,
+            // reasegura el valor del select y precarga los datos del equipo preseleccionado.
+            this.$nextTick(() => {
+                if (this.preEquipmentId && !this.repopulate) {
+                    this.equipmentId = this.preEquipmentId;
+                    const sel = document.getElementById('equipment_id');
+                    if (sel) sel.value = this.preEquipmentId;
+                    this.loadFromEquipment();
+                }
+            });
+        },
         onClientChange() { this.equipmentId = ''; this.resetPanel(); },
         onEquipmentChange() { this.loadFromEquipment(); },
         loadFromEquipment() {
@@ -155,6 +167,26 @@
     <div class="sm:col-span-2 border-t border-gray-100 pt-4" x-show="equipmentId" x-cloak>
         <h3 class="text-sm font-semibold text-brand-900 mb-1">Datos del equipo</h3>
         <p class="text-xs text-gray-400 mb-4">Estos campos se <strong>guardan en la ficha del equipo</strong> (y quedan registrados en esta orden). Edítalos aquí sin salir de la OT.</p>
+
+        {{-- Resumen de identificación (solo lectura) --}}
+        <div class="mb-4 rounded-lg bg-gray-50 border border-gray-100 p-3" x-show="selectedEquipment" x-cloak>
+            <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                <template x-for="row in [
+                    ['Marca', selectedEquipment?.brand],
+                    ['Modelo', selectedEquipment?.model],
+                    ['Categoría', selectedEquipment?.category],
+                    ['Serial', selectedEquipment?.serial_number],
+                    ['Área', selectedEquipment?.area],
+                    ['Ubicación / sede', selectedEquipment?.location],
+                    ['Registro INVIMA', selectedEquipment?.invima_registry],
+                ]" :key="row[0]">
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500 uppercase" x-text="row[0]"></dt>
+                        <dd class="text-gray-900" x-text="row[1] || '—'"></dd>
+                    </div>
+                </template>
+            </dl>
+        </div>
 
         {{-- Características técnicas --}}
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">

@@ -121,6 +121,26 @@
                                 <p class="text-sm font-semibold text-brand-900 mb-1">Datos del equipo</p>
                                 <p class="text-xs text-gray-400 mb-3">Se <strong>guardan en la ficha del equipo</strong> y quedan registrados en esta orden.</p>
 
+                                {{-- Resumen de identificación (solo lectura) --}}
+                                <div class="mb-4 rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                    <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-sm">
+                                        @foreach ([
+                                            'Marca' => optional($eq->brand)->name,
+                                            'Modelo' => optional($eq->model)->name,
+                                            'Categoría' => optional($eq->category)->name,
+                                            'Serial' => $eq->serial_number,
+                                            'Área' => optional($eq->area)->name,
+                                            'Ubicación / sede' => $eq->location,
+                                            'Registro INVIMA' => $eq->invima_registry,
+                                        ] as $label => $value)
+                                            <div>
+                                                <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>
+                                                <dd class="text-gray-900">{{ $value ?: '—' }}</dd>
+                                            </div>
+                                        @endforeach
+                                    </dl>
+                                </div>
+
                                 {{-- Características técnicas del equipo (editables) --}}
                                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                                     <div>

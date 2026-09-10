@@ -298,12 +298,29 @@ class WorkOrderController extends Controller
      */
     private function formOptions(): array
     {
+        // Datos del equipo embebidos para el prellenado y el resumen (marca/modelo/…).
+        $equipment = Equipment::with(['brand:id,name', 'model:id,name', 'category:id,name', 'area:id,name'])
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Equipment $e) => [
+                'id' => $e->id,
+                'name' => $e->name,
+                'client_id' => $e->client_id,
+                'serial_number' => $e->serial_number,
+                'location' => $e->location,
+                'brand' => $e->brand?->name,
+                'model' => $e->model?->name,
+                'category' => $e->category?->name,
+                'area' => $e->area?->name,
+                'invima_registry' => $e->invima_registry,
+                'maintenance_tasks' => $e->maintenance_tasks ?? [],
+                'accessories' => $e->accessories ?? [],
+                ...collect(WorkOrderService::EQUIPMENT_FIELDS)->mapWithKeys(fn ($f) => [$f => $e->{$f}])->all(),
+            ]);
+
         return [
             'clients' => Client::orderBy('name')->pluck('name', 'id'),
-            'equipment' => Equipment::orderBy('name')->get([
-                'id', 'name', 'client_id', 'maintenance_tasks', 'accessories',
-                ...WorkOrderService::EQUIPMENT_FIELDS,
-            ]),
+            'equipment' => $equipment,
             'technicians' => Technician::orderBy('name')->pluck('name', 'id'),
             'taskOptions' => MaintenanceTask::active()->orderBy('name')->pluck('name'),
             'accessoryOptions' => Accessory::active()->orderBy('name')->pluck('name'),
