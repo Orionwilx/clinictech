@@ -67,19 +67,106 @@
                     </div>
                 @endif
 
-                <div class="flex items-center gap-4 mt-6">
-                    <a href="{{ route('admin.work_orders.pdf', $workOrder) }}"
-                       target="_blank"
-                       class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                        Generar PDF
-                    </a>
-                    @can('update work_orders')
-                        <a href="{{ route('admin.work_orders.edit', $workOrder) }}"
-                           class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
-                            {{ __('Editar') }}
+                {{-- Acciones según estado del flujo colaborativo --}}
+                <div class="mt-6 space-y-3">
+
+                    {{-- Solicitud del cliente (draft) --}}
+                    @if ($workOrder->status === 'draft')
+                        @if ($workOrder->requested_by_client)
+                            <div class="rounded-md bg-blue-50 border border-blue-200 p-4">
+                                <p class="text-sm font-semibold text-blue-800 mb-3">Solicitud del cliente — pendiente de revisión</p>
+                                <div class="flex flex-wrap items-start gap-4">
+                                    <form method="POST" action="{{ route('admin.work_orders.approve-request', $workOrder) }}" class="flex items-end gap-2">
+                                        @csrf
+                                        <div>
+                                            <label class="block text-xs text-blue-700 mb-1">Asignar técnico (opcional)</label>
+                                            <x-searchable-select name="technician_id"
+                                                :options="\App\Models\Technician::orderBy('name')->pluck('name','id')"
+                                                placeholder="— Sin asignar —" />
+                                        </div>
+                                        <button type="submit"
+                                                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 shrink-0">
+                                            Aprobar solicitud
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.work_orders.reject-request', $workOrder) }}" class="flex items-end gap-2">
+                                        @csrf
+                                        <div>
+                                            <label class="block text-xs text-blue-700 mb-1">Motivo del rechazo</label>
+                                            <x-text-input name="rejection_reason" type="text" class="block" placeholder="Opcional…" />
+                                        </div>
+                                        <button type="submit"
+                                                onclick="return confirm('¿Rechazar esta solicitud?')"
+                                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 shrink-0">
+                                            Rechazar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+
+                    {{-- Trabajo del técnico listo para revisión --}}
+                    @if ($workOrder->status === 'pending_review')
+                        <div class="rounded-md bg-purple-50 border border-purple-200 p-4">
+                            <p class="text-sm font-semibold text-purple-800 mb-3">El técnico completó el formulario — revisión pendiente</p>
+                            <div class="flex flex-wrap items-start gap-4">
+                                <form method="POST" action="{{ route('admin.work_orders.approve-work', $workOrder) }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                                        Aprobar trabajo
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ route('admin.work_orders.reject-work', $workOrder) }}" class="flex items-end gap-2">
+                                    @csrf
+                                    <div>
+                                        <label class="block text-xs text-purple-700 mb-1">Motivo de devolución <span class="text-red-500">*</span></label>
+                                        <x-text-input name="rejection_reason" type="text" class="block" placeholder="Indica qué debe corregir el técnico…" required />
+                                    </div>
+                                    <button type="submit"
+                                            class="inline-flex items-center px-4 py-2 bg-orange-500 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-600 shrink-0">
+                                        Devolver al técnico
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- OT cerrada, lista para enviar al cliente --}}
+                    @if ($workOrder->status === 'closed' && ! $workOrder->visible_to_client)
+                        <div class="rounded-md bg-green-50 border border-green-200 p-4">
+                            <p class="text-sm font-semibold text-green-800 mb-2">OT aprobada — pendiente de envío al cliente</p>
+                            <form method="POST" action="{{ route('admin.work_orders.send-to-client', $workOrder) }}">
+                                @csrf
+                                <button type="submit"
+                                        class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                                    Enviar al cliente
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+
+                    @if ($workOrder->visible_to_client)
+                        <div class="rounded-md bg-gray-50 border border-gray-200 px-4 py-3">
+                            <span class="text-sm text-gray-600">✓ Esta OT ya fue enviada al cliente.</span>
+                        </div>
+                    @endif
+
+                    {{-- Acciones estándar --}}
+                    <div class="flex items-center gap-4 pt-2">
+                        <a href="{{ route('admin.work_orders.pdf', $workOrder) }}" target="_blank"
+                           class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                            Generar PDF
                         </a>
-                    @endcan
-                    <a href="{{ route('admin.work_orders.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Volver</a>
+                        @can('update work_orders')
+                            <a href="{{ route('admin.work_orders.edit', $workOrder) }}"
+                               class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
+                                Editar
+                            </a>
+                        @endcan
+                        <a href="{{ route('admin.work_orders.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Volver</a>
+                    </div>
                 </div>
             </div>
         </div>

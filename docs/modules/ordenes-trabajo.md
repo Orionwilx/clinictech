@@ -29,17 +29,24 @@
 | accessories_checked | json (array) | nullable, in:Equipment::ACCESSORIES | Accesorios revisados en esta OT |
 | scheduled_at | datetime | nullable | Fecha programada |
 | started_at | datetime | nullable | Se sella al pasar a «En proceso» |
-| completed_at | datetime | nullable | Se sella al «Completar» |
+| completed_at | datetime | nullable | Se sella al «Completar» / «En revisión» |
 | closed_at | datetime | nullable | Se sella al «Cerrar» |
+| requested_by_client | bool | default false | La OT nació de una solicitud del cliente (draft) |
+| visible_to_client | bool | default false | El admin ya la envió al panel del cliente |
+| rejection_reason | text | nullable | Motivo de rechazo/devolución (cliente o técnico) |
 | (soft deletes) | — | — | Baja recuperable, visible solo admin |
 
 ## Estados (código EN / UI ES) — `WorkOrder::STATUSES`
+- `draft` → «Borrador» (solicitud del cliente pendiente de aprobación)
 - `open` → «Abierta» (default)
 - `assigned` → «Asignada»
 - `in_progress` → «En proceso»
+- `pending_review` → «En revisión» (técnico completó, espera al admin)
 - `completed` → «Completada»
 - `closed` → «Cerrada»
 - `cancelled` → «Cancelada»
+
+Máquina de estados del flujo colaborativo: `draft → open/assigned → in_progress → pending_review → closed → (visible_to_client)`.
 
 ## Tipos (`WorkOrder::TYPES`)
 - `corrective` → «Correctivo» (default) · `preventive` → «Preventivo»
@@ -72,6 +79,16 @@
 - **Checklist de mantenimiento (plantilla → ejecución)**: al seleccionar un equipo se precargan sus subtareas (`maintenance_tasks`) y accesorios (`accessories`) definidos como plantilla; el técnico marca lo ejecutado/revisado y se guarda en la OT (`maintenance_tasks` / `accessories_checked`). Al crear se autocompleta desde la plantilla; al editar no se sobrescribe lo ya registrado. Se muestran en la ficha de la OT.
 - **Filtros en el índice**: búsqueda por Nº/asunto (`search`, LIKE sobre `code`/`title`) + selectores de cliente, técnico, tipo, estado y prioridad. Se combinan (AND), persisten en la paginación (`withQueryString`) y «Limpiar» resetea. Implementados con `->when()` en `WorkOrderController::index`.
 - Enlace en el sidebar con `@can('view work_orders')`.
+
+## Gestión desde la lista (admin) — pestañas + acciones rápidas y masivas
+El índice de OT es un **centro de operación** orientado a reducir clics del admin (no hay que abrir cada OT para decidir):
+
+- **Pestañas/bandejas** (parámetro `tab`, default `all`): «Requieren tu acción» (con **badge de conteo** que centraliza la atención), «En curso», «Todas», «Papelera». La bandeja de acción usa el scope `WorkOrder::scopeAwaitingAdminAction` (draft de cliente · `pending_review` · `closed` sin enviar). Los filtros conviven con la pestaña (se preserva `tab`).
+- **Acción primaria contextual por fila** (1 clic): la decide `WorkOrder::primaryAdminAction()` (fat model → la vista solo pinta). Botón «Aprobar»/«Enviar» que hace POST a `work_orders/{wo}/advance`; el `▾` abre un popover para «Aprobar y asignar técnico» (solicitudes) o el motivo de rechazo/devolución (POST a `.../regress`). Selects del popover son **nativos** (no Tom Select, por la restricción de popovers/`x-show`).
+- **Acciones masivas** (checkbox por fila + «seleccionar todo» + barra flotante Alpine): «Aprobar», «Rechazar/Devolver» (modal con motivo) y «Asignar» (modal con técnico). Envían un único POST a `work_orders/batch` con `action` (`approve|reject|assign`), `ids[]` y opcionales `technician_id`/`rejection_reason`.
+- El **badge de estado** se centraliza en `<x-work-order-status-badge :order>` (reusado en índice/hub); muestra «Solicitud» para draft de cliente y «Enviada al cliente» para closed visible.
+
+**Servicio** (`WorkOrderService`): `advanceForAdmin` / `regressForAdmin` (despachan la transición correcta según estado), `assignTechnician` (ajusta `open⇆assigned` y notifica) y `batchForAdmin` (itera y devuelve cuántas afectó; omite las que no aplican). **Rutas**: `advance`, `regress`, `assign` (por OT) y `batch` (colección, declarada **antes** del `Route::resource` para no colisionar con `{work_order}`).
 
 ## Pendiente (iteraciones futuras)
 - Adjuntos/evidencias de archivo (§5.2).

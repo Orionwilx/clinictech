@@ -32,7 +32,7 @@
     <div>
         <x-input-label for="role" :value="__('Rol')" />
         <select id="role" name="role" required
-                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
             <option value="">— Selecciona —</option>
             @foreach ($roles as $role)
                 <option value="{{ $role }}" @selected(old('role', $currentRole ?? '') === $role)>{{ ucfirst($role) }}</option>
@@ -45,7 +45,7 @@
         <input type="hidden" name="is_active" value="0">
         <input id="is_active" name="is_active" type="checkbox" value="1"
                @checked(old('is_active', $user->is_active ?? true))
-               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+               class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
         <x-input-label for="is_active" :value="__('Usuario activo')" />
     </div>
 </div>

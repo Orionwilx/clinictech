@@ -50,7 +50,7 @@ class RolePermissionSeeder extends Seeder
             'view trainings',
         ]);
 
-        // cliente: solo consulta de su propia información (segregación en Policies, §7).
+        // cliente: consulta de su información. Solicitar OTs se autoriza por rol (no por permiso).
         Role::firstOrCreate(['name' => 'cliente'])->syncPermissions([
             'view areas',
             'view equipment',

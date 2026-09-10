@@ -336,3 +336,9 @@ implementación. La aprobación del cambio deberá quedar documentada.
     plan anual.
 
 9.  Convertir este documento en anexo técnico del contrato comercial.
+
+
+# NOTAS DEL USUARIO 
+Estadnarizar todos los  datables para el uso de ogis y manejo correcto 
+Mejora en el manejo de la imagenes, ayque aunque persisten en public no se visualizan entre sesioens
+Mejora en las ot y panel de opciones 

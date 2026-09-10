@@ -73,7 +73,12 @@ Para el recurso `Clinic` (singular PascalCase), los archivos SIEMPRE están aqu�
 - Archivos cortos (guía: ~150 líneas). Una responsabilidad por archivo.
 - `User` usa `SoftDeletes` — usa `withTrashed()`/`restore()` cuando aplique; borra con `delete()` (soft), no `forceDelete()` salvo intención explícita.
 - Para crear un CRUD nuevo usa el comando `/nuevo-recurso {Recurso}` (ver `.claude/commands/nuevo-recurso.md`).
-- Antes de cerrar una tarea: `./vendor/bin/pint` y `php artisan test`.
+- Antes de cerrar una tarea, ejecutar en orden:
+  1. `./vendor/bin/pint` — formateo
+  2. `php artisan test` — suite completa
+  3. `php artisan route:list` — verifica que rutas, middlewares y controllers resuelvan sin error
+  4. Verificar en navegador si se tocó: middleware, `bootstrap/app.php`, layouts o bindings
+- **Middlewares de Spatie NO se auto-registran en Laravel 11.** Siempre declararlos en `bootstrap/app.php` → `$middleware->alias([...])`: `role`, `permission`, `role_or_permission`.
 
 ## Estrategia de migraciones (desarrollo temprano — "de menos a más")
 El esquema evoluciona constantemente; se añaden campos de forma incremental. Para NO acumular migraciones basura:
@@ -109,11 +114,13 @@ npm run dev                  # assets en watch
 - ✅ **Áreas de trabajo** (`Area` + `Admin/AreaController`): subdivisiones internas del cliente (UCI, Urgencias…), `Area belongsTo Client`, únicas por cliente. Se gestionan **en línea** en la pestaña «Áreas» del hub del cliente (rutas anidadas `clients/{client}/areas`). El equipo enlaza a un área (`equipment.area_id`, selector dependiente del cliente); `location` se conserva como **sede/dirección de la instalación** (concepto distinto del área). Permiso `areas`. Tests en `AreaManagementTest`.
 - ⏳ Pendiente en Clientes: contactos, adjuntos, recordatorios (§5.4). Login por username (fase Panel Cliente).
 - ✅ **Técnicos** (`Admin/TechnicianController` + `TechnicianService`): ficha (name, document único, email, phone, specialty) con **cuenta vinculada** (`Technician belongsTo User` rol `tecnico`, login por email). Soft delete + restore. Spec en `docs/modules/tecnicos.md`.
-- ✅ **Órdenes de trabajo** (`Admin/WorkOrderController` + `WorkOrderService`): OT que relaciona `Client` (req.), `Equipment` (opcional, debe pertenecer al cliente) y `Technician` (opcional). `code` autogenerado (`OT-000001`) por el servicio; `type`/`priority`/`status` con **código EN y etiquetas ES** (`WorkOrder::TYPES/PRIORITIES/STATUSES`); sellos automáticos `started_at/completed_at/closed_at` según estado. Soft delete + restore. Spec en `docs/modules/ordenes-trabajo.md`, tests en `WorkOrderManagementTest`.
+- ✅ **Órdenes de trabajo** (`Admin/WorkOrderController` + `WorkOrderService`): OT que relaciona `Client` (req.), `Equipment` (opcional, debe pertenecer al cliente) y `Technician` (opcional). `code` autogenerado (`OT-000001`) por el servicio; `type`/`priority`/`status` con **código EN y etiquetas ES** (`WorkOrder::TYPES/PRIORITIES/STATUSES`); sellos automáticos `started_at/completed_at/closed_at` según estado. Soft delete + restore. **Centro de operación en el índice**: pestañas/bandejas (`?tab=action|active|all|trashed`, «Requieren tu acción» con badge de conteo vía `scopeAwaitingAdminAction`), **acción primaria contextual por fila** en 1 clic (`WorkOrder::primaryAdminAction()` → rutas `advance`/`regress`/`assign`) y **acciones masivas** (checkbox + barra flotante → ruta `batch`, `WorkOrderService::batchForAdmin`). Badge centralizado en `<x-work-order-status-badge>`. Spec en `docs/modules/ordenes-trabajo.md`, tests en `WorkOrderManagementTest`.
 - ℹ️ **Mantenimiento = tipo de OT** (NO hay entidad separada): un mantenimiento es una `WorkOrder` con `type` preventivo/correctivo. Se crean/consultan desde el módulo de Órdenes y desde el hub del cliente. Tipos abiertos a ampliar (pendiente: hacerlos configurables por admin).
 - ✅ **Hub del cliente**: la ficha `clients/show` es un tablero con pestañas (Datos / Áreas / Equipos / Órdenes / OT pendientes) que lista lo del cliente y ofrece «+ Nuevo» con `?client_id` precargado (editable). En Órdenes hay accesos «+ OT preventiva» / «+ OT correctiva» que precargan `type`. «OT pendientes» lista equipos con OT activas (`WorkOrder::ACTIVE_STATUSES`). El cliente tiene **logo** (`logo_path`, disco `public`) mostrado en la cabecera.
 - ⏳ Pendiente en Técnicos: capacitaciones (`Training`). Pendiente en OT: adjuntos/evidencias, recordatorios (para preventivas), tipos configurables por admin.
-- ✅ **Panel cliente** (`Client/DashboardController`, `Client/EquipmentController`, `Client/WorkOrderController`, `Client/TechnicianController`): acceso segregado por `client_id`; rutas bajo `/client` con middleware `role:cliente` + `EnsureClientProfile`; redirección post-login al `client.dashboard`; sidebar condicional por rol. Vistas: dashboard (métricas + equipos con mantenimiento vencido), mis equipos (hoja de vida), mis OT (detalle + PDF), mis técnicos. Sin Policies de Laravel — segregación por dos capas: middleware + `abort_if` en controller.
+- ✅ **Panel cliente** (`Client/DashboardController`, `Client/EquipmentController`, `Client/WorkOrderController`, `Client/TechnicianController`): acceso segregado por `client_id`; rutas bajo `/client` con middleware `role:cliente` + `EnsureClientProfile`; redirección post-login al `client.dashboard`; sidebar condicional por rol. Vistas: dashboard (métricas + equipos con mantenimiento vencido), mis equipos (hoja de vida), mis OT (detalle + PDF), mis técnicos, solicitar mantenimiento. ⏳ Pendiente: hoja de vida de técnicos, capacitaciones.
+- ✅ **Panel técnico** (`Technician/DashboardController`, `Technician/WorkOrderController`): rutas bajo `/technician` con middleware `role:tecnico` + `EnsureTechnicianProfile`; redirección post-login a `technician.dashboard`; sidebar propio. Vistas: dashboard (OTs pendientes + métricas), mis OT (índice + diligenciamiento de formulario + envío a revisión). ⏳ Pendiente: hoja de vida propia.
+- ✅ **Flujo colaborativo de OT**: estado `draft` (solicitud cliente) + `pending_review` (técnico completó, esperando admin) + `visible_to_client` (bool) + `requested_by_client` (bool) + `rejection_reason`. Máquina de estados: draft→open/assigned→in_progress→pending_review→closed→visible_to_client. Admin puede aprobar/rechazar solicitud, aprobar/devolver trabajo del técnico y enviar al cliente. Notificaciones in-app (tabla `notifications`, canal database) en cada transición. ⏳ Deuda técnica: notificaciones por email (Laravel Mail).
 - ⏳ Siguiente: despliegue AWS.
 
 ## Dominio (orden de implementación por fases — detalle en `project.md`)
@@ -124,6 +131,8 @@ npm run dev                  # assets en watch
 5. ✅ **Técnicos** (`Technician`) — ficha + cuenta vinculada. Pendiente: capacitaciones (`Training`).
 6. ✅ **Mantenimientos** — NO es entidad propia: es una OT de `type` preventivo/correctivo (ver Fase 4). Pendiente: recordatorios/notificaciones para preventivas.
 7. **Reportes** — por cliente, equipo, OT, técnico, tipo de OT (mantenimiento); filtros y exportaciones.
-8. ✅ **Panel cliente** — acceso segregado por `client_id` (middleware `EnsureClientProfile` + `abort_if` en controller). Dashboard, equipos, OT, técnicos.
+8. ✅ **Panel cliente** — acceso segregado por `client_id`. Dashboard, equipos, OT (solo `visible_to_client=true` + solicitudes propias), técnicos, solicitar mantenimiento. ⏳ Pendiente: hoja de vida técnicos, capacitaciones.
+   ✅ **Panel técnico** — dashboard + mis OT + diligenciamiento de formulario + envío a revisión. ⏳ Pendiente: hoja de vida propia.
+   ✅ **Flujo colaborativo** — solicitud cliente → aprobación admin → asignación técnico → diligenciamiento → revisión admin → envío al cliente. Notificaciones in-app en cada paso.
 
 > Nombres de modelo tentativos en inglés (convención del código). Confirma el mapeo negocio↔modelo en `project.md` antes de crear cada recurso.
