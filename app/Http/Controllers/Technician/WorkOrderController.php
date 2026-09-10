@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Technician;
 
 use App\Http\Requests\Technician\UpdateWorkOrderRequest;
+use App\Models\Accessory;
+use App\Models\MaintenanceTask;
 use App\Models\WorkOrder;
 use App\Services\WorkOrderService;
 use Illuminate\Http\JsonResponse;
@@ -39,7 +41,11 @@ class WorkOrderController extends TechnicianPanelController
 
         $workOrder->load('client', 'equipment.brand', 'equipment.model', 'photos');
 
-        return view('technician.work_orders.show', compact('workOrder'));
+        return view('technician.work_orders.show', [
+            'workOrder' => $workOrder,
+            'taskOptions' => MaintenanceTask::active()->orderBy('name')->pluck('name'),
+            'accessoryOptions' => Accessory::active()->orderBy('name')->pluck('name'),
+        ]);
     }
 
     public function submit(WorkOrder $workOrder): RedirectResponse
@@ -55,15 +61,17 @@ class WorkOrderController extends TechnicianPanelController
 
     public function update(UpdateWorkOrderRequest $request, WorkOrder $workOrder): RedirectResponse|JsonResponse
     {
-        $validated = $request->validated();
+        [$orderData, $equipmentData] = $this->service->splitEquipmentData($request->validated());
 
         // Si estaba assigned, moverlo a in_progress al empezar a editar
         if ($workOrder->status === 'assigned') {
-            $validated['status'] = 'in_progress';
-            $validated['started_at'] = $workOrder->started_at ?? now();
+            $orderData['status'] = 'in_progress';
+            $orderData['started_at'] = $workOrder->started_at ?? now();
         }
 
-        $workOrder->update($validated);
+        $workOrder->update($orderData);
+        // Persiste en la ficha del equipo lo editado desde la OT.
+        $this->service->syncEquipmentData($workOrder, $equipmentData, $orderData);
 
         // Autoguardado del borrador (AJAX desde el formulario del técnico).
         if ($request->expectsJson()) {

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Technician;
 
+use App\Models\Equipment;
 use App\Models\Technician;
 use App\Models\User;
 use App\Models\WorkOrder;
@@ -89,5 +90,28 @@ class WorkOrderPhotoTest extends TestCase
             ->assertJsonStructure(['saved_at']);
 
         $this->assertSame('Borrador en progreso', $this->workOrder->fresh()->diagnosis);
+    }
+
+    public function test_technician_can_edit_equipment_data_from_the_order(): void
+    {
+        $equipment = Equipment::factory()->create([
+            'client_id' => $this->workOrder->client_id,
+            'voltage' => '110V',
+        ]);
+        $this->workOrder->update(['equipment_id' => $equipment->id]);
+
+        $this->actingAs($this->technician->user)
+            ->put(route('technician.work_orders.update', $this->workOrder), [
+                'diagnosis' => 'OK',
+                'eq_voltage' => '220V',
+                'maintenance_tasks' => ['Prueba de funcionamiento'],
+                'accessories_checked' => ['Cable de AC'],
+            ])
+            ->assertRedirect();
+
+        $equipment->refresh();
+        $this->assertSame('220V', $equipment->voltage);
+        $this->assertEqualsCanonicalizing(['Prueba de funcionamiento'], $equipment->maintenance_tasks);
+        $this->assertEqualsCanonicalizing(['Cable de AC'], $equipment->accessories);
     }
 }

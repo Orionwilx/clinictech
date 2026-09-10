@@ -6,9 +6,70 @@ use App\Models\Technician;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Notifications\WorkOrderNotification;
+use Illuminate\Support\Arr;
 
 class WorkOrderService
 {
+    /**
+     * Características del equipo editables desde la OT (se guardan en su ficha).
+     *
+     * @var list<string>
+     */
+    public const EQUIPMENT_FIELDS = [
+        'risk_class', 'voltage', 'amperage', 'current', 'power',
+        'temperature', 'pressure', 'weight', 'speed', 'predominant_technology',
+    ];
+
+    /**
+     * Separa del payload de la OT los campos del equipo (prefijo eq_).
+     * Devuelve [datosOT, datosEquipo].
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>}
+     */
+    public function splitEquipmentData(array $data): array
+    {
+        $equipmentData = [];
+
+        foreach (self::EQUIPMENT_FIELDS as $field) {
+            $key = "eq_{$field}";
+            if (array_key_exists($key, $data)) {
+                $equipmentData[$field] = Arr::pull($data, $key);
+            }
+        }
+
+        return [$data, $equipmentData];
+    }
+
+    /**
+     * Persiste en la ficha del equipo vinculado lo editado desde la OT:
+     * características (eq_*) y subtareas/accesorios (= lo marcado en la orden).
+     * No hace nada si la OT no tiene equipo.
+     *
+     * @param  array<string, mixed>  $equipmentData  características (ya separadas)
+     * @param  array<string, mixed>  $orderData  payload de la OT (para tomar los checklists)
+     */
+    public function syncEquipmentData(WorkOrder $workOrder, array $equipmentData, array $orderData): void
+    {
+        $equipment = $workOrder->equipment;
+
+        if (! $equipment) {
+            return;
+        }
+
+        if (array_key_exists('maintenance_tasks', $orderData)) {
+            $equipmentData['maintenance_tasks'] = $orderData['maintenance_tasks'] ?? [];
+        }
+
+        if (array_key_exists('accessories_checked', $orderData)) {
+            $equipmentData['accessories'] = $orderData['accessories_checked'] ?? [];
+        }
+
+        if ($equipmentData !== []) {
+            $equipment->update($equipmentData);
+        }
+    }
+
     /**
      * Crea una OT asignando código consecutivo y sellos de tiempo por estado.
      *

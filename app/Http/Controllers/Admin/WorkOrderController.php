@@ -9,8 +9,10 @@ use App\Http\Requests\WorkOrder\RejectWorkOrderRequest;
 use App\Http\Requests\WorkOrder\ReturnWorkOrderRequest;
 use App\Http\Requests\WorkOrder\StoreWorkOrderRequest;
 use App\Http\Requests\WorkOrder\UpdateWorkOrderRequest;
+use App\Models\Accessory;
 use App\Models\Client;
 use App\Models\Equipment;
+use App\Models\MaintenanceTask;
 use App\Models\Technician;
 use App\Models\WorkOrder;
 use App\Services\WorkOrderService;
@@ -75,7 +77,9 @@ class WorkOrderController extends Controller
 
     public function store(StoreWorkOrderRequest $request): RedirectResponse
     {
-        $this->service->create($request->validated());
+        [$orderData, $equipmentData] = $this->service->splitEquipmentData($request->validated());
+        $workOrder = $this->service->create($orderData);
+        $this->service->syncEquipmentData($workOrder, $equipmentData, $orderData);
 
         return redirect()->route('admin.work_orders.index')
             ->with('status', 'Orden de trabajo creada correctamente.');
@@ -102,7 +106,9 @@ class WorkOrderController extends Controller
 
     public function update(UpdateWorkOrderRequest $request, WorkOrder $workOrder): RedirectResponse
     {
-        $this->service->update($workOrder, $request->validated());
+        [$orderData, $equipmentData] = $this->service->splitEquipmentData($request->validated());
+        $this->service->update($workOrder, $orderData);
+        $this->service->syncEquipmentData($workOrder, $equipmentData, $orderData);
 
         return redirect()->route('admin.work_orders.index')
             ->with('status', 'Orden de trabajo actualizada correctamente.');
@@ -255,8 +261,13 @@ class WorkOrderController extends Controller
     {
         return [
             'clients' => Client::orderBy('name')->pluck('name', 'id'),
-            'equipment' => Equipment::orderBy('name')->get(['id', 'name', 'client_id', 'maintenance_tasks', 'accessories']),
+            'equipment' => Equipment::orderBy('name')->get([
+                'id', 'name', 'client_id', 'maintenance_tasks', 'accessories',
+                ...WorkOrderService::EQUIPMENT_FIELDS,
+            ]),
             'technicians' => Technician::orderBy('name')->pluck('name', 'id'),
+            'taskOptions' => MaintenanceTask::active()->orderBy('name')->pluck('name'),
+            'accessoryOptions' => Accessory::active()->orderBy('name')->pluck('name'),
         ];
     }
 }

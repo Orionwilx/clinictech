@@ -177,6 +177,49 @@ class WorkOrderManagementTest extends TestCase
         $this->assertEqualsCanonicalizing(['Cable de AC', 'Batería'], $order->accessories_checked);
     }
 
+    public function test_work_order_persists_equipment_data_to_the_equipment(): void
+    {
+        $client = Client::factory()->create();
+        $equipment = Equipment::factory()->create([
+            'client_id' => $client->id,
+            'voltage' => '110V',
+            'maintenance_tasks' => ['Prueba de funcionamiento'],
+        ]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.work_orders.store'), $this->validPayload([
+                'client_id' => $client->id,
+                'equipment_id' => $equipment->id,
+                'type' => 'preventive',
+                'eq_voltage' => '220V',
+                'eq_risk_class' => 'IIB',
+                'maintenance_tasks' => ['Prueba de funcionamiento', 'Prueba de fugas'],
+                'accessories_checked' => ['Cable de AC'],
+            ]))
+            ->assertRedirect(route('admin.work_orders.index'));
+
+        $equipment->refresh();
+        // Las características y el checklist editados desde la OT persisten en la ficha del equipo.
+        $this->assertSame('220V', $equipment->voltage);
+        $this->assertSame('IIB', $equipment->risk_class);
+        $this->assertEqualsCanonicalizing(['Prueba de funcionamiento', 'Prueba de fugas'], $equipment->maintenance_tasks);
+        $this->assertEqualsCanonicalizing(['Cable de AC'], $equipment->accessories);
+    }
+
+    public function test_equipment_risk_class_from_order_is_validated(): void
+    {
+        $client = Client::factory()->create();
+        $equipment = Equipment::factory()->create(['client_id' => $client->id]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.work_orders.store'), $this->validPayload([
+                'client_id' => $client->id,
+                'equipment_id' => $equipment->id,
+                'eq_risk_class' => 'ZZZ',
+            ]))
+            ->assertSessionHasErrors('eq_risk_class');
+    }
+
     public function test_work_order_checklist_rejects_non_string_values(): void
     {
         $this->actingAs($this->admin())

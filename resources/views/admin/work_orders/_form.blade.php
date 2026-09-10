@@ -1,25 +1,44 @@
-{{-- Espera: $workOrder (nullable), $clients (id=>nombre), $equipment (Collection), $technicians (id=>nombre) --}}
+{{-- Espera: $workOrder (nullable), $clients (id=>nombre), $equipment (Collection), $technicians (id=>nombre), $taskOptions, $accessoryOptions --}}
 @php($editing = isset($workOrder) && $workOrder->exists)
+@php($eqFields = \App\Services\WorkOrderService::EQUIPMENT_FIELDS)
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4"
      x-data="{
         editing: {{ $editing ? 'true' : 'false' }},
+        repopulate: {{ old() ? 'true' : 'false' }},
         client: '{{ old('client_id', $workOrder->client_id ?? request('client_id')) }}',
         equipmentId: '{{ old('equipment_id', $workOrder->equipment_id ?? request('equipment_id')) }}',
-        equipment: {{ Illuminate\Support\Js::from($equipment->map->only('id', 'name', 'client_id', 'maintenance_tasks', 'accessories')) }},
+        equipment: {{ Illuminate\Support\Js::from($equipment) }},
+        taskCatalog: {{ Illuminate\Support\Js::from($taskOptions) }},
+        accessoryCatalog: {{ Illuminate\Support\Js::from($accessoryOptions) }},
         selectedTasks: {{ Illuminate\Support\Js::from((array) old('maintenance_tasks', $workOrder->maintenance_tasks ?? [])) }},
         selectedAccessories: {{ Illuminate\Support\Js::from((array) old('accessories_checked', $workOrder->accessories_checked ?? [])) }},
+        eq: {{ Illuminate\Support\Js::from(collect($eqFields)->mapWithKeys(fn ($f) => [$f => old('eq_'.$f, '')])->all()) }},
+        newTask: '', newAccessory: '',
         get filteredEquipment() { return this.equipment.filter(e => String(e.client_id) === String(this.client)); },
         get selectedEquipment() { return this.equipment.find(e => String(e.id) === String(this.equipmentId)); },
-        get availableTasks() { return [...new Set([...(this.selectedEquipment?.maintenance_tasks ?? []), ...this.selectedTasks])]; },
-        get availableAccessories() { return [...new Set([...(this.selectedEquipment?.accessories ?? []), ...this.selectedAccessories])]; },
-        init() { if (!this.editing && this.equipmentId && this.selectedTasks.length === 0 && this.selectedAccessories.length === 0) this.applyTemplate(); },
-        onClientChange() { this.equipmentId = ''; if (!this.editing) { this.selectedTasks = []; this.selectedAccessories = []; } },
-        applyTemplate() {
-            if (this.editing) return;
-            const eq = this.equipment.find(e => String(e.id) === String(this.equipmentId));
-            this.selectedTasks = eq && eq.maintenance_tasks ? [...eq.maintenance_tasks] : [];
-            this.selectedAccessories = eq && eq.accessories ? [...eq.accessories] : [];
+        get allTasks() { return [...new Set([...this.taskCatalog, ...this.selectedTasks])]; },
+        get allAccessories() { return [...new Set([...this.accessoryCatalog, ...this.selectedAccessories])]; },
+        init() { if (this.equipmentId && !this.repopulate) this.loadFromEquipment(); },
+        onClientChange() { this.equipmentId = ''; this.resetPanel(); },
+        onEquipmentChange() { this.loadFromEquipment(); },
+        loadFromEquipment() {
+            const e = this.selectedEquipment;
+            if (!e) { this.resetPanel(); return; }
+            this.selectedTasks = e.maintenance_tasks ? [...e.maintenance_tasks] : [];
+            this.selectedAccessories = e.accessories ? [...e.accessories] : [];
+            {{ collect($eqFields)->map(fn ($f) => "this.eq.$f = e.$f ?? '';")->implode(' ') }}
+        },
+        resetPanel() {
+            this.selectedTasks = []; this.selectedAccessories = [];
+            {{ collect($eqFields)->map(fn ($f) => "this.eq.$f = '';")->implode(' ') }}
+        },
+        addItem(kind) {
+            const isTask = kind === 'task';
+            const name = (isTask ? this.newTask : this.newAccessory).trim();
+            if (!name) return;
+            if (isTask) { if (!this.selectedTasks.includes(name)) this.selectedTasks.push(name); this.newTask = ''; }
+            else { if (!this.selectedAccessories.includes(name)) this.selectedAccessories.push(name); this.newAccessory = ''; }
         }
      }">
     <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -37,7 +56,7 @@
 
         <div>
             <x-input-label for="equipment_id" :value="__('Equipo (opcional)')" />
-            <select id="equipment_id" name="equipment_id" x-model="equipmentId" @change="applyTemplate()" :disabled="!client"
+            <select id="equipment_id" name="equipment_id" x-model="equipmentId" @change="onEquipmentChange()" :disabled="!client"
                     class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
                 <option value="">{{ __('— Sin equipo —') }}</option>
                 <template x-for="e in filteredEquipment" :key="e.id">
@@ -132,35 +151,74 @@
         <x-input-error :messages="$errors->get('additional_observations')" class="mt-2" />
     </div>
 
-    {{-- Checklist de mantenimiento (plantilla del equipo, ejecución en la OT) --}}
+    {{-- Panel del equipo: editable y persistente en su ficha --}}
     <div class="sm:col-span-2 border-t border-gray-100 pt-4" x-show="equipmentId" x-cloak>
-        <h3 class="text-sm font-semibold text-brand-900 mb-1">Checklist de mantenimiento</h3>
-        <p class="text-xs text-gray-400 mb-3">Se precargan las subtareas y accesorios definidos en el equipo. Marca lo ejecutado/revisado en esta orden.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <h3 class="text-sm font-semibold text-brand-900 mb-1">Datos del equipo</h3>
+        <p class="text-xs text-gray-400 mb-4">Estos campos se <strong>guardan en la ficha del equipo</strong> (y quedan registrados en esta orden). Edítalos aquí sin salir de la OT.</p>
+
+        {{-- Características técnicas --}}
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-                <p class="text-xs font-medium text-gray-500 uppercase mb-2">Subtareas ejecutadas</p>
+                <x-input-label for="eq_risk_class" :value="__('Clase de riesgo')" class="text-xs" />
+                <select id="eq_risk_class" name="eq_risk_class" x-model="eq.risk_class"
+                        class="mt-1 block w-full text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                    <option value="">—</option>
+                    @foreach (\App\Models\Equipment::RISK_CLASSES as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @foreach ([
+                'voltage' => 'Voltaje', 'amperage' => 'Amperaje', 'current' => 'Corriente',
+                'power' => 'Potencia', 'temperature' => 'Temperatura', 'pressure' => 'Presión',
+                'weight' => 'Peso', 'speed' => 'Velocidad', 'predominant_technology' => 'Tecnología',
+            ] as $field => $label)
+                <div>
+                    <x-input-label :for="'eq_'.$field" :value="__($label)" class="text-xs" />
+                    <input type="text" id="eq_{{ $field }}" name="eq_{{ $field }}" x-model="eq.{{ $field }}"
+                           class="mt-1 block w-full text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                </div>
+            @endforeach
+        </div>
+
+        {{-- Subtareas y accesorios --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-5">
+            <div>
+                <p class="text-xs font-medium text-gray-500 uppercase mb-2">Subtareas de mantenimiento</p>
                 <div class="grid grid-cols-1 gap-1.5">
-                    <template x-for="task in availableTasks" :key="task">
+                    <template x-for="task in allTasks" :key="task">
                         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                             <input type="checkbox" name="maintenance_tasks[]" :value="task" x-model="selectedTasks"
                                    class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
                             <span x-text="task"></span>
                         </label>
                     </template>
-                    <p x-show="availableTasks.length === 0" class="text-xs text-gray-400">El equipo no tiene subtareas definidas.</p>
+                    <p x-show="allTasks.length === 0" class="text-xs text-gray-400">Sin subtareas en el catálogo.</p>
+                </div>
+                <div class="mt-2 flex items-center gap-2">
+                    <input type="text" x-model="newTask" @keydown.enter.prevent="addItem('task')"
+                           placeholder="Agregar subtarea…"
+                           class="block w-44 text-xs border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                    <button type="button" @click="addItem('task')" class="px-2.5 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 rounded-md hover:bg-brand-100">+ Agregar</button>
                 </div>
             </div>
             <div>
-                <p class="text-xs font-medium text-gray-500 uppercase mb-2">Accesorios revisados</p>
+                <p class="text-xs font-medium text-gray-500 uppercase mb-2">Accesorios</p>
                 <div class="grid grid-cols-1 gap-1.5">
-                    <template x-for="accessory in availableAccessories" :key="accessory">
+                    <template x-for="accessory in allAccessories" :key="accessory">
                         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
                             <input type="checkbox" name="accessories_checked[]" :value="accessory" x-model="selectedAccessories"
                                    class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
                             <span x-text="accessory"></span>
                         </label>
                     </template>
-                    <p x-show="availableAccessories.length === 0" class="text-xs text-gray-400">El equipo no tiene accesorios definidos.</p>
+                    <p x-show="allAccessories.length === 0" class="text-xs text-gray-400">Sin accesorios en el catálogo.</p>
+                </div>
+                <div class="mt-2 flex items-center gap-2">
+                    <input type="text" x-model="newAccessory" @keydown.enter.prevent="addItem('accessory')"
+                           placeholder="Agregar accesorio…"
+                           class="block w-44 text-xs border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                    <button type="button" @click="addItem('accessory')" class="px-2.5 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 rounded-md hover:bg-brand-100">+ Agregar</button>
                 </div>
             </div>
         </div>

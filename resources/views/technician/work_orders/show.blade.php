@@ -100,34 +100,87 @@
                             </div>
 
                             @if ($workOrder->equipment)
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 border-t border-gray-100">
-                                @php($taskOptions = collect($workOrder->equipment->maintenance_tasks ?? [])->merge((array) $workOrder->maintenance_tasks)->unique())
-                                @php($accessoryOptions = collect($workOrder->equipment->accessories ?? [])->merge((array) $workOrder->accessories_checked)->unique())
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500 uppercase mb-2">Subtareas ejecutadas</p>
-                                    @forelse ($taskOptions as $value)
-                                        <label class="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                                            <input type="checkbox" name="maintenance_tasks[]" value="{{ $value }}"
-                                                   @checked(in_array($value, (array) $workOrder->maintenance_tasks))
-                                                   class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                                            {{ $value }}
-                                        </label>
-                                    @empty
-                                        <p class="text-xs text-gray-400">El equipo no tiene subtareas definidas.</p>
-                                    @endforelse
+                            @php($eq = $workOrder->equipment)
+                            @php($taskCatalog = collect($taskOptions)->merge($eq->maintenance_tasks ?? [])->merge((array) $workOrder->maintenance_tasks)->unique()->values())
+                            @php($accessoryCatalog = collect($accessoryOptions)->merge($eq->accessories ?? [])->merge((array) $workOrder->accessories_checked)->unique()->values())
+                            <div class="pt-3 border-t border-gray-100"
+                                 x-data="{
+                                    tasks: {{ Illuminate\Support\Js::from($taskCatalog) }},
+                                    accessories: {{ Illuminate\Support\Js::from($accessoryCatalog) }},
+                                    selectedTasks: {{ Illuminate\Support\Js::from((array) old('maintenance_tasks', $workOrder->maintenance_tasks ?? [])) }},
+                                    selectedAccessories: {{ Illuminate\Support\Js::from((array) old('accessories_checked', $workOrder->accessories_checked ?? [])) }},
+                                    newTask: '', newAccessory: '',
+                                    addItem(kind) {
+                                        const isTask = kind === 'task';
+                                        const name = (isTask ? this.newTask : this.newAccessory).trim();
+                                        if (!name) return;
+                                        if (isTask) { if (!this.tasks.includes(name)) this.tasks.push(name); if (!this.selectedTasks.includes(name)) this.selectedTasks.push(name); this.newTask = ''; }
+                                        else { if (!this.accessories.includes(name)) this.accessories.push(name); if (!this.selectedAccessories.includes(name)) this.selectedAccessories.push(name); this.newAccessory = ''; }
+                                    }
+                                 }">
+                                <p class="text-sm font-semibold text-brand-900 mb-1">Datos del equipo</p>
+                                <p class="text-xs text-gray-400 mb-3">Se <strong>guardan en la ficha del equipo</strong> y quedan registrados en esta orden.</p>
+
+                                {{-- Características técnicas del equipo (editables) --}}
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                                    <div>
+                                        <x-input-label for="eq_risk_class" value="Clase de riesgo" class="text-xs" />
+                                        <select id="eq_risk_class" name="eq_risk_class"
+                                                class="mt-1 block w-full text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                                            <option value="">—</option>
+                                            @foreach (\App\Models\Equipment::RISK_CLASSES as $value => $label)
+                                                <option value="{{ $value }}" @selected(old('eq_risk_class', $eq->risk_class) === $value)>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    @foreach ([
+                                        'voltage' => 'Voltaje', 'amperage' => 'Amperaje', 'current' => 'Corriente',
+                                        'power' => 'Potencia', 'temperature' => 'Temperatura', 'pressure' => 'Presión',
+                                        'weight' => 'Peso', 'speed' => 'Velocidad', 'predominant_technology' => 'Tecnología',
+                                    ] as $field => $label)
+                                        <div>
+                                            <x-input-label :for="'eq_'.$field" :value="$label" class="text-xs" />
+                                            <input type="text" id="eq_{{ $field }}" name="eq_{{ $field }}"
+                                                   value="{{ old('eq_'.$field, $eq->$field) }}"
+                                                   class="mt-1 block w-full text-sm border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                                        </div>
+                                    @endforeach
                                 </div>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500 uppercase mb-2">Accesorios revisados</p>
-                                    @forelse ($accessoryOptions as $value)
-                                        <label class="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                                            <input type="checkbox" name="accessories_checked[]" value="{{ $value }}"
-                                                   @checked(in_array($value, (array) $workOrder->accessories_checked))
-                                                   class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                                            {{ $value }}
-                                        </label>
-                                    @empty
-                                        <p class="text-xs text-gray-400">El equipo no tiene accesorios definidos.</p>
-                                    @endforelse
+
+                                {{-- Subtareas y accesorios (editables + agregar) --}}
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-500 uppercase mb-2">Subtareas de mantenimiento</p>
+                                        <template x-for="task in tasks" :key="task">
+                                            <label class="flex items-center gap-2 text-sm text-gray-700 mb-1">
+                                                <input type="checkbox" name="maintenance_tasks[]" :value="task" x-model="selectedTasks"
+                                                       class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                                                <span x-text="task"></span>
+                                            </label>
+                                        </template>
+                                        <p x-show="tasks.length === 0" class="text-xs text-gray-400">Sin subtareas.</p>
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <input type="text" x-model="newTask" @keydown.enter.prevent="addItem('task')" placeholder="Agregar subtarea…"
+                                                   class="block w-40 text-xs border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                                            <button type="button" @click="addItem('task')" class="px-2.5 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 rounded-md hover:bg-brand-100">+ Agregar</button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-500 uppercase mb-2">Accesorios</p>
+                                        <template x-for="accessory in accessories" :key="accessory">
+                                            <label class="flex items-center gap-2 text-sm text-gray-700 mb-1">
+                                                <input type="checkbox" name="accessories_checked[]" :value="accessory" x-model="selectedAccessories"
+                                                       class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
+                                                <span x-text="accessory"></span>
+                                            </label>
+                                        </template>
+                                        <p x-show="accessories.length === 0" class="text-xs text-gray-400">Sin accesorios.</p>
+                                        <div class="mt-2 flex items-center gap-2">
+                                            <input type="text" x-model="newAccessory" @keydown.enter.prevent="addItem('accessory')" placeholder="Agregar accesorio…"
+                                                   class="block w-40 text-xs border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                                            <button type="button" @click="addItem('accessory')" class="px-2.5 py-1.5 text-xs font-semibold text-brand-700 bg-brand-50 rounded-md hover:bg-brand-100">+ Agregar</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             @endif

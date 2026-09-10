@@ -11,6 +11,8 @@ use Illuminate\Validation\Validator;
 
 class StoreWorkOrderRequest extends FormRequest
 {
+    use InteractsWithOrderEquipmentRules;
+
     public function authorize(): bool
     {
         return $this->user()?->can('create work_orders') ?? false;
@@ -32,15 +34,12 @@ class StoreWorkOrderRequest extends FormRequest
             'status' => ['required', Rule::in(array_keys(WorkOrder::STATUSES))],
             'diagnosis' => ['nullable', 'string'],
             'work_performed' => ['nullable', 'string'],
-            'maintenance_tasks' => ['nullable', 'array'],
-            'maintenance_tasks.*' => ['string', 'max:255'],
-            'accessories_checked' => ['nullable', 'array'],
-            'accessories_checked.*' => ['string', 'max:255'],
             'additional_observations' => ['nullable', 'string'],
             'scheduled_at' => ['nullable', 'date'],
             'started_at' => ['nullable', 'date'],
             'completed_at' => ['nullable', 'date'],
             'closed_at' => ['nullable', 'date'],
+            ...$this->orderEquipmentRules(),
         ];
     }
 
