@@ -193,6 +193,43 @@ class EquipmentManagementTest extends TestCase
             ->assertSessionHasErrors('model_id');
     }
 
+    public function test_admin_can_toggle_equipment_active_inactive(): void
+    {
+        $equipment = Equipment::factory()->create(['status' => 'active']);
+
+        $this->actingAs($this->admin())
+            ->patch(route('admin.equipment.toggle-active', $equipment))
+            ->assertRedirect();
+        $this->assertSame('inactive', $equipment->fresh()->status);
+
+        $this->actingAs($this->admin())
+            ->patch(route('admin.equipment.toggle-active', $equipment))
+            ->assertRedirect();
+        $this->assertSame('active', $equipment->fresh()->status);
+    }
+
+    public function test_toggle_from_maintenance_reactivates_to_active(): void
+    {
+        $equipment = Equipment::factory()->create(['status' => 'maintenance']);
+
+        $this->actingAs($this->admin())
+            ->patch(route('admin.equipment.toggle-active', $equipment));
+
+        $this->assertSame('active', $equipment->fresh()->status);
+    }
+
+    public function test_client_cannot_toggle_equipment_status(): void
+    {
+        $equipment = Equipment::factory()->create(['status' => 'active']);
+        $cliente = User::factory()->create()->assignRole('cliente');
+
+        $this->actingAs($cliente)
+            ->patch(route('admin.equipment.toggle-active', $equipment))
+            ->assertForbidden();
+
+        $this->assertSame('active', $equipment->fresh()->status);
+    }
+
     public function test_equipment_life_sheet_shows_work_order_history(): void
     {
         $equipment = Equipment::factory()->create();

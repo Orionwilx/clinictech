@@ -75,6 +75,9 @@ En BD/código se guarda el valor en inglés; en vistas se muestra la etiqueta en
 - `belongsTo(EquipmentCategory)` · `belongsTo(Brand)` · `belongsTo(EquipmentModel, 'model_id')` — catálogo maestro.
 - `hasMany(WorkOrder)`. (Mantenimiento = OT tipo preventivo/correctivo.)
 
+## Estado: toggle rápido activo/inactivo
+Componente `<x-equipment-status-toggle :equipment>` (switch) en el índice de equipos y en la pestaña «Equipos» del hub del cliente: alterna **activo⇄inactivo** al instante (ruta `PATCH admin.equipment.toggle-active`, permiso `update equipment`). Desde `maintenance`/`retired` el toggle reactiva a `active`; esos dos estados solo se fijan desde el formulario completo. Sin `@can('update equipment')` muestra solo la etiqueta.
+
 ## Reglas de negocio
 - `serial_number` requerido y único (identifica el equipo).
 - `client_id` requerido (todo equipo pertenece a un cliente).

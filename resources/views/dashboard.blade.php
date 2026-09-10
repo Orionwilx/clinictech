@@ -102,20 +102,21 @@
                             @php
                                 $rowStatus = $client->trashed() ? 'deleted' : ($client->is_active ? 'active' : 'inactive');
                             @endphp
-                            <tr class="hover:bg-gray-50"
+                            <tr class="hover:bg-brand-50/60 transition-colors {{ $client->trashed() ? '' : 'cursor-pointer' }} group"
+                                @unless ($client->trashed()) @click="window.location='{{ route('admin.clients.show', $client) }}'" @endunless
                                 x-show="matches('{{ addslashes($client->name) }}', '{{ addslashes($client->nit ?? '') }}', '{{ addslashes($client->city ?? '') }}', '{{ $rowStatus }}')"
                                 x-cloak>
                                 <td class="px-6 py-3 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
                                         @if ($client->logoUrl())
                                             <img src="{{ $client->logoUrl() }}" alt="{{ $client->name }}"
-                                                 class="h-8 w-8 rounded object-contain border border-gray-100 bg-white flex-shrink-0">
+                                                 class="h-9 w-9 rounded object-contain border border-gray-100 bg-white flex-shrink-0">
                                         @else
-                                            <div class="h-8 w-8 rounded bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                            <div class="h-9 w-9 rounded bg-brand-50 flex items-center justify-center flex-shrink-0 group-hover:bg-brand-100 transition-colors">
                                                 <span class="text-xs font-bold text-brand-600">{{ mb_strtoupper(mb_substr($client->name, 0, 2)) }}</span>
                                             </div>
                                         @endif
-                                        <span class="text-sm font-medium text-gray-900">{{ $client->name }}</span>
+                                        <span class="text-sm font-medium text-gray-900 group-hover:text-brand-700">{{ $client->name }}</span>
                                     </div>
                                 </td>
                                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-500">{{ $client->nit ?: '—' }}</td>
@@ -129,10 +130,15 @@
                                         <span class="inline-flex rounded-full bg-gray-100 px-2 text-xs font-semibold text-gray-700">Inactivo</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <td class="px-6 py-3 whitespace-nowrap text-right">
                                     @unless ($client->trashed())
-                                        <a href="{{ route('admin.clients.show', $client) }}"
-                                           class="text-brand-600 hover:text-brand-800">Ver</a>
+                                        <a href="{{ route('admin.clients.show', $client) }}" title="Abrir hub del cliente"
+                                           @click.stop
+                                           class="inline-flex items-center justify-center w-8 h-8 rounded-full text-brand-600 group-hover:bg-brand-100 group-hover:text-brand-800 transition-colors">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                                            </svg>
+                                        </a>
                                     @endunless
                                 </td>
                             </tr>

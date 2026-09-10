@@ -186,7 +186,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serial</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Área</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase"></th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200">
@@ -197,9 +197,17 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->serial_number }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ optional($item->area)->name ?? '—' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->statusLabel() }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <x-equipment-status-toggle :equipment="$item" />
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                        <a href="{{ route('admin.equipment.show', $item) }}" class="text-brand-600 hover:text-brand-800">Ver</a>
+                                        <div class="inline-flex items-center gap-2">
+                                            @can('create work_orders')
+                                                <a href="{{ route('admin.work_orders.create', ['client_id' => $client->id, 'equipment_id' => $item->id]) }}"
+                                                   class="inline-flex items-center px-2.5 py-1.5 bg-brand-600 rounded-md font-semibold text-xs text-white hover:bg-brand-700">+ Nueva OT</a>
+                                            @endcan
+                                            <a href="{{ route('admin.equipment.show', $item) }}" class="text-brand-600 hover:text-brand-800">Ver</a>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -212,12 +220,10 @@
 
             {{-- Órdenes de trabajo (incluye mantenimientos: OT tipo preventivo/correctivo) --}}
             <div x-show="tab === 'ordenes'" x-cloak>
-                <div class="flex justify-end gap-2 mb-3">
+                <div class="flex justify-end mb-3">
                     @can('create work_orders')
-                        <a href="{{ route('admin.work_orders.create', ['client_id' => $client->id, 'type' => 'preventive']) }}"
-                           class="inline-flex items-center px-3 py-2 bg-white border border-brand-600 rounded-md font-semibold text-xs text-brand-700 uppercase tracking-widest hover:bg-brand-50">+ OT preventiva</a>
-                        <a href="{{ route('admin.work_orders.create', ['client_id' => $client->id, 'type' => 'corrective']) }}"
-                           class="inline-flex items-center px-3 py-2 bg-brand-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">+ OT correctiva</a>
+                        <a href="{{ route('admin.work_orders.create', ['client_id' => $client->id]) }}"
+                           class="inline-flex items-center px-3 py-2 bg-brand-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">+ Nueva OT</a>
                     @endcan
                 </div>
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

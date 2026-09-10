@@ -55,13 +55,7 @@
                             @if ($item->trashed())
                                 <span class="inline-flex rounded-full bg-red-100 px-2 text-xs font-semibold text-red-800">Eliminado</span>
                             @else
-                                <span @class([
-                                    'inline-flex rounded-full px-2 text-xs font-semibold',
-                                    'bg-green-100 text-green-800' => $item->status === 'active',
-                                    'bg-gray-100 text-gray-800' => $item->status === 'inactive',
-                                    'bg-amber-100 text-amber-800' => $item->status === 'maintenance',
-                                    'bg-red-100 text-red-800' => $item->status === 'retired',
-                                ])>{{ $item->statusLabel() }}</span>
+                                <x-equipment-status-toggle :equipment="$item" />
                             @endif
                         </x-td>
                         <x-td-actions>

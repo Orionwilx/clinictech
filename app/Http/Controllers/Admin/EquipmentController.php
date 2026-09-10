@@ -135,6 +135,22 @@ class EquipmentController extends Controller
     }
 
     /**
+     * Alterna rápido activo⇄inactivo sin abrir el formulario.
+     * Los estados 'maintenance'/'retired' se fijan desde el formulario completo:
+     * desde cualquiera de ellos, activar lleva a 'active'.
+     */
+    public function toggleActive(Equipment $equipment): RedirectResponse
+    {
+        $this->authorize('update equipment');
+
+        $equipment->update([
+            'status' => $equipment->status === 'active' ? 'inactive' : 'active',
+        ]);
+
+        return back()->with('status', "Equipo «{$equipment->name}» marcado como {$equipment->statusLabel()}.");
+    }
+
+    /**
      * Opciones para los selectores del formulario.
      *
      * @return array<string, mixed>

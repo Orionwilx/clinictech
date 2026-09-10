@@ -64,6 +64,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::delete('areas/{area}', [AreaController::class, 'destroy'])->name('areas.destroy');
 
     Route::get('equipment/{equipment}/pdf', [EquipmentController::class, 'pdf'])->name('equipment.pdf');
+    Route::patch('equipment/{equipment}/toggle-active', [EquipmentController::class, 'toggleActive'])->name('equipment.toggle-active');
     Route::put('equipment/{id}/restore', [EquipmentController::class, 'restore'])
         ->withTrashed()
         ->name('equipment.restore');
