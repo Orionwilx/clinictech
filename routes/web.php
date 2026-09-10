@@ -18,12 +18,16 @@ use App\Http\Controllers\Client\WorkOrderController as ClientWorkOrderController
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Technician\DashboardController as TechDashboardController;
 use App\Http\Controllers\Technician\WorkOrderController as TechWorkOrderController;
+use App\Http\Controllers\Technician\WorkOrderPhotoController;
 use App\Models\Client;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Pantalla para usuarios desactivados (EnsureUserIsActive los redirige aquí tras cerrar su sesión).
+Route::get('/cuenta-inactiva', fn () => view('auth.inactive'))->name('account.inactive');
 
 Route::get('/dashboard', function () {
     $clients = Client::orderBy('name')->get();
@@ -59,6 +63,7 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::put('areas/{area}', [AreaController::class, 'update'])->name('areas.update');
     Route::delete('areas/{area}', [AreaController::class, 'destroy'])->name('areas.destroy');
 
+    Route::get('equipment/{equipment}/pdf', [EquipmentController::class, 'pdf'])->name('equipment.pdf');
     Route::put('equipment/{id}/restore', [EquipmentController::class, 'restore'])
         ->withTrashed()
         ->name('equipment.restore');
@@ -115,6 +120,7 @@ Route::middleware(['auth', 'role:cliente', 'client.profile'])
     ->name('client.')
     ->group(function () {
         Route::get('dashboard', [ClientDashboardController::class, 'index'])->name('dashboard');
+        Route::get('equipment/{equipment}/pdf', [ClientEquipmentController::class, 'pdf'])->name('equipment.pdf');
         Route::resource('equipment', ClientEquipmentController::class)->only(['index', 'show']);
         Route::get('work_orders/{work_order}/pdf', [ClientWorkOrderController::class, 'pdf'])->name('work_orders.pdf');
         Route::resource('work_orders', ClientWorkOrderController::class)->only(['index', 'show', 'create', 'store']);
@@ -128,6 +134,9 @@ Route::middleware(['auth', 'role:tecnico', 'technician.profile'])
     ->group(function () {
         Route::get('dashboard', [TechDashboardController::class, 'index'])->name('dashboard');
         Route::post('work_orders/{work_order}/submit', [TechWorkOrderController::class, 'submit'])->name('work_orders.submit');
+        // Evidencias fotográficas (subida AJAX inmediata + borrado).
+        Route::post('work_orders/{work_order}/photos', [WorkOrderPhotoController::class, 'store'])->name('work_orders.photos.store');
+        Route::delete('work_orders/{work_order}/photos/{photo}', [WorkOrderPhotoController::class, 'destroy'])->name('work_orders.photos.destroy');
         Route::resource('work_orders', TechWorkOrderController::class)->only(['index', 'show', 'update']);
     });
 

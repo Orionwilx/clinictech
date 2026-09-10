@@ -155,7 +155,6 @@ class EquipmentManagementTest extends TestCase
                 'serial_number' => 'SN-EXT-001',
                 'risk_class' => 'IIB',
                 'acquisition_type' => 'comodato',
-                'maintenance_frequency' => 'quarterly',
                 'warranty_status' => 'en_garantia',
                 'specialties' => ['Prevención', 'Tratamiento'],
                 'maintenance_tasks' => ['Prueba de funcionamiento', 'Prueba de fugas'],

@@ -43,7 +43,6 @@ trait InteractsWithEquipmentRules
             'invima_registry' => ['nullable', 'string', 'max:255'],
             'manufacturer' => ['nullable', 'string', 'max:255'],
             'origin_country' => ['nullable', 'string', 'max:255'],
-            'maintenance_frequency' => ['nullable', Rule::in(array_keys(Equipment::FREQUENCIES))],
             'acquisition_type' => ['nullable', Rule::in(array_keys(Equipment::ACQUISITION_TYPES))],
 
             // Características técnicas
@@ -56,8 +55,6 @@ trait InteractsWithEquipmentRules
             'weight' => ['nullable', 'string', 'max:255'],
             'speed' => ['nullable', 'string', 'max:255'],
             'predominant_technology' => ['nullable', 'string', 'max:255'],
-            'technical_observations' => ['nullable', 'string'],
-            'general_observations' => ['nullable', 'string'],
 
             // Plantilla de mantenimiento / accesorios
             'maintenance_tasks' => ['nullable', 'array'],

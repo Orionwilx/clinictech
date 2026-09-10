@@ -40,29 +40,6 @@
                 </select>
                 <x-input-error :messages="$errors->get('risk_class')" class="mt-2" />
             </div>
-            <div>
-                <x-input-label for="maintenance_frequency" :value="__('Periodicidad de mantenimiento')" />
-                <select id="maintenance_frequency" name="maintenance_frequency"
-                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-                    <option value="">— Selecciona —</option>
-                    @foreach (\App\Models\Equipment::FREQUENCIES as $value => $label)
-                        <option value="{{ $value }}" @selected(old('maintenance_frequency', $category->maintenance_frequency ?? '') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('maintenance_frequency')" class="mt-2" />
-            </div>
-            <div>
-                <x-input-label for="manufacturer" :value="__('Fabricante')" />
-                <x-text-input id="manufacturer" name="manufacturer" type="text" class="mt-1 block w-full"
-                              :value="old('manufacturer', $category->manufacturer ?? '')" />
-                <x-input-error :messages="$errors->get('manufacturer')" class="mt-2" />
-            </div>
-            <div>
-                <x-input-label for="origin_country" :value="__('País de origen')" />
-                <x-text-input id="origin_country" name="origin_country" type="text" class="mt-1 block w-full"
-                              :value="old('origin_country', $category->origin_country ?? '')" />
-                <x-input-error :messages="$errors->get('origin_country')" class="mt-2" />
-            </div>
             <div class="sm:col-span-2">
                 <x-input-label :value="__('Clasificación por especialidad')" />
                 <x-catalog-checkboxes name="specialties" catalog="specialties" columns="sm:grid-cols-4"
@@ -94,18 +71,6 @@
                     <x-input-error :messages="$errors->get($field)" class="mt-2" />
                 </div>
             @endforeach
-            <div class="sm:col-span-3">
-                <x-input-label for="technical_observations" :value="__('Observaciones técnicas')" />
-                <textarea id="technical_observations" name="technical_observations" rows="2"
-                          class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('technical_observations', $category->technical_observations ?? '') }}</textarea>
-                <x-input-error :messages="$errors->get('technical_observations')" class="mt-2" />
-            </div>
-            <div class="sm:col-span-3">
-                <x-input-label for="general_observations" :value="__('Observaciones generales')" />
-                <textarea id="general_observations" name="general_observations" rows="2"
-                          class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('general_observations', $category->general_observations ?? '') }}</textarea>
-                <x-input-error :messages="$errors->get('general_observations')" class="mt-2" />
-            </div>
         </div>
     </div>
 

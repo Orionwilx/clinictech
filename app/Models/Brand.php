@@ -12,7 +12,7 @@ class Brand extends Model
     /** @use HasFactory<BrandFactory> */
     use HasFactory;
 
-    protected $fillable = ['name'];
+    protected $fillable = ['name', 'manufacturer', 'origin_country'];
 
     public function models(): HasMany
     {

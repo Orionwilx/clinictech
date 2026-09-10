@@ -6,6 +6,9 @@
 
 > Inventario de equipos que pertenecen a un cliente. La hoja de vida/historial (§5.3) consolida las Órdenes de trabajo del equipo. Equipos eliminados = soft delete, visibles solo para admin.
 
+## Hoja de vida en PDF
+Botón «Hoja de vida (PDF)» en `equipment/show` (admin y panel cliente): genera con dompdf (`admin.equipment.pdf`, vista compartida) la ficha técnica completa + historial de OT. Rutas `admin.equipment.pdf` y `client.equipment.pdf` (cliente solo sus equipos). Logo del cliente embebido vía `Client::logoBase64()`.
+
 ## Hoja de vida (`equipment/show`)
 La ficha del equipo es su **hoja de vida**: identidad (cliente, área, marca/modelo, serial, compra/garantía, ubicación, observaciones) + **resumen** (nº de intervenciones, preventivas, correctivas, última intervención) + **historial cronológico** de sus `WorkOrder` (código enlazado, tipo, estado, título, diagnóstico, trabajo realizado, técnico, fecha), ordenado del más reciente al más antiguo. El controlador (`EquipmentController::show`) carga `workOrders.technician` con `latest()`. Botón «+ Nueva orden» precarga `client_id` + `equipment_id` en el form de OT.
 
@@ -32,13 +35,11 @@ El formulario está organizado en secciones: **Inventario**, **Datos específico
 | risk_class | string | nullable, in:RISK_CLASSES | Clasificación por riesgo (INVIMA) |
 | specialties | json (array de strings) | nullable | Especialidades (nombres del catálogo `specialties`, snapshot editable) |
 | invima_registry | string | nullable | Registro INVIMA |
-| manufacturer | string | nullable | Fabricante |
-| origin_country | string | nullable | País de origen |
-| maintenance_frequency | string | nullable, in:FREQUENCIES | Periodicidad |
+| manufacturer | string | nullable | Fabricante (snapshot autodiligenciado desde la marca) |
+| origin_country | string | nullable | País de origen (snapshot autodiligenciado desde la marca) |
 | acquisition_type | string | nullable, in:ACQUISITION_TYPES | Tipo de adquisición |
 | voltage/amperage/current/power/temperature/pressure/weight/speed | string | nullable | Características técnicas |
 | predominant_technology | string | nullable | Tecnología predominante |
-| technical_observations / general_observations | text | nullable | Observaciones técnicas / generales |
 | maintenance_tasks | json (array de strings) | nullable | Subtareas que aplican (nombres del catálogo, snapshot; se ejecutan en la OT) |
 | accessories | json (array de strings) | nullable | Accesorios del equipo (nombres del catálogo, snapshot) |
 | components | text | nullable | Componentes/accesorios (detalle) |
@@ -52,18 +53,18 @@ Constantes en `Equipment`:
 - `STATUSES`: active/inactive/maintenance/retired (default `active`).
 - `WARRANTY_STATUSES`: en_garantia/sin_garantia/leasing.
 - `RISK_CLASSES`: I/IIA/IIB/III (clasificación INVIMA de dispositivos médicos, Colombia).
-- `FREQUENCIES`: monthly/bimonthly/quarterly/biannual/annual.
 - `ACQUISITION_TYPES`: purchase/comodato/leasing/donation.
+- ⚠️ La **periodicidad de mantenimiento** y las **observaciones técnicas/generales** se eliminaron del equipo (las observaciones viven solo en las OT).
 - ⚠️ `SPECIALTIES`, `MAINTENANCE_TASKS` y `ACCESSORIES` **dejan de ser constantes**: pasan a catálogos configurables por admin (tablas `specialties`, `maintenance_tasks`, `accessories`). Ver `categorias-equipos.md`.
 
-En BD/código se guarda el valor en inglés; en vistas se muestra la etiqueta en español (helpers `statusLabel()`, `warrantyStatusLabel()`, `riskClassLabel()`, `frequencyLabel()`, `acquisitionTypeLabel()`, `specialtyLabels()`).
+En BD/código se guarda el valor en inglés; en vistas se muestra la etiqueta en español (helpers `statusLabel()`, `warrantyStatusLabel()`, `riskClassLabel()`, `acquisitionTypeLabel()`).
 
 ## Plantilla de mantenimiento y accesorios
 `maintenance_tasks` y `accessories` definen QUÉ subtareas/accesorios aplican a **este** equipo (snapshot prediligenciado desde la categoría, editable por unidad). No registran la ejecución: al crear una OT de mantenimiento estos ítems se proponen/marcan por intervención (ver `docs/modules/ordenes-trabajo.md`). Las reglas de validación viven en el trait `InteractsWithEquipmentRules` (compartido por Store/Update).
 
 ## Catálogo maestro: categoría → marca → modelo
 - `EquipmentCategory` es la **plantilla completa** del equipo (ver [`categorias-equipos.md`](./categorias-equipos.md)); al elegirla, el formulario prediligencia identificación, características técnicas, subtareas y accesorios (snapshot editable).
-- `Brand` (tabla `brands`) y `EquipmentModel` (tabla `equipment_models`, `belongsTo Brand` + `belongsTo EquipmentCategory`). Un modelo pertenece a una marca (`unique(brand_id, name)`) y a una categoría.
+- `Brand` (tabla `brands`, con `manufacturer` y `origin_country` que se **autodiligencian** en el equipo al elegir la marca) y `EquipmentModel` (tabla `equipment_models`, `belongsTo Brand` + `belongsTo EquipmentCategory`). Un modelo pertenece a una marca (`unique(brand_id, name)`) y a una categoría.
 - En el formulario, **cascada**: categoría → marca (filtrada a marcas con modelos de esa categoría) → modelo (filtrado por marca+categoría). Validado en Request.
 - CRUD admin: `Admin/BrandController`, `Admin/EquipmentModelController`, `Admin/EquipmentCategoryController` (permisos `brands`, `equipment_models`, `equipment_categories`, solo admin). Semilla inicial en `EquipmentCatalogSeeder`.
 

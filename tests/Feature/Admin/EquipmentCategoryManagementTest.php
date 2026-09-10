@@ -47,7 +47,6 @@ class EquipmentCategoryManagementTest extends TestCase
             ->post(route('admin.equipment_categories.store'), [
                 'name' => 'Compresor',
                 'risk_class' => 'IIA',
-                'maintenance_frequency' => 'quarterly',
                 'voltage' => '110V',
                 'specialties' => ['Prevención'],
                 'maintenance_tasks' => ['Prueba de fugas', 'Limpieza de filtros'],

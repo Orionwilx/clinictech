@@ -92,6 +92,9 @@ class ClientManagementTest extends TestCase
         $this->assertSame('contacto@clinicanorte.com', $client->user->email);
         $this->assertSame('clinica_norte', $client->user->name);
         $this->assertTrue($client->user->hasRole('cliente'));
+
+        // Copia cifrada de la contraseña consultable por el admin
+        $this->assertSame('password123', $client->access_password);
     }
 
     public function test_client_hub_shows_equipment_with_pending_work_orders(): void

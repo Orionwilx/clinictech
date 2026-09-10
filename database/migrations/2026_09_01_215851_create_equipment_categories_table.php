@@ -18,12 +18,9 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->text('description')->nullable();
 
-            // Plantilla — Identificación
+            // Plantilla — Identificación (fabricante/país viven en la marca)
             $table->string('risk_class')->nullable();            // INVIMA (I/IIA/IIB/III)
             $table->json('specialties')->nullable();             // nombres del catálogo specialties
-            $table->string('manufacturer')->nullable();
-            $table->string('origin_country')->nullable();
-            $table->string('maintenance_frequency')->nullable();
 
             // Plantilla — Características técnicas
             $table->string('voltage')->nullable();
@@ -35,8 +32,6 @@ return new class extends Migration
             $table->string('weight')->nullable();
             $table->string('speed')->nullable();
             $table->string('predominant_technology')->nullable();
-            $table->text('technical_observations')->nullable();
-            $table->text('general_observations')->nullable();
 
             // Plantilla — Mantenimiento / accesorios
             $table->json('maintenance_tasks')->nullable();       // nombres del catálogo maintenance_tasks

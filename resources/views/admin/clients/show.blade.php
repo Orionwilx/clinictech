@@ -73,6 +73,28 @@
                             <dd class="text-sm text-gray-900 col-span-2">{{ $value }}</dd>
                         </div>
                     @endforeach
+
+                    {{-- Credenciales de acceso (solo admin) --}}
+                    @can('update clients')
+                        <div class="py-3 grid grid-cols-3 gap-4">
+                            <dt class="text-sm font-medium text-gray-500">Login (correo)</dt>
+                            <dd class="text-sm text-gray-900 col-span-2">{{ optional($client->user)->email ?: '—' }}</dd>
+                        </div>
+                        <div class="py-3 grid grid-cols-3 gap-4" x-data="{ visible: false }">
+                            <dt class="text-sm font-medium text-gray-500">Contraseña</dt>
+                            <dd class="text-sm text-gray-900 col-span-2 flex items-center gap-3">
+                                @if ($client->access_password)
+                                    <span x-show="!visible" class="tracking-widest select-none">••••••••</span>
+                                    <span x-show="visible" x-cloak class="font-mono">{{ $client->access_password }}</span>
+                                    <button type="button" @click="visible = !visible"
+                                            class="text-xs font-semibold text-brand-700 hover:text-brand-900"
+                                            x-text="visible ? 'Ocultar' : 'Mostrar'"></button>
+                                @else
+                                    <span class="text-gray-400">No registrada — asígnala editando el cliente.</span>
+                                @endif
+                            </dd>
+                        </div>
+                    @endcan
                 </dl>
             </div>
 
@@ -244,7 +266,6 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marca / Modelo</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N. Serie</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Obs. técnicas</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">OT pendientes</th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Opciones</th>
                             </tr>
@@ -267,7 +288,6 @@
                                             'bg-red-100 text-red-800' => $item->status === 'retired',
                                         ])>{{ $item->statusLabel() }}</span>
                                     </td>
-                                    <td class="px-4 py-4 text-sm text-gray-500 max-w-xs truncate" title="{{ $item->technical_observations }}">{{ $item->technical_observations ?: '—' }}</td>
                                     <td class="px-4 py-4 text-sm">
                                         <span class="inline-flex items-center justify-center rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-semibold">{{ $item->pending_count }}</span>
                                         <div class="mt-1 space-y-0.5">

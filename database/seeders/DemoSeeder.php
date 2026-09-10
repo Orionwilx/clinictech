@@ -132,7 +132,7 @@ class DemoSeeder extends Seeder
             'warranty_expiry' => '2026-03-10', 'warranty_status' => 'en_garantia',
             'risk_class' => 'IIB', 'invima_registry' => 'INVIMA-2023EBC-0012345',
             'manufacturer' => 'Philips Medical', 'origin_country' => 'Países Bajos',
-            'maintenance_frequency' => 'quarterly', 'acquisition_type' => 'purchase',
+            'acquisition_type' => 'purchase',
             'voltage' => '110-240V', 'power' => '150W',
             'specialties' => ['Prevención', 'Tratamiento'],
             'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma', 'Revisión de conectores', 'Limpieza de tarjetas'],
@@ -146,7 +146,6 @@ class DemoSeeder extends Seeder
             ...$catalog('Dräger', 'Evita V300'),
             'serial_number' => 'SN-VLL-0002', 'location' => 'Sede Principal - Cali',
             'purchase_date' => '2022-07-01', 'warranty_expiry' => '2025-07-01',
-            'maintenance_frequency' => 'quarterly',
             'maintenance_tasks' => ['Prueba de funcionamiento', 'Limpieza de filtros', 'Revisión de conectores'],
             'status' => 'maintenance',
         ]);
@@ -157,7 +156,6 @@ class DemoSeeder extends Seeder
             ...$catalog('Zoll', 'R Series'),
             'serial_number' => 'SN-NOR-0001', 'location' => 'Sede Norte - Barranquilla',
             'purchase_date' => '2021-11-20', 'warranty_expiry' => '2024-11-20',
-            'maintenance_frequency' => 'biannual',
             'status' => 'active',
         ]);
 
@@ -176,7 +174,6 @@ class DemoSeeder extends Seeder
             ...$catalog('GE Healthcare', 'Logiq E10'),
             'serial_number' => 'SN-IMG-0001', 'location' => 'Sede Medellín',
             'purchase_date' => '2024-01-05', 'warranty_expiry' => '2027-01-05',
-            'maintenance_frequency' => 'annual',
             'status' => 'active',
         ]);
 

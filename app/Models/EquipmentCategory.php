@@ -15,12 +15,9 @@ class EquipmentCategory extends Model
     protected $fillable = [
         'name',
         'description',
-        // Plantilla — Identificación
+        // Plantilla — Identificación (fabricante/país viven en la marca)
         'risk_class',
         'specialties',
-        'manufacturer',
-        'origin_country',
-        'maintenance_frequency',
         // Plantilla — Características técnicas
         'voltage',
         'amperage',
@@ -31,8 +28,6 @@ class EquipmentCategory extends Model
         'weight',
         'speed',
         'predominant_technology',
-        'technical_observations',
-        'general_observations',
         // Plantilla — Mantenimiento / accesorios
         'maintenance_tasks',
         'accessories',
@@ -68,9 +63,6 @@ class EquipmentCategory extends Model
             'name' => $this->name,
             'risk_class' => $this->risk_class,
             'specialties' => $this->specialties ?? [],
-            'manufacturer' => $this->manufacturer,
-            'origin_country' => $this->origin_country,
-            'maintenance_frequency' => $this->maintenance_frequency,
             'voltage' => $this->voltage,
             'amperage' => $this->amperage,
             'current' => $this->current,
@@ -80,8 +72,6 @@ class EquipmentCategory extends Model
             'weight' => $this->weight,
             'speed' => $this->speed,
             'predominant_technology' => $this->predominant_technology,
-            'technical_observations' => $this->technical_observations,
-            'general_observations' => $this->general_observations,
             'maintenance_tasks' => $this->maintenance_tasks ?? [],
             'accessories' => $this->accessories ?? [],
             'components' => $this->components,

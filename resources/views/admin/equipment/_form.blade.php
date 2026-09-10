@@ -11,11 +11,11 @@
         brand: '{{ old('brand_id', $equipment->brand_id ?? '') }}',
         model: '{{ old('model_id', $equipment->model_id ?? '') }}',
         categories: {{ Illuminate\Support\Js::from($categories) }},
-        brandNames: {{ Illuminate\Support\Js::from($brands) }},
+        brands: {{ Illuminate\Support\Js::from($brands) }},
         models: {{ Illuminate\Support\Js::from($models->map->only('id', 'name', 'brand_id', 'category_id')) }},
         get filteredBrands() {
             const ids = [...new Set(this.models.filter(m => String(m.category_id) === String(this.category)).map(m => m.brand_id))];
-            return ids.map(id => ({ id, name: this.brandNames[id] })).filter(b => b.name).sort((a, b) => a.name.localeCompare(b.name));
+            return this.brands.filter(b => ids.includes(b.id));
         },
         get filteredModels() {
             return this.models.filter(m => String(m.brand_id) === String(this.brand) && String(m.category_id) === String(this.category));
@@ -27,13 +27,20 @@
             if (this.editing && !confirm('¿Aplicar la plantilla de esta categoría al equipo? Se reemplazarán los valores prediligenciados.')) return;
             this.applyTemplate(t);
         },
+        onBrandChange() {
+            this.model = '';
+            const b = this.brands.find(x => String(x.id) === String(this.brand));
+            if (!b) return;
+            // Fabricante y país se autodiligencian desde la marca (snapshot editable).
+            document.getElementById('manufacturer').value = b.manufacturer ?? '';
+            document.getElementById('origin_country').value = b.origin_country ?? '';
+        },
         applyTemplate(t) {
             const nameInput = document.getElementById('name');
             if (nameInput && (!this.editing || !nameInput.value)) nameInput.value = t.name ?? '';
-            ['risk_class', 'maintenance_frequency', 'manufacturer', 'origin_country',
+            ['risk_class',
              'voltage', 'amperage', 'current', 'power', 'temperature', 'pressure', 'weight', 'speed',
-             'predominant_technology', 'technical_observations', 'general_observations',
-             'components', 'default_ot_observations'].forEach(f => {
+             'predominant_technology', 'components', 'default_ot_observations'].forEach(f => {
                 const el = document.getElementById(f);
                 if (el) el.value = t[f] ?? '';
             });
@@ -98,7 +105,7 @@
             </div>
             <div>
                 <x-input-label for="brand_id" :value="__('Marca')" />
-                <select id="brand_id" name="brand_id" x-model="brand" @change="model = ''" :disabled="!category"
+                <select id="brand_id" name="brand_id" x-model="brand" @change="onBrandChange()" :disabled="!category"
                         class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
                     <option value="">{{ __('— Selecciona una categoría primero —') }}</option>
                     <template x-for="b in filteredBrands" :key="b.id">
@@ -134,17 +141,6 @@
                     @endforeach
                 </select>
                 <x-input-error :messages="$errors->get('risk_class')" class="mt-2" />
-            </div>
-            <div>
-                <x-input-label for="maintenance_frequency" :value="__('Periodicidad de mantenimiento')" />
-                <select id="maintenance_frequency" name="maintenance_frequency"
-                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-                    <option value="">— Selecciona —</option>
-                    @foreach (\App\Models\Equipment::FREQUENCIES as $value => $label)
-                        <option value="{{ $value }}" @selected(old('maintenance_frequency', $equipment->maintenance_frequency ?? '') === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('maintenance_frequency')" class="mt-2" />
             </div>
             <div class="sm:col-span-3">
                 <x-input-label :value="__('Clasificación por especialidad')" />
@@ -264,18 +260,6 @@
                     <x-input-error :messages="$errors->get($field)" class="mt-2" />
                 </div>
             @endforeach
-            <div class="sm:col-span-3">
-                <x-input-label for="technical_observations" :value="__('Observaciones técnicas')" />
-                <textarea id="technical_observations" name="technical_observations" rows="2"
-                          class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('technical_observations', $equipment->technical_observations ?? '') }}</textarea>
-                <x-input-error :messages="$errors->get('technical_observations')" class="mt-2" />
-            </div>
-            <div class="sm:col-span-3">
-                <x-input-label for="general_observations" :value="__('Observaciones generales')" />
-                <textarea id="general_observations" name="general_observations" rows="2"
-                          class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('general_observations', $equipment->general_observations ?? '') }}</textarea>
-                <x-input-error :messages="$errors->get('general_observations')" class="mt-2" />
-            </div>
         </div>
     </div>
 

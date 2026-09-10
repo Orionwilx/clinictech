@@ -35,6 +35,7 @@ class ClientService
                 'whatsapp' => $data['whatsapp'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'is_active' => $data['is_active'] ?? true,
+                'access_password' => $data['password'],
                 'user_id' => $user->id,
             ]);
         });
@@ -68,6 +69,7 @@ class ClientService
 
                 if (! empty($data['password'])) {
                     $client->user->password = Hash::make($data['password']);
+                    $client->update(['access_password' => $data['password']]);
                 }
 
                 $client->user->save();

@@ -19,6 +19,8 @@ class StoreBrandRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255', 'unique:brands,name'],
+            'manufacturer' => ['nullable', 'string', 'max:255'],
+            'origin_country' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

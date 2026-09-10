@@ -36,6 +36,8 @@ Subdivisiones internas del cliente (UCI, Urgencias, Laboratorio…). `Area belon
 ## Login del cliente (cuenta vinculada)
 - Al crear un `Client` se crea también un `User` con rol `cliente`, enlazado por `user_id`.
 - Mapeo del formulario: `usuario` → `User.name` · `correo` → `User.email` (login) · `contraseña` → `User.password` (hasheada).
+- **Credenciales visibles para el admin**: `clients.access_password` guarda una **copia cifrada reversible** (cast `encrypted`, Laravel Crypt) de la contraseña; se muestra en la pestaña «Datos» de la ficha con botón Mostrar/Ocultar (`@can('update clients')`). Se sincroniza al crear y al cambiar la contraseña desde el form (`ClientService`). El login sigue validando contra el hash de `users.password`.
+- **Cuenta inactiva**: un usuario con `is_active = false` que intente entrar (o cuya sesión esté abierta) es expulsado por el middleware global `EnsureUserIsActive` a la pantalla `/cuenta-inactiva` («contacta con el administrador»).
 - Login por **email** (estándar Laravel). Login por username queda para la fase Panel Cliente (§5.7).
 - Relación: `Client belongsTo User` · `User hasOne Client`.
 

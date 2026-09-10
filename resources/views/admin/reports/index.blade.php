@@ -225,11 +225,11 @@
                                 ])>{{ $report->statusLabel() }}</span>
                             </x-td>
                             <x-td :title="optional($report->generator)->name" muted>{{ optional($report->generator)->name ?? '—' }}</x-td>
-                            <x-td muted>{{ $report->created_at->format('d/m/Y H:i') }}</x-td>
+                            <x-td muted>{{ $report->created_at->format('d/m/Y') }}</x-td>
                             <x-td muted>{{ $report->durationLabel() }}</x-td>
                             <x-td muted
                                   :title="optional($report->downloader)->name"
-                                  :sub="$report->downloader ? $report->downloaded_at->format('d/m/Y H:i') : null">{{ optional($report->downloader)->name ?? '—' }}</x-td>
+                                  :sub="$report->downloader ? $report->downloaded_at->format('d/m/Y') : null">{{ optional($report->downloader)->name ?? '—' }}</x-td>
                             <x-td-actions>
                                 @if ($report->status === 'done')
                                     <a href="{{ route('admin.reports.download', $report) }}"

@@ -19,10 +19,10 @@
                         'Descripción' => $workOrder->description ?: '—',
                         'Diagnóstico' => $workOrder->diagnosis ?: '—',
                         'Actividades realizadas' => $workOrder->work_performed ?: '—',
-                        'Fecha programada' => optional($workOrder->scheduled_at)->format('Y-m-d H:i') ?: '—',
-                        'Inicio' => optional($workOrder->started_at)->format('Y-m-d H:i') ?: '—',
-                        'Completada' => optional($workOrder->completed_at)->format('Y-m-d H:i') ?: '—',
-                        'Cerrada' => optional($workOrder->closed_at)->format('Y-m-d H:i') ?: '—',
+                        'Fecha programada' => optional($workOrder->scheduled_at)->format('Y-m-d') ?: '—',
+                        'Inicio' => optional($workOrder->started_at)->format('Y-m-d') ?: '—',
+                        'Completada' => optional($workOrder->completed_at)->format('Y-m-d') ?: '—',
+                        'Cerrada' => optional($workOrder->closed_at)->format('Y-m-d') ?: '—',
                     ] as $label => $value)
                         <div class="py-3 grid grid-cols-3 gap-4">
                             <dt class="text-sm font-medium text-gray-500">{{ $label }}</dt>
@@ -64,6 +64,19 @@
                     <div class="mt-6">
                         <h3 class="text-sm font-semibold text-gray-900 mb-1">Observaciones adicionales</h3>
                         <p class="text-sm text-gray-700 whitespace-pre-line">{{ $workOrder->additional_observations }}</p>
+                    </div>
+                @endif
+
+                @if ($workOrder->photos->isNotEmpty())
+                    <div class="mt-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-2">Evidencias fotográficas</h3>
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                            @foreach ($workOrder->photos as $photo)
+                                <a href="{{ $photo->url() }}" target="_blank">
+                                    <img src="{{ $photo->url() }}" alt="{{ $photo->original_name }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
                 @endif
 

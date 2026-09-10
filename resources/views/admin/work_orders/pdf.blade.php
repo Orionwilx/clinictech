@@ -132,12 +132,12 @@
                             </tr>
                             <tr>
                                 <td class="label">Fecha programada</td>
-                                <td class="value">{{ optional($workOrder->scheduled_at)->format('d/m/Y H:i') ?: '—' }}</td>
+                                <td class="value">{{ optional($workOrder->scheduled_at)->format('d/m/Y') ?: '—' }}</td>
                             </tr>
                             @if ($workOrder->completed_at)
                             <tr>
                                 <td class="label">Fecha ejecución</td>
-                                <td class="value">{{ $workOrder->completed_at->format('d/m/Y H:i') }}</td>
+                                <td class="value">{{ $workOrder->completed_at->format('d/m/Y') }}</td>
                             </tr>
                             @endif
                         </table>
@@ -299,6 +299,27 @@
     </div>
     @endif
 
+    {{-- EVIDENCIAS FOTOGRÁFICAS --}}
+    @if ($workOrder->photos->isNotEmpty())
+    <div class="section">
+        <div class="section-title">Evidencias fotográficas</div>
+        <table style="width:100%; border-collapse:collapse;">
+            @foreach ($workOrder->photos->chunk(3) as $row)
+                <tr>
+                    @foreach ($row as $photo)
+                        <td style="width:33%; padding:4px; text-align:center; vertical-align:top;">
+                            <img src="{{ $photo->absolutePath() }}" style="max-width:100%; max-height:160px; border:1px solid #e5e7eb;">
+                        </td>
+                    @endforeach
+                    @for ($i = $row->count(); $i < 3; $i++)
+                        <td style="width:33%;"></td>
+                    @endfor
+                </tr>
+            @endforeach
+        </table>
+    </div>
+    @endif
+
     {{-- FIRMAS --}}
     <div class="signatures">
         <table class="sig-table">
@@ -324,7 +345,7 @@
 
     {{-- PIE DE PÁGINA --}}
     <div class="footer">
-        Documento generado el {{ now()->format('d/m/Y H:i') }} &mdash; {{ config('app.name') }}
+        Documento generado el {{ now()->format('d/m/Y') }} &mdash; {{ config('app.name') }}
     </div>
 
 </div>

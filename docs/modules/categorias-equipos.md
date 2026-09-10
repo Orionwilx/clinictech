@@ -17,13 +17,9 @@
 | **Plantilla — Identificación** | | | |
 | risk_class | string | nullable, in:RISK_CLASSES | Riesgo INVIMA por defecto |
 | specialties | json (array de strings) | nullable | Nombres de especialidades que aplican |
-| manufacturer | string | nullable | Fabricante por defecto |
-| origin_country | string | nullable | País de origen por defecto |
-| maintenance_frequency | string | nullable, in:FREQUENCIES | Periodicidad por defecto |
 | **Plantilla — Características técnicas** | | | |
 | voltage/amperage/current/power/temperature/pressure/weight/speed | string | nullable | Valores por defecto (campos fijos) |
 | predominant_technology | string | nullable | |
-| technical_observations / general_observations | text | nullable | |
 | **Plantilla — Mantenimiento / accesorios** | | | |
 | maintenance_tasks | json (array de strings) | nullable | Nombres de subtareas que aplican |
 | accessories | json (array de strings) | nullable | Nombres de accesorios que aplican |
@@ -32,6 +28,7 @@
 
 - Sin soft delete. **No se puede eliminar** una categoría con modelos asociados (`restrictOnDelete`); en equipos la FK es `nullOnDelete` (el equipo conserva su snapshot).
 - NO incluye datos únicos de la unidad: serial, registro INVIMA, fechas, garantía, adquisición, cliente/área/sede, estado, notas.
+- NO incluye **fabricante ni país de origen**: viven en la **marca** (`brands.manufacturer` / `brands.origin_country`) y se autodiligencian al elegirla. Tampoco periodicidad ni observaciones técnicas/generales (eliminadas del dominio de equipos).
 
 ### Catálogos de opciones (configurables por admin)
 

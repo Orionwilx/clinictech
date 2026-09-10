@@ -44,17 +44,6 @@ class Equipment extends Model
     ];
 
     /**
-     * Periodicidad de mantenimiento.
-     */
-    public const FREQUENCIES = [
-        'monthly' => 'Mensual',
-        'bimonthly' => 'Bimestral',
-        'quarterly' => 'Trimestral',
-        'biannual' => 'Semestral',
-        'annual' => 'Anual',
-    ];
-
-    /**
      * Tipo de adquisición.
      */
     public const ACQUISITION_TYPES = [
@@ -86,7 +75,6 @@ class Equipment extends Model
         'invima_registry',
         'manufacturer',
         'origin_country',
-        'maintenance_frequency',
         'acquisition_type',
         // Características técnicas
         'voltage',
@@ -98,8 +86,6 @@ class Equipment extends Model
         'weight',
         'speed',
         'predominant_technology',
-        'technical_observations',
-        'general_observations',
         // Plantilla de mantenimiento / accesorios
         'maintenance_tasks',
         'accessories',
@@ -165,11 +151,6 @@ class Equipment extends Model
     public function riskClassLabel(): ?string
     {
         return self::RISK_CLASSES[$this->risk_class] ?? $this->risk_class;
-    }
-
-    public function frequencyLabel(): ?string
-    {
-        return self::FREQUENCIES[$this->maintenance_frequency] ?? $this->maintenance_frequency;
     }
 
     public function acquisitionTypeLabel(): ?string

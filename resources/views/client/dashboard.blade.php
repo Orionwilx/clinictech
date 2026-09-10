@@ -81,27 +81,6 @@
                 </div>
             @endif
 
-            {{-- Equipos con mantenimiento vencido --}}
-            @if ($overdue->count() > 0)
-                <div class="bg-red-50 border border-red-200 shadow-sm sm:rounded-lg p-6">
-                    <h3 class="font-semibold text-red-800 mb-3">Equipos con mantenimiento vencido</h3>
-                    <ul class="divide-y divide-red-100">
-                        @foreach ($overdue as $eq)
-                            <li class="py-2 flex items-center justify-between gap-4">
-                                <div>
-                                    <a href="{{ route('client.equipment.show', $eq) }}"
-                                       class="text-sm font-medium text-red-700 hover:underline">{{ $eq->name }}</a>
-                                    <p class="text-xs text-red-500">Frecuencia: {{ $eq->frequencyLabel() }}</p>
-                                </div>
-                                <span class="text-xs text-red-500">
-                                    Última preventiva: {{ optional(optional($eq->workOrders->first())->created_at)->format('Y-m-d') ?: 'Nunca' }}
-                                </span>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
             {{-- Accesos rápidos --}}
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 @foreach ([

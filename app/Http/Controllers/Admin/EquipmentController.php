@@ -14,9 +14,11 @@ use App\Models\EquipmentCategory;
 use App\Models\EquipmentModel;
 use App\Models\MaintenanceTask;
 use App\Models\Specialty;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class EquipmentController extends Controller
 {
@@ -74,6 +76,26 @@ class EquipmentController extends Controller
         return view('admin.equipment.show', compact('equipment'));
     }
 
+    /**
+     * Hoja de vida del equipo en PDF: ficha técnica completa + historial de OT.
+     */
+    public function pdf(Equipment $equipment): Response
+    {
+        $this->authorize('view equipment');
+
+        $equipment->load([
+            'client', 'area', 'category', 'brand', 'model',
+            'workOrders' => fn ($q) => $q->with('technician')->latest(),
+        ]);
+
+        $pdf = Pdf::loadView('admin.equipment.pdf', [
+            'equipment' => $equipment,
+            'logoBase64' => $equipment->client?->logoBase64(),
+        ])->setPaper('A4', 'portrait');
+
+        return $pdf->download("hoja-de-vida-{$equipment->serial_number}.pdf");
+    }
+
     public function edit(Equipment $equipment): View
     {
         $this->authorize('update equipment');
@@ -122,7 +144,8 @@ class EquipmentController extends Controller
         return [
             'clients' => Client::orderBy('name')->pluck('name', 'id'),
             'areas' => Area::orderBy('name')->get(['id', 'name', 'client_id']),
-            'brands' => Brand::orderBy('name')->pluck('name', 'id'),
+            // Con fabricante/país para autodiligenciar al elegir la marca.
+            'brands' => Brand::orderBy('name')->get(['id', 'name', 'manufacturer', 'origin_country']),
             'models' => EquipmentModel::orderBy('name')->get(['id', 'name', 'brand_id', 'category_id']),
             // Plantillas por categoría, embebidas para el prediligenciado (Alpine).
             'categories' => EquipmentCategory::orderBy('name')->get()

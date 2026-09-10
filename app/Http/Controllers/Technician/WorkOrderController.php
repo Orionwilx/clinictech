@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Technician;
 use App\Http\Requests\Technician\UpdateWorkOrderRequest;
 use App\Models\WorkOrder;
 use App\Services\WorkOrderService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -36,7 +37,7 @@ class WorkOrderController extends TechnicianPanelController
     {
         abort_if($workOrder->technician_id !== $this->technician()->id, 403);
 
-        $workOrder->load('client', 'equipment.brand', 'equipment.model');
+        $workOrder->load('client', 'equipment.brand', 'equipment.model', 'photos');
 
         return view('technician.work_orders.show', compact('workOrder'));
     }
@@ -52,7 +53,7 @@ class WorkOrderController extends TechnicianPanelController
             ->with('status', 'Formulario enviado a revisión del administrador.');
     }
 
-    public function update(UpdateWorkOrderRequest $request, WorkOrder $workOrder): RedirectResponse
+    public function update(UpdateWorkOrderRequest $request, WorkOrder $workOrder): RedirectResponse|JsonResponse
     {
         $validated = $request->validated();
 
@@ -63,6 +64,11 @@ class WorkOrderController extends TechnicianPanelController
         }
 
         $workOrder->update($validated);
+
+        // Autoguardado del borrador (AJAX desde el formulario del técnico).
+        if ($request->expectsJson()) {
+            return response()->json(['saved_at' => now()->toIso8601String()]);
+        }
 
         return redirect()->route('technician.work_orders.show', $workOrder)
             ->with('status', 'Formulario guardado.');

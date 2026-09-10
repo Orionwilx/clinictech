@@ -90,6 +90,18 @@ El índice de OT es un **centro de operación** orientado a reducir clics del ad
 
 **Servicio** (`WorkOrderService`): `advanceForAdmin` / `regressForAdmin` (despachan la transición correcta según estado), `assignTechnician` (ajusta `open⇆assigned` y notifica) y `batchForAdmin` (itera y devuelve cuántas afectó; omite las que no aplican). **Rutas**: `advance`, `regress`, `assign` (por OT) y `batch` (colección, declarada **antes** del `Route::resource` para no colisionar con `{work_order}`).
 
+## Evidencias fotográficas (técnico)
+- `WorkOrderPhoto` (tabla `work_order_photos`: `work_order_id`, `path`, `original_name`, `size`) · `WorkOrder hasMany photos`.
+- El técnico dueño de la OT (estado `assigned`/`in_progress`) sube fotos desde el diligenciamiento; **subida AJAX inmediata** (rutas `technician.work_orders.photos.{store,destroy}`) — no dependen del envío del formulario, así no se pierden con mala conexión.
+- **Compresión en servidor** (`ImageService`, GD): lado mayor ≤ 1600 px, re-codificado JPEG calidad 72, orientación EXIF corregida, transparencias aplanadas en blanco. Límite de subida 15 MB.
+- Galería visible en el show del admin, del cliente (cuando la OT le es visible) y en el **PDF de la OT**.
+
+## Borrador con autoguardado (técnico)
+El formulario de diligenciamiento se **autoguarda** cada 20 s cuando hay cambios (fetch `PUT` con `Accept: application/json`; `Technician\WorkOrderController::update` responde JSON `saved_at`). Indicador «✓ Borrador guardado» / aviso de sin conexión. El botón «Guardar borrador» sigue disponible.
+
+## Fechas sin horas (regla de producto)
+Todas las vistas de producto (admin/cliente/técnico) muestran **solo fechas, nunca horas** (`Y-m-d` / `d/m/Y`); `scheduled_at` se captura con input `date`. Los timestamps completos se conservan en BD para auditoría de los devs.
+
 ## Pendiente (iteraciones futuras)
-- Adjuntos/evidencias de archivo (§5.2).
+- Adjuntos de archivo no fotográficos (§5.2).
 - Integración con hoja de vida de equipos y con Mantenimientos.

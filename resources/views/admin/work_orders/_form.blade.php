@@ -99,8 +99,8 @@
 
     <div>
         <x-input-label for="scheduled_at" :value="__('Fecha programada')" />
-        <x-text-input id="scheduled_at" name="scheduled_at" type="datetime-local" class="mt-1 block w-full"
-                      :value="old('scheduled_at', optional($workOrder->scheduled_at ?? null)->format('Y-m-d\TH:i'))" />
+        <x-text-input id="scheduled_at" name="scheduled_at" type="date" class="mt-1 block w-full"
+                      :value="old('scheduled_at', optional($workOrder->scheduled_at ?? null)->format('Y-m-d'))" />
         <x-input-error :messages="$errors->get('scheduled_at')" class="mt-2" />
     </div>
 

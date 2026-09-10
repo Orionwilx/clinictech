@@ -2,6 +2,10 @@
     <x-slot name="header">
         <x-page-header title="Hoja de vida del equipo" :breadcrumbs="[['label' => 'Equipos', 'href' => route('admin.equipment.index')], ['label' => $equipment->name]]">
             <x-slot:actions>
+                <a href="{{ route('admin.equipment.pdf', $equipment) }}" target="_blank"
+                   class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                    {{ __('Hoja de vida (PDF)') }}
+                </a>
                 @can('update equipment')
                     <a href="{{ route('admin.equipment.edit', $equipment) }}"
                        class="inline-flex items-center px-4 py-2 bg-brand-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-brand-700">
@@ -58,7 +62,6 @@
                         'Registro INVIMA' => $equipment->invima_registry ?: '—',
                         'Fabricante' => $equipment->manufacturer ?: '—',
                         'País de origen' => $equipment->origin_country ?: '—',
-                        'Periodicidad' => $equipment->frequencyLabel() ?: '—',
                         'Tipo de adquisición' => $equipment->acquisitionTypeLabel() ?: '—',
                         'Especialidad' => $equipment->specialties ? implode(', ', $equipment->specialties) : '—',
                     ] as $label => $value)
@@ -88,7 +91,7 @@
                 'Velocidad' => $equipment->speed,
                 'Tecnología predominante' => $equipment->predominant_technology,
             ]))
-            @if ($techFields || $equipment->technical_observations || $equipment->general_observations)
+            @if ($techFields)
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="font-semibold text-gray-900 mb-4">Características técnicas</h3>
                     <dl class="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
@@ -99,12 +102,6 @@
                             </div>
                         @endforeach
                     </dl>
-                    @if ($equipment->technical_observations)
-                        <p class="text-sm text-gray-700 mt-4"><span class="font-medium">Obs. técnicas:</span> {{ $equipment->technical_observations }}</p>
-                    @endif
-                    @if ($equipment->general_observations)
-                        <p class="text-sm text-gray-700 mt-1"><span class="font-medium">Obs. generales:</span> {{ $equipment->general_observations }}</p>
-                    @endif
                 </div>
             @endif
 

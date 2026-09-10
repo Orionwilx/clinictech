@@ -35,9 +35,8 @@ return new class extends Migration
             $table->string('risk_class')->nullable();        // clasificación INVIMA (I/IIA/IIB/III)
             $table->json('specialties')->nullable();         // clasificación por especialidad (multi)
             $table->string('invima_registry')->nullable();   // registro INVIMA
-            $table->string('manufacturer')->nullable();      // fabricante
-            $table->string('origin_country')->nullable();    // país de origen
-            $table->string('maintenance_frequency')->nullable(); // periodicidad
+            $table->string('manufacturer')->nullable();      // fabricante (snapshot desde la marca)
+            $table->string('origin_country')->nullable();    // país de origen (snapshot desde la marca)
             $table->string('acquisition_type')->nullable();  // compra/comodato/leasing/donación
 
             // Características técnicas
@@ -50,8 +49,6 @@ return new class extends Migration
             $table->string('weight')->nullable();
             $table->string('speed')->nullable();
             $table->string('predominant_technology')->nullable();
-            $table->text('technical_observations')->nullable();
-            $table->text('general_observations')->nullable();
 
             // Plantilla de mantenimiento y accesorios (se ejecutan/marcan en cada OT)
             $table->json('maintenance_tasks')->nullable();   // subtareas que aplican al equipo

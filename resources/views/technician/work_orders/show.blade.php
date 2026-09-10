@@ -29,7 +29,7 @@
                         'Prioridad' => $workOrder->priorityLabel(),
                         'Cliente' => optional($workOrder->client)->name ?? '—',
                         'Equipo' => optional($workOrder->equipment)->name ?? '—',
-                        'Fecha programada' => optional($workOrder->scheduled_at)->format('Y-m-d H:i') ?: '—',
+                        'Fecha programada' => optional($workOrder->scheduled_at)->format('Y-m-d') ?: '—',
                     ] as $label => $value)
                         <div class="py-3 grid grid-cols-3 gap-4">
                             <dt class="text-sm font-medium text-gray-500">{{ $label }}</dt>
@@ -47,10 +47,39 @@
 
             {{-- Formulario de diligenciamiento (solo si está en progreso o asignado) --}}
             @if (in_array($workOrder->status, ['assigned', 'in_progress']))
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="font-semibold text-gray-900 mb-4">Diligenciar formulario de mantenimiento</h3>
+                <div class="bg-white shadow-sm sm:rounded-lg p-6"
+                     x-data="{
+                        dirty: false, saving: false, saved: false, error: false,
+                        init() {
+                            this.$refs.form.addEventListener('input', () => { this.dirty = true; this.saved = false; });
+                            setInterval(() => { if (this.dirty && !this.saving) this.autosave(); }, 20000);
+                        },
+                        async autosave() {
+                            this.saving = true; this.error = false;
+                            const data = new FormData(this.$refs.form);
+                            data.set('_method', 'PUT');
+                            try {
+                                const res = await fetch('{{ route('technician.work_orders.update', $workOrder) }}', {
+                                    method: 'POST',
+                                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                                    body: data,
+                                });
+                                if (!res.ok) throw new Error();
+                                this.dirty = false; this.saved = true;
+                            } catch { this.error = true; }
+                            this.saving = false;
+                        }
+                     }">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-gray-900">Diligenciar formulario de mantenimiento</h3>
+                        <span class="text-xs" x-cloak>
+                            <span x-show="saving" class="text-gray-400">Guardando borrador…</span>
+                            <span x-show="!saving && saved" class="text-green-600">✓ Borrador guardado</span>
+                            <span x-show="!saving && error" class="text-red-600">Sin conexión — tu avance se reintentará</span>
+                        </span>
+                    </div>
 
-                    <form method="POST" action="{{ route('technician.work_orders.update', $workOrder) }}">
+                    <form method="POST" action="{{ route('technician.work_orders.update', $workOrder) }}" x-ref="form">
                         @csrf @method('PUT')
 
                         <div class="space-y-4">
@@ -106,8 +135,77 @@
 
                         <div class="flex items-center gap-3 mt-6">
                             <x-primary-button>Guardar borrador</x-primary-button>
+                            <span class="text-xs text-gray-400">El borrador también se guarda automáticamente mientras escribes.</span>
                         </div>
                     </form>
+
+                    {{-- Evidencias fotográficas (subida inmediata, comprimidas en servidor) --}}
+                    <div class="mt-6 pt-4 border-t border-gray-100"
+                         x-data="{
+                            photos: {{ Illuminate\Support\Js::from($workOrder->photos->map(fn ($p) => ['id' => $p->id, 'url' => $p->url(), 'name' => $p->original_name])) }},
+                            uploading: 0, error: '',
+                            async upload(files) {
+                                this.error = '';
+                                for (const file of files) {
+                                    this.uploading++;
+                                    const data = new FormData();
+                                    data.append('photo', file);
+                                    try {
+                                        const res = await fetch('{{ route('technician.work_orders.photos.store', $workOrder) }}', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Accept': 'application/json',
+                                                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                            },
+                                            body: data,
+                                        });
+                                        if (res.status === 201) this.photos.push(await res.json());
+                                        else if (res.status === 422) this.error = Object.values((await res.json()).errors ?? {}).flat()[0] ?? 'Archivo inválido.';
+                                        else this.error = 'No se pudo subir la foto.';
+                                    } catch { this.error = 'Sin conexión: la foto no se subió, inténtalo de nuevo.'; }
+                                    this.uploading--;
+                                }
+                                this.$refs.fileInput.value = '';
+                            },
+                            async remove(photo) {
+                                if (!confirm('¿Eliminar esta foto?')) return;
+                                const res = await fetch(`{{ url('technician/work_orders/'.$workOrder->id.'/photos') }}/${photo.id}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                    },
+                                });
+                                if (res.ok) this.photos = this.photos.filter(p => p.id !== photo.id);
+                            }
+                         }">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs font-medium text-gray-500 uppercase">Evidencias fotográficas</p>
+                            <span class="text-xs text-gray-400" x-show="uploading > 0" x-cloak>Subiendo y comprimiendo…</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-3">Las fotos se suben y guardan al instante (se comprimen automáticamente); no se pierden aunque no envíes el formulario.</p>
+
+                        <div class="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3" x-show="photos.length" x-cloak>
+                            <template x-for="photo in photos" :key="photo.id">
+                                <div class="relative group">
+                                    <a :href="photo.url" target="_blank">
+                                        <img :src="photo.url" :alt="photo.name" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                    </a>
+                                    <button type="button" @click="remove(photo)"
+                                            class="absolute -top-2 -right-2 hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white text-xs shadow"
+                                            title="Eliminar foto">✕</button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <label class="inline-flex items-center gap-2 px-3 py-2 text-xs font-semibold text-brand-700 bg-brand-50 rounded-md hover:bg-brand-100 cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316ZM16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z"/></svg>
+                            Agregar fotos
+                            <input type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden"
+                                   x-ref="fileInput" @change="upload($event.target.files)">
+                        </label>
+                        <p class="mt-2 text-xs text-red-600" x-show="error" x-text="error" x-cloak></p>
+                    </div>
 
                     {{-- Botón enviar a revisión --}}
                     @if ($workOrder->status === 'in_progress')
@@ -142,6 +240,18 @@
                             @endif
                         @endforeach
                     </dl>
+                    @if ($workOrder->photos->isNotEmpty())
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <p class="text-xs font-medium text-gray-500 uppercase mb-2">Evidencias fotográficas</p>
+                            <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                                @foreach ($workOrder->photos as $photo)
+                                    <a href="{{ $photo->url() }}" target="_blank">
+                                        <img src="{{ $photo->url() }}" alt="{{ $photo->original_name }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                     <div class="mt-3 pt-3 border-t border-gray-100">
                         <span @class([
                             'inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold',

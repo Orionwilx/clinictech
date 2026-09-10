@@ -43,42 +43,60 @@ class EquipmentCatalogSeeder extends Seeder
      */
     private const CATEGORIES = [
         'Monitor de signos vitales' => [
-            'risk_class' => 'IIB', 'maintenance_frequency' => 'quarterly',
+            'risk_class' => 'IIB',
             'voltage' => '110-240V', 'power' => '150W',
             'specialties' => ['Prevención', 'Tratamiento'],
             'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma', 'Revisión de conectores', 'Limpieza de tarjetas'],
             'accessories' => ['Cable de AC', 'Sensor SpO2', 'Manguera NIBP', 'Brazalete', 'Batería'],
         ],
         'Ventilador mecánico' => [
-            'risk_class' => 'III', 'maintenance_frequency' => 'quarterly',
+            'risk_class' => 'III',
             'voltage' => '110-240V',
             'specialties' => ['Tratamiento'],
             'maintenance_tasks' => ['Prueba de funcionamiento', 'Limpieza de filtros', 'Prueba de fugas', 'Revisión de alarma'],
             'accessories' => ['Cable de AC', 'Sensor de oxígeno', 'Manguera de oxígeno', 'Manguera de aire', 'Batería'],
         ],
         'Desfibrilador' => [
-            'risk_class' => 'III', 'maintenance_frequency' => 'biannual',
+            'risk_class' => 'III',
             'specialties' => ['Tratamiento'],
             'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma', 'Ajuste sistema eléctrico'],
             'accessories' => ['Cable de AC', 'Pala EKG', 'Cable ECG', 'Batería'],
         ],
         'Bomba de infusión' => [
-            'risk_class' => 'IIB', 'maintenance_frequency' => 'biannual',
+            'risk_class' => 'IIB',
             'specialties' => ['Tratamiento'],
             'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma', 'Ajustes mecánicos'],
             'accessories' => ['Cable de AC', 'Batería'],
         ],
         'Ecógrafo' => [
-            'risk_class' => 'IIA', 'maintenance_frequency' => 'annual',
+            'risk_class' => 'IIA',
             'specialties' => ['Prevención', 'Análisis de laboratorio'],
             'maintenance_tasks' => ['Prueba de funcionamiento', 'Limpieza de tarjetas', 'Revisión panel de control'],
             'accessories' => ['Cable de AC', 'Transductor', 'Control'],
         ],
-        'Máquina de anestesia' => ['risk_class' => 'III', 'maintenance_frequency' => 'quarterly'],
-        'Incubadora' => ['risk_class' => 'IIB', 'maintenance_frequency' => 'quarterly'],
-        'Equipo de imagenología' => ['risk_class' => 'IIA', 'maintenance_frequency' => 'annual'],
-        'Máquina de diálisis' => ['risk_class' => 'III', 'maintenance_frequency' => 'quarterly'],
-        'Equipo quirúrgico' => ['risk_class' => 'IIB', 'maintenance_frequency' => 'biannual'],
+        'Máquina de anestesia' => ['risk_class' => 'III'],
+        'Incubadora' => ['risk_class' => 'IIB'],
+        'Equipo de imagenología' => ['risk_class' => 'IIA'],
+        'Máquina de diálisis' => ['risk_class' => 'III'],
+        'Equipo quirúrgico' => ['risk_class' => 'IIB'],
+    ];
+
+    /**
+     * Marca => [fabricante, país de origen] (autodiligenciados en el equipo).
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    private const BRAND_INFO = [
+        'Philips' => ['Philips Medical Systems', 'Países Bajos'],
+        'GE Healthcare' => ['GE Healthcare', 'Estados Unidos'],
+        'Dräger' => ['Drägerwerk AG', 'Alemania'],
+        'Mindray' => ['Mindray Bio-Medical', 'China'],
+        'Medtronic' => ['Medtronic plc', 'Irlanda'],
+        'B. Braun' => ['B. Braun Melsungen', 'Alemania'],
+        'Fresenius' => ['Fresenius Medical Care', 'Alemania'],
+        'Siemens Healthineers' => ['Siemens Healthineers', 'Alemania'],
+        'Zoll' => ['ZOLL Medical', 'Estados Unidos'],
+        'Nihon Kohden' => ['Nihon Kohden Corp.', 'Japón'],
     ];
 
     /**
@@ -151,7 +169,11 @@ class EquipmentCatalogSeeder extends Seeder
         }
 
         foreach (self::CATALOG as $brandName => $models) {
-            $brand = Brand::firstOrCreate(['name' => $brandName]);
+            [$manufacturer, $originCountry] = self::BRAND_INFO[$brandName] ?? [null, null];
+            $brand = Brand::firstOrCreate(['name' => $brandName], [
+                'manufacturer' => $manufacturer,
+                'origin_country' => $originCountry,
+            ]);
 
             foreach ($models as $modelName => $categoryName) {
                 EquipmentModel::firstOrCreate(

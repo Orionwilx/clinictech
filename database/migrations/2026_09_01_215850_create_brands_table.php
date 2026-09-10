@@ -11,6 +11,9 @@ return new class extends Migration
         Schema::create('brands', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
+            // Autodiligenciados en el equipo al elegir la marca (snapshot editable).
+            $table->string('manufacturer')->nullable();      // fabricante
+            $table->string('origin_country')->nullable();    // país de origen
             $table->timestamps();
         });
     }

@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('whatsapp')->nullable();
             $table->string('phone')->nullable();    // celular
             $table->boolean('is_active')->default(true);
+            // Copia cifrada (Crypt) de la contraseña de la cuenta, visible solo para admin.
+            $table->text('access_password')->nullable();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();

@@ -1,7 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Hoja de vida del equipo"
-            :breadcrumbs="[['label' => 'Panel', 'href' => route('client.dashboard')], ['label' => 'Equipos', 'href' => route('client.equipment.index')], ['label' => $equipment->name]]" />
+            :breadcrumbs="[['label' => 'Panel', 'href' => route('client.dashboard')], ['label' => 'Equipos', 'href' => route('client.equipment.index')], ['label' => $equipment->name]]">
+            <x-slot:actions>
+                <a href="{{ route('client.equipment.pdf', $equipment) }}" target="_blank"
+                   class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                    {{ __('Hoja de vida (PDF)') }}
+                </a>
+            </x-slot:actions>
+        </x-page-header>
     </x-slot>
 
     @php
@@ -42,7 +49,6 @@
                         'Registro INVIMA' => $equipment->invima_registry ?: '—',
                         'Fabricante' => $equipment->manufacturer ?: '—',
                         'País de origen' => $equipment->origin_country ?: '—',
-                        'Periodicidad' => $equipment->frequencyLabel() ?: '—',
                         'Especialidad' => $equipment->specialties ? implode(', ', $equipment->specialties) : '—',
                     ] as $label => $value)
                         <div>

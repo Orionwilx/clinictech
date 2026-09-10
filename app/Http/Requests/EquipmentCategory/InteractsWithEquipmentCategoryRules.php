@@ -16,13 +16,10 @@ trait InteractsWithEquipmentCategoryRules
     {
         return [
             'description' => ['nullable', 'string'],
-            // Identificación
+            // Identificación (fabricante/país viven en la marca)
             'risk_class' => ['nullable', Rule::in(array_keys(Equipment::RISK_CLASSES))],
             'specialties' => ['nullable', 'array'],
             'specialties.*' => ['string', 'max:255'],
-            'manufacturer' => ['nullable', 'string', 'max:255'],
-            'origin_country' => ['nullable', 'string', 'max:255'],
-            'maintenance_frequency' => ['nullable', Rule::in(array_keys(Equipment::FREQUENCIES))],
             // Características técnicas
             'voltage' => ['nullable', 'string', 'max:255'],
             'amperage' => ['nullable', 'string', 'max:255'],
@@ -33,8 +30,6 @@ trait InteractsWithEquipmentCategoryRules
             'weight' => ['nullable', 'string', 'max:255'],
             'speed' => ['nullable', 'string', 'max:255'],
             'predominant_technology' => ['nullable', 'string', 'max:255'],
-            'technical_observations' => ['nullable', 'string'],
-            'general_observations' => ['nullable', 'string'],
             // Mantenimiento / accesorios
             'maintenance_tasks' => ['nullable', 'array'],
             'maintenance_tasks.*' => ['string', 'max:255'],
