@@ -41,7 +41,7 @@ class ImageService
         imagedestroy($image);
 
         $path = trim($directory, '/').'/'.Str::uuid().'.jpg';
-        Storage::disk('public')->put($path, $binary);
+        Storage::disk('private')->put($path, $binary);
 
         return ['path' => $path, 'size' => strlen($binary)];
     }

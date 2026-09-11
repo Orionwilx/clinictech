@@ -260,7 +260,7 @@ class WorkOrderManagementTest extends TestCase
 
     public function test_admin_can_upload_and_delete_photo_on_a_work_order(): void
     {
-        Storage::fake('public');
+        Storage::fake('private');
         $order = WorkOrder::factory()->create();
 
         $response = $this->actingAs($this->admin())
@@ -271,15 +271,15 @@ class WorkOrderManagementTest extends TestCase
             ->assertJsonStructure(['id', 'url', 'name']);
 
         $photo = $order->photos()->firstOrFail();
-        Storage::disk('public')->assertExists($photo->path);
+        Storage::disk('private')->assertExists($photo->path);
         // Comprimida por ImageService.
-        [$width, $height] = getimagesizefromstring(Storage::disk('public')->get($photo->path));
+        [$width, $height] = getimagesizefromstring(Storage::disk('private')->get($photo->path));
         $this->assertLessThanOrEqual(1600, max($width, $height));
 
         $this->actingAs($this->admin())
             ->deleteJson(route('admin.work_orders.photos.destroy', [$order, $photo->id]))
             ->assertOk();
-        $this->assertDatabaseMissing('work_order_photos', ['id' => $photo->id]);
+        $this->assertDatabaseMissing('uploads', ['id' => $photo->id]);
     }
 
     public function test_client_cannot_upload_photo_to_work_order(): void

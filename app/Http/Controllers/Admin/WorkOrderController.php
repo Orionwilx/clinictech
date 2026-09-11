@@ -15,8 +15,8 @@ use App\Models\Client;
 use App\Models\Equipment;
 use App\Models\MaintenanceTask;
 use App\Models\Technician;
+use App\Models\Upload;
 use App\Models\WorkOrder;
-use App\Models\WorkOrderPhoto;
 use App\Services\ImageService;
 use App\Services\WorkOrderService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -24,7 +24,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class WorkOrderController extends Controller
@@ -139,10 +138,14 @@ class WorkOrderController extends Controller
         $file = $request->file('photo');
         $stored = $images->storeCompressed($file, "work_order_photos/{$workOrder->id}");
 
-        $photo = $workOrder->photos()->create([
+        $photo = $workOrder->uploads()->create([
+            'collection' => 'photo',
+            'disk' => 'private',
             'path' => $stored['path'],
             'original_name' => $file->getClientOriginalName(),
+            'mime_type' => 'image/jpeg',
             'size' => $stored['size'],
+            'uploaded_by' => auth()->id(),
         ]);
 
         return response()->json([
@@ -152,13 +155,12 @@ class WorkOrderController extends Controller
         ], 201);
     }
 
-    public function destroyPhoto(WorkOrder $workOrder, WorkOrderPhoto $photo): JsonResponse
+    public function destroyPhoto(WorkOrder $workOrder, Upload $photo): JsonResponse
     {
         $this->authorize('update work_orders');
-        abort_if($photo->work_order_id !== $workOrder->id, 404);
+        abort_if($photo->uploadable_id !== $workOrder->id, 404);
 
-        Storage::disk('public')->delete($photo->path);
-        $photo->delete();
+        $photo->purge();
 
         return response()->json(['deleted' => true]);
     }
@@ -167,21 +169,9 @@ class WorkOrderController extends Controller
     {
         $this->authorize('view work_orders');
 
-        $workOrder->load(['client', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician']);
+        $workOrder->load(['client.logo', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician']);
 
-        $logoBase64 = null;
-        if ($workOrder->client?->logo_path) {
-            $path = storage_path('app/public/'.$workOrder->client->logo_path);
-            if (file_exists($path)) {
-                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                $mime = match ($ext) {
-                    'png' => 'image/png',
-                    'gif' => 'image/gif',
-                    default => 'image/jpeg',
-                };
-                $logoBase64 = "data:{$mime};base64,".base64_encode(file_get_contents($path));
-            }
-        }
+        $logoBase64 = $workOrder->client?->logoBase64();
 
         $pdf = Pdf::loadView('admin.work_orders.pdf', compact('workOrder', 'logoBase64'))
             ->setPaper('A4', 'portrait');

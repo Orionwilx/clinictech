@@ -36,7 +36,7 @@ class WorkOrderPhotoTest extends TestCase
 
     public function test_technician_can_upload_photo_and_it_is_compressed(): void
     {
-        Storage::fake('public');
+        Storage::fake('private');
 
         $response = $this->actingAs($this->technician->user)
             ->postJson(route('technician.work_orders.photos.store', $this->workOrder), [
@@ -46,17 +46,17 @@ class WorkOrderPhotoTest extends TestCase
         $response->assertCreated()->assertJsonStructure(['id', 'url', 'name']);
 
         $photo = $this->workOrder->photos()->firstOrFail();
-        Storage::disk('public')->assertExists($photo->path);
+        Storage::disk('private')->assertExists($photo->path);
         $this->assertStringEndsWith('.jpg', $photo->path);
 
         // Comprimida: el lado mayor no supera 1600px.
-        [$width, $height] = getimagesizefromstring(Storage::disk('public')->get($photo->path));
+        [$width, $height] = getimagesizefromstring(Storage::disk('private')->get($photo->path));
         $this->assertLessThanOrEqual(1600, max($width, $height));
     }
 
     public function test_technician_cannot_upload_to_someone_elses_order(): void
     {
-        Storage::fake('public');
+        Storage::fake('private');
         $otherOrder = WorkOrder::factory()->create(['status' => 'in_progress']);
 
         $this->actingAs($this->technician->user)
@@ -68,16 +68,19 @@ class WorkOrderPhotoTest extends TestCase
 
     public function test_technician_can_delete_own_photo(): void
     {
-        Storage::fake('public');
-        Storage::disk('public')->put('work_order_photos/x.jpg', 'fake');
-        $photo = $this->workOrder->photos()->create(['path' => 'work_order_photos/x.jpg']);
+        Storage::fake('private');
+        Storage::disk('private')->put('work_order_photos/x.jpg', 'fake');
+        $photo = $this->workOrder->uploads()->create([
+            'collection' => 'photo', 'disk' => 'private',
+            'path' => 'work_order_photos/x.jpg', 'original_name' => 'x.jpg',
+        ]);
 
         $this->actingAs($this->technician->user)
             ->deleteJson(route('technician.work_orders.photos.destroy', [$this->workOrder, $photo]))
             ->assertOk();
 
-        $this->assertDatabaseMissing('work_order_photos', ['id' => $photo->id]);
-        Storage::disk('public')->assertMissing('work_order_photos/x.jpg');
+        $this->assertDatabaseMissing('uploads', ['id' => $photo->id]);
+        Storage::disk('private')->assertMissing('work_order_photos/x.jpg');
     }
 
     public function test_autosave_returns_json(): void

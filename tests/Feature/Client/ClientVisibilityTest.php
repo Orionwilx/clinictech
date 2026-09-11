@@ -35,7 +35,7 @@ class ClientVisibilityTest extends TestCase
         $user = User::factory()->create();
         $user->assignRole('cliente');
         $this->client = Client::factory()->create(['user_id' => $user->id]);
-        $this->equipment = Equipment::factory()->create(['client_id' => $this->client->id]);
+        $this->equipment = Equipment::factory()->create(['client_id' => $this->client->id, 'status' => 'active']);
 
         $this->visibleOrder = WorkOrder::factory()->create([
             'client_id' => $this->client->id,

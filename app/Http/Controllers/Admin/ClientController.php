@@ -10,7 +10,6 @@ use App\Models\WorkOrder;
 use App\Services\ClientService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ClientController extends Controller
@@ -24,17 +23,16 @@ class ClientController extends Controller
         $filters = $request->only(['search', 'status']);
 
         $clients = Client::withTrashed()
-            ->when($filters['search'] ?? null, fn ($q, $s) =>
-                $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
-                    ->orWhere('nit', 'like', "%$s%")
-                    ->orWhere('city', 'like', "%$s%"))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
+                ->orWhere('nit', 'like', "%$s%")
+                ->orWhere('city', 'like', "%$s%"))
             )
             ->when(isset($filters['status']), function ($q) use ($filters) {
                 match ($filters['status']) {
-                    'deleted'  => $q->onlyTrashed(),
+                    'deleted' => $q->onlyTrashed(),
                     'inactive' => $q->where('is_active', false),
-                    'active'   => $q->where('is_active', true),
-                    default    => null,
+                    'active' => $q->where('is_active', true),
+                    default => null,
                 };
             })
             ->latest()
@@ -54,12 +52,20 @@ class ClientController extends Controller
     public function store(StoreClientRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $client = $this->clients->create($data);
 
         if ($request->hasFile('logo')) {
-            $data['logo_path'] = $request->file('logo')->store('logos', 'public');
+            $file = $request->file('logo');
+            $client->uploads()->create([
+                'collection' => 'logo',
+                'disk' => 'private',
+                'path' => $file->store('logos', 'private'),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'uploaded_by' => auth()->id(),
+            ]);
         }
-
-        $this->clients->create($data);
 
         return redirect()->route('admin.clients.index')
             ->with('status', 'Cliente creado correctamente.');
@@ -71,9 +77,11 @@ class ClientController extends Controller
 
         $client->load([
             'user',
+            'logo',
             'areas' => fn ($q) => $q->withCount('equipment')->orderBy('name'),
             'equipment' => fn ($q) => $q->with('area')->latest(),
             'workOrders' => fn ($q) => $q->with(['equipment', 'technician'])->latest(),
+            'documents.uploader',
         ]);
 
         $active = WorkOrder::ACTIVE_STATUSES;
@@ -104,10 +112,17 @@ class ClientController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('logo')) {
-            if ($client->logo_path) {
-                Storage::disk('public')->delete($client->logo_path);
-            }
-            $data['logo_path'] = $request->file('logo')->store('logos', 'public');
+            $client->logo?->purge();
+            $file = $request->file('logo');
+            $client->uploads()->create([
+                'collection' => 'logo',
+                'disk' => 'private',
+                'path' => $file->store('logos', 'private'),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'uploaded_by' => auth()->id(),
+            ]);
         }
 
         $this->clients->update($client, $data);

@@ -8,8 +8,8 @@
 
             {{-- Cabecera del cliente --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6 flex items-center gap-6">
-                @if ($client->logo_path)
-                    <img src="{{ Storage::url($client->logo_path) }}" alt="{{ $client->name }}"
+                @if ($client->logoUrl())
+                    <img src="{{ $client->logoUrl() }}" alt="{{ $client->name }}"
                          class="h-16 w-16 rounded-full object-cover shrink-0">
                 @else
                     <div class="h-16 w-16 rounded-full bg-brand-100 flex items-center justify-center shrink-0">

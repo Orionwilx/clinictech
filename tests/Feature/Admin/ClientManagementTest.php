@@ -56,7 +56,7 @@ class ClientManagementTest extends TestCase
 
     public function test_admin_can_upload_client_logo(): void
     {
-        Storage::fake('public');
+        Storage::fake('private');
 
         $this->actingAs($this->admin())
             ->post(route('admin.clients.store'), $this->validPayload([
@@ -65,8 +65,9 @@ class ClientManagementTest extends TestCase
             ->assertRedirect(route('admin.clients.index'));
 
         $client = Client::where('nit', '900123456-7')->firstOrFail();
-        $this->assertNotNull($client->logo_path);
-        Storage::disk('public')->assertExists($client->logo_path);
+        $logo = $client->logo;
+        $this->assertNotNull($logo);
+        Storage::disk('private')->assertExists($logo->path);
     }
 
     public function test_non_admin_cannot_view_clients_index(): void

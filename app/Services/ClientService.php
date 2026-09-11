@@ -27,7 +27,6 @@ class ClientService
 
             return Client::create([
                 'name' => $data['name'],
-                'logo_path' => $data['logo_path'] ?? null,
                 'nit' => $data['nit'],
                 'email' => $data['email'],
                 'city' => $data['city'] ?? null,
@@ -49,7 +48,7 @@ class ClientService
     public function update(Client $client, array $data): void
     {
         DB::transaction(function () use ($client, $data) {
-            $client->update(array_merge([
+            $client->update([
                 'name' => $data['name'],
                 'nit' => $data['nit'],
                 'email' => $data['email'],
@@ -58,7 +57,7 @@ class ClientService
                 'whatsapp' => $data['whatsapp'] ?? null,
                 'phone' => $data['phone'] ?? null,
                 'is_active' => $data['is_active'] ?? false,
-            ], array_key_exists('logo_path', $data) ? ['logo_path' => $data['logo_path']] : []));
+            ]);
 
             if ($client->user) {
                 $client->user->fill([

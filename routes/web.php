@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AreaController;
 use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\ClientAttachmentController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\EquipmentCatalogController;
 use App\Http\Controllers\Admin\EquipmentCategoryController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Client\DashboardController as ClientDashboardController
 use App\Http\Controllers\Client\EquipmentController as ClientEquipmentController;
 use App\Http\Controllers\Client\TechnicianController as ClientTechnicianController;
 use App\Http\Controllers\Client\WorkOrderController as ClientWorkOrderController;
+use App\Http\Controllers\MediaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Technician\DashboardController as TechDashboardController;
 use App\Http\Controllers\Technician\WorkOrderController as TechWorkOrderController;
@@ -34,6 +36,9 @@ Route::get('/dashboard', function () {
 
     return view('dashboard', compact('clients'));
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Archivos privados: punto único de acceso autenticado. Control por rol en MediaController.
+Route::middleware('auth')->get('media/{upload}', [MediaController::class, 'serve'])->name('media.serve');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -60,6 +65,11 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
     // Áreas de trabajo (anidadas al cliente; se gestionan desde el hub).
     Route::post('clients/{client}/areas', [AreaController::class, 'store'])->name('clients.areas.store');
+
+    // Adjuntos de documentos del cliente.
+    Route::post('clients/{client}/attachments', [ClientAttachmentController::class, 'store'])->name('clients.attachments.store');
+    Route::get('clients/{client}/attachments/{attachment}/download', [ClientAttachmentController::class, 'download'])->name('clients.attachments.download');
+    Route::delete('clients/{client}/attachments/{attachment}', [ClientAttachmentController::class, 'destroy'])->name('clients.attachments.destroy');
     Route::put('areas/{area}', [AreaController::class, 'update'])->name('areas.update');
     Route::delete('areas/{area}', [AreaController::class, 'destroy'])->name('areas.destroy');
 

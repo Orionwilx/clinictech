@@ -1,13 +1,13 @@
 # Módulo: Clientes (Client)
 
 - **Ref. plan**: §5.4 de `project.md`
-- **Estado**: ✅ implementado (empresa + login + hub + áreas; contactos/adjuntos/recordatorios pendientes)
+- **Estado**: ✅ implementado (empresa + login + hub + áreas + adjuntos de documentos); ⏳ pendiente: recordatorios (sin alcance definido)
 - **Depende de**: Usuarios/roles ✅
 
 > Base del sistema: de Clientes cuelgan equipos, órdenes y el panel cliente. "De menos a más": empresa + login + hub con áreas ya implementados; contactos, adjuntos y recordatorios se añaden después.
 
 ## Hub del cliente
-La ficha `clients/show` es un **tablero con pestañas** (Datos / Áreas / Equipos / Órdenes / OT pendientes) que lista lo del cliente. La pestaña activa se puede fijar con `?tab=areas`. Desde Equipos/Órdenes se crea con `?client_id` precargado. Si el cliente tiene logo, se muestra en la cabecera del hub.
+La ficha `clients/show` es un **tablero con pestañas** (Datos / Áreas / Equipos / Órdenes / OT pendientes / Documentos) que lista lo del cliente. La pestaña activa se puede fijar con `?tab=areas`. Desde Equipos/Órdenes se crea con `?client_id` precargado. Si el cliente tiene logo, se muestra en la cabecera del hub.
 
 ### Pestaña «OT pendientes»
 Lista los **equipos del cliente que tienen OT activas** (estados `open`/`assigned`/`in_progress`, ver `WorkOrder::ACTIVE_STATUSES`). Columnas: equipo, área, marca/modelo, N. serie, estado, obs. técnicas, OT pendientes (nº + enlaces a cada OT) y acceso a la hoja de vida. El controlador arma `pendingEquipment` con `whereHas`/`withCount` sobre las OT activas.
@@ -22,7 +22,6 @@ Subdivisiones internas del cliente (UCI, Urgencias, Laboratorio…). `Area belon
 | Campo | Tipo | Reglas | Notas |
 |-------|------|--------|-------|
 | name | string | required, max:255 | Nombre de la empresa |
-| logo_path | string | nullable, image max 2MB | Logo de la empresa (disco `public`, subida en el form) |
 | nit | string | required, unique | NIT / identificación |
 | email | string | required, email | Correo (= login de la cuenta) |
 | city | string | nullable | Ciudad |
@@ -33,6 +32,8 @@ Subdivisiones internas del cliente (UCI, Urgencias, Laboratorio…). `Area belon
 | user_id | FK users | nullable, constrained | Cuenta de login vinculada |
 | (soft deletes) | — | — | Baja recuperable |
 
+> **Logo**: no hay columna `logo_path` en `clients`. El logo vive en la tabla `uploads` (collection `logo`, disk `private`). Se accede via `Client::logo()` (MorphOne), `Client::logoUrl()` → ruta `media.serve`, `Client::logoBase64()` → para PDFs.
+
 ## Login del cliente (cuenta vinculada)
 - Al crear un `Client` se crea también un `User` con rol `cliente`, enlazado por `user_id`.
 - Mapeo del formulario: `usuario` → `User.name` · `correo` → `User.email` (login) · `contraseña` → `User.password` (hasheada).
@@ -41,8 +42,21 @@ Subdivisiones internas del cliente (UCI, Urgencias, Laboratorio…). `Area belon
 - Login por **email** (estándar Laravel). Login por username queda para la fase Panel Cliente (§5.7).
 - Relación: `Client belongsTo User` · `User hasOne Client`.
 
-## Relaciones (futuras)
-- `hasMany(Equipment)` · `hasMany(WorkOrder)` · `hasMany(Contact)` · `hasMany(WorkArea)` — fases posteriores.
+## Relaciones
+- `hasMany(Equipment)` ✅ · `hasMany(WorkOrder)` ✅ · `hasMany(Area)` ✅
+- `uploadMany('document')` ✅ via trait `HasUploads` — archivos del cliente (RUT, cámara de comercio, contratos, etc.)
+
+## Adjuntos de documentos ✅
+- Tabla central `uploads` (polimórfica, collection `document`, disk `private`). No hay tabla `client_attachments` ni modelo `ClientAttachment`.
+- Controlador: `Admin/ClientAttachmentController` (store / download / destroy).
+- Rutas: `POST clients/{client}/attachments`, `GET …/{attachment}/download`, `DELETE …/{attachment}` (donde `{attachment}` es un `Upload`).
+- UI: pestaña «Documentos» en el hub del cliente; formulario de subida + tabla con descarga/eliminar.
+- Permiso: `update clients` para subir/eliminar; `view clients` para descargar.
+
+## Pendientes
+
+### Recordatorios
+Sin alcance definido. No implementar hasta acordar con el cliente.
 
 ## Reglas de negocio
 - `nit` único y requerido (identifica al cliente).

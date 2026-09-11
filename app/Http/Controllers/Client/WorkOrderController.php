@@ -17,7 +17,7 @@ class WorkOrderController extends ClientPanelController
 
     public function create(): View
     {
-        $equipment = $this->client()->equipment()->orderBy('name')->pluck('name', 'id');
+        $equipment = $this->client()->equipment()->visibleToClients()->orderBy('name')->pluck('name', 'id');
 
         return view('client.work_orders.create', compact('equipment'));
     }
@@ -83,21 +83,9 @@ class WorkOrderController extends ClientPanelController
         // Solo OT aprobadas y enviadas por el admin.
         abort_unless($workOrder->visible_to_client, 403);
 
-        $workOrder->load(['client', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician']);
+        $workOrder->load(['client.logo', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician']);
 
-        $logoBase64 = null;
-        if ($workOrder->client?->logo_path) {
-            $path = storage_path('app/public/'.$workOrder->client->logo_path);
-            if (file_exists($path)) {
-                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                $mime = match ($ext) {
-                    'png' => 'image/png',
-                    'gif' => 'image/gif',
-                    default => 'image/jpeg',
-                };
-                $logoBase64 = "data:{$mime};base64,".base64_encode(file_get_contents($path));
-            }
-        }
+        $logoBase64 = $workOrder->client?->logoBase64();
 
         $pdf = Pdf::loadView('admin.work_orders.pdf', compact('workOrder', 'logoBase64'))
             ->setPaper('A4', 'portrait');

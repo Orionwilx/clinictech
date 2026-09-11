@@ -2,21 +2,23 @@
 
 namespace App\Models;
 
+use App\Traits\HasUploads;
 use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Client extends Model
 {
     /** @use HasFactory<ClientFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUploads, SoftDeletes;
 
     protected $fillable = [
         'name',
-        'logo_path',
         'nit',
         'email',
         'city',
@@ -34,29 +36,35 @@ class Client extends Model
     {
         return [
             'is_active' => 'boolean',
-            // Copia reversible de la contraseña de acceso, solo para consulta del admin.
             'access_password' => 'encrypted',
         ];
     }
 
-    /**
-     * URL pública del logo (o null si no tiene).
-     */
-    public function logoUrl(): ?string
+    public function logo(): MorphOne
     {
-        return $this->logo_path ? asset('storage/'.$this->logo_path) : null;
+        return $this->upload('logo');
     }
 
-    /**
-     * Logo como data-URI base64 para incrustar en PDFs (dompdf).
-     */
+    public function documents(): MorphMany
+    {
+        return $this->uploadMany('document');
+    }
+
+    /** URL autenticada del logo (via MediaController). */
+    public function logoUrl(): ?string
+    {
+        return $this->logo ? $this->logo->url() : null;
+    }
+
+    /** Logo como data-URI base64 para incrustar en PDFs (dompdf). */
     public function logoBase64(): ?string
     {
-        if (! $this->logo_path) {
+        $logo = $this->logo;
+        if (! $logo) {
             return null;
         }
 
-        $path = storage_path('app/public/'.$this->logo_path);
+        $path = $logo->absolutePath();
 
         if (! file_exists($path)) {
             return null;
@@ -71,9 +79,7 @@ class Client extends Model
         return "data:{$mime};base64,".base64_encode((string) file_get_contents($path));
     }
 
-    /**
-     * Cuenta de acceso (rol cliente) vinculada a esta empresa.
-     */
+    /** Cuenta de acceso (rol cliente) vinculada a esta empresa. */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

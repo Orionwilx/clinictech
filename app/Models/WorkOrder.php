@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\HasUploads;
 use Database\Factories\WorkOrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class WorkOrder extends Model
 {
     /** @use HasFactory<WorkOrderFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUploads, SoftDeletes;
 
     /**
      * Estados: valor (código, EN) => etiqueta (UI, ES).
@@ -103,9 +104,9 @@ class WorkOrder extends Model
         return $this->belongsTo(Technician::class);
     }
 
-    public function photos(): HasMany
+    public function photos(): MorphMany
     {
-        return $this->hasMany(WorkOrderPhoto::class);
+        return $this->uploadMany('photo');
     }
 
     public function statusLabel(): string
