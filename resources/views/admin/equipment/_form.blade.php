@@ -37,15 +37,18 @@
         applyTemplate(t) {
             const nameInput = document.getElementById('name');
             if (nameInput && (!this.editing || !nameInput.value)) nameInput.value = t.name ?? '';
+            // Solo sobreescribe si la plantilla tiene un valor; si es null/vacío deja el campo intacto.
             ['risk_class',
              'voltage', 'amperage', 'current', 'power', 'temperature', 'pressure', 'weight', 'speed',
              'predominant_technology', 'components', 'default_ot_observations'].forEach(f => {
+                const val = t[f];
+                if (val === null || val === undefined || val === '') return;
                 const el = document.getElementById(f);
-                if (el) el.value = t[f] ?? '';
+                if (el) el.value = val;
             });
-            this.setChecks('specialties', t.specialties ?? []);
-            this.setChecks('maintenance_tasks', t.maintenance_tasks ?? []);
-            this.setChecks('accessories', t.accessories ?? []);
+            if (t.specialties?.length) this.setChecks('specialties', t.specialties);
+            if (t.maintenance_tasks?.length) this.setChecks('maintenance_tasks', t.maintenance_tasks);
+            if (t.accessories?.length) this.setChecks('accessories', t.accessories);
         },
         setChecks(field, values) {
             document.querySelectorAll(`input[name='${field}[]']`).forEach(cb => cb.checked = values.includes(cb.value));
