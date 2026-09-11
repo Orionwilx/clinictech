@@ -110,71 +110,96 @@ class DemoSeeder extends Seeder
         $hospNorte = $hospitalNorte->areas()->create(['name' => 'Hospitalización']);
         $imgSala = $centroImagen->areas()->create(['name' => 'Imagenología', 'description' => 'Sala 2']);
 
-        // ─── Helper catálogo (marca/modelo/categoría sembrados por EquipmentCatalogSeeder) ───
-        $catalog = function (string $brandName, string $modelName): array {
-            $model = EquipmentModel::whereHas('brand', fn ($q) => $q->where('name', $brandName))
-                ->where('name', $modelName)->first();
+        // ─── Helper: crea un equipo COMPLETO derivando la plantilla de su categoría
+        //     (características, subtareas, accesorios) + fabricante/país de la marca. ─────
+        $makeEquipment = function (Client $client, ?int $areaId, string $brandName, string $modelName, array $unit): Equipment {
+            $model = EquipmentModel::with('brand', 'category')
+                ->whereHas('brand', fn ($q) => $q->where('name', $brandName))
+                ->where('name', $modelName)->firstOrFail();
 
-            return [
-                'brand_id' => optional($model)->brand_id,
-                'model_id' => optional($model)->id,
-                'category_id' => optional($model)->category_id,
-            ];
+            $template = $model->category?->templateData() ?? [];
+            unset($template['name']); // el nombre lo define la unidad
+
+            return Equipment::create(array_merge([
+                'client_id' => $client->id,
+                'area_id' => $areaId,
+                'brand_id' => $model->brand_id,
+                'model_id' => $model->id,
+                'category_id' => $model->category_id,
+                'manufacturer' => $model->brand?->manufacturer,
+                'origin_country' => $model->brand?->origin_country,
+                'warranty_status' => 'en_garantia',
+                'acquisition_type' => 'purchase',
+                'status' => 'active',
+                ...$template,
+            ], $unit));
         };
 
-        // ─── Equipos ──────────────────────────────────────────────────────────
-        $monitor = Equipment::create([
-            'client_id' => $clinicaValle->id, 'area_id' => $uci->id,
-            'name' => 'Monitor de signos vitales',
-            ...$catalog('Philips', 'IntelliVue MX450'),
-            'serial_number' => 'SN-VLL-0001', 'location' => 'Sede Principal - Cali',
-            'entry_date' => '2023-03-15', 'purchase_date' => '2023-03-10',
-            'warranty_expiry' => '2026-03-10', 'warranty_status' => 'en_garantia',
-            'risk_class' => 'IIB', 'invima_registry' => 'INVIMA-2023EBC-0012345',
-            'manufacturer' => 'Philips Medical', 'origin_country' => 'Países Bajos',
-            'acquisition_type' => 'purchase',
-            'voltage' => '110-240V', 'power' => '150W',
-            'specialties' => ['Prevención', 'Tratamiento'],
-            'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma', 'Revisión de conectores', 'Limpieza de tarjetas'],
-            'accessories' => ['Cable de AC', 'Sensor SpO2', 'Manguera NIBP', 'Brazalete', 'Batería'],
-            'status' => 'active',
+        // ─── Equipos (todos con ficha completa) ───────────────────────────────
+        // Clínica del Valle
+        $monitor = $makeEquipment($clinicaValle, $uci->id, 'Philips', 'IntelliVue MX450', [
+            'name' => 'Monitor de signos vitales', 'serial_number' => 'SN-VLL-0001', 'location' => 'Sede Principal - Cali',
+            'entry_date' => '2023-03-15', 'purchase_date' => '2023-03-10', 'warranty_expiry' => '2026-03-10',
+            'invima_registry' => 'INVIMA-2023EBC-0012345',
+        ]);
+        $ventilador = $makeEquipment($clinicaValle, $uci->id, 'Dräger', 'Evita V300', [
+            'name' => 'Ventilador mecánico', 'serial_number' => 'SN-VLL-0002', 'location' => 'Sede Principal - Cali',
+            'entry_date' => '2022-07-05', 'purchase_date' => '2022-07-01', 'warranty_expiry' => '2025-07-01',
+            'invima_registry' => 'INVIMA-2022EBC-0022110', 'status' => 'maintenance',
+        ]);
+        $makeEquipment($clinicaValle, $urgValle->id, 'B. Braun', 'Perfusor Space', [
+            'name' => 'Bomba de jeringa', 'serial_number' => 'SN-VLL-0003', 'location' => 'Sede Principal - Cali',
+            'entry_date' => '2023-09-01', 'purchase_date' => '2023-08-20', 'warranty_expiry' => '2026-08-20',
+            'invima_registry' => 'INVIMA-2023EBC-0033007',
+        ]);
+        $makeEquipment($clinicaValle, $uci->id, 'GE Healthcare', 'Giraffe OmniBed', [
+            'name' => 'Incubadora neonatal', 'serial_number' => 'SN-VLL-0004', 'location' => 'Sede Principal - Cali',
+            'entry_date' => '2021-02-10', 'purchase_date' => '2021-02-01', 'warranty_expiry' => '2024-02-01',
+            'warranty_status' => 'sin_garantia', 'invima_registry' => 'INVIMA-2021EBC-0011884',
+        ]);
+        $makeEquipment($clinicaValle, $urgValle->id, 'Dräger', 'Fabius Tiro', [
+            'name' => 'Máquina de anestesia', 'serial_number' => 'SN-VLL-0005', 'location' => 'Sede Principal - Cali',
+            'entry_date' => '2022-11-15', 'purchase_date' => '2022-11-01', 'warranty_expiry' => '2025-11-01',
+            'invima_registry' => 'INVIMA-2022EBC-0044521', 'acquisition_type' => 'comodato',
         ]);
 
-        $ventilador = Equipment::create([
-            'client_id' => $clinicaValle->id, 'area_id' => $uci->id,
-            'name' => 'Ventilador mecánico',
-            ...$catalog('Dräger', 'Evita V300'),
-            'serial_number' => 'SN-VLL-0002', 'location' => 'Sede Principal - Cali',
-            'purchase_date' => '2022-07-01', 'warranty_expiry' => '2025-07-01',
-            'maintenance_tasks' => ['Prueba de funcionamiento', 'Limpieza de filtros', 'Revisión de conectores'],
-            'status' => 'maintenance',
+        // Hospital del Norte
+        $desfibrilador = $makeEquipment($hospitalNorte, $urgNorte->id, 'Zoll', 'R Series', [
+            'name' => 'Desfibrilador', 'serial_number' => 'SN-NOR-0001', 'location' => 'Sede Norte - Barranquilla',
+            'entry_date' => '2021-11-25', 'purchase_date' => '2021-11-20', 'warranty_expiry' => '2024-11-20',
+            'warranty_status' => 'sin_garantia', 'invima_registry' => 'INVIMA-2021EBC-0055120',
+        ]);
+        $bomba = $makeEquipment($hospitalNorte, $hospNorte->id, 'B. Braun', 'Infusomat Space', [
+            'name' => 'Bomba de infusión', 'serial_number' => 'SN-NOR-0002', 'location' => 'Sede Norte - Barranquilla',
+            'entry_date' => '2020-05-20', 'purchase_date' => '2020-05-15', 'warranty_expiry' => '2023-05-15',
+            'warranty_status' => 'sin_garantia', 'invima_registry' => 'INVIMA-2020EBC-0066033', 'status' => 'retired',
+        ]);
+        $makeEquipment($hospitalNorte, $hospNorte->id, 'Fresenius', '4008S', [
+            'name' => 'Máquina de diálisis', 'serial_number' => 'SN-NOR-0003', 'location' => 'Sede Norte - Barranquilla',
+            'entry_date' => '2023-04-10', 'purchase_date' => '2023-04-01', 'warranty_expiry' => '2026-04-01',
+            'invima_registry' => 'INVIMA-2023EBC-0077914', 'acquisition_type' => 'leasing', 'warranty_status' => 'leasing',
+        ]);
+        $makeEquipment($hospitalNorte, $urgNorte->id, 'Mindray', 'BeneVision N22', [
+            'name' => 'Monitor multiparámetro', 'serial_number' => 'SN-NOR-0004', 'location' => 'Sede Norte - Barranquilla',
+            'entry_date' => '2024-01-20', 'purchase_date' => '2024-01-10', 'warranty_expiry' => '2027-01-10',
+            'invima_registry' => 'INVIMA-2024EBC-0088245',
         ]);
 
-        $desfibrilador = Equipment::create([
-            'client_id' => $hospitalNorte->id, 'area_id' => $urgNorte->id,
-            'name' => 'Desfibrilador',
-            ...$catalog('Zoll', 'R Series'),
-            'serial_number' => 'SN-NOR-0001', 'location' => 'Sede Norte - Barranquilla',
-            'purchase_date' => '2021-11-20', 'warranty_expiry' => '2024-11-20',
-            'status' => 'active',
+        // Centro de Imágenes
+        $ecografo = $makeEquipment($centroImagen, $imgSala->id, 'GE Healthcare', 'Logiq E10', [
+            'name' => 'Ecógrafo', 'serial_number' => 'SN-IMG-0001', 'location' => 'Sede Medellín',
+            'entry_date' => '2024-01-10', 'purchase_date' => '2024-01-05', 'warranty_expiry' => '2027-01-05',
+            'invima_registry' => 'INVIMA-2024EBC-0099002',
         ]);
-
-        $bomba = Equipment::create([
-            'client_id' => $hospitalNorte->id, 'area_id' => $hospNorte->id,
-            'name' => 'Bomba de infusión',
-            ...$catalog('B. Braun', 'Infusomat Space'),
-            'serial_number' => 'SN-NOR-0002', 'location' => 'Sede Norte - Barranquilla',
-            'purchase_date' => '2020-05-15', 'warranty_expiry' => '2023-05-15',
-            'status' => 'inactive',
+        $makeEquipment($centroImagen, $imgSala->id, 'Siemens Healthineers', 'Somatom Go', [
+            'name' => 'Tomógrafo', 'serial_number' => 'SN-IMG-0002', 'location' => 'Sede Medellín',
+            'entry_date' => '2022-06-01', 'purchase_date' => '2022-05-15', 'warranty_expiry' => '2027-05-15',
+            'invima_registry' => 'INVIMA-2022EBC-0100777', 'acquisition_type' => 'leasing', 'warranty_status' => 'leasing',
         ]);
-
-        $ecografo = Equipment::create([
-            'client_id' => $centroImagen->id, 'area_id' => $imgSala->id,
-            'name' => 'Ecógrafo',
-            ...$catalog('GE Healthcare', 'Logiq E10'),
-            'serial_number' => 'SN-IMG-0001', 'location' => 'Sede Medellín',
-            'purchase_date' => '2024-01-05', 'warranty_expiry' => '2027-01-05',
-            'status' => 'active',
+        $makeEquipment($centroImagen, $imgSala->id, 'Mindray', 'Resona 7', [
+            'name' => 'Ecógrafo doppler', 'serial_number' => 'SN-IMG-0003', 'location' => 'Sede Medellín',
+            'entry_date' => '2023-03-01', 'purchase_date' => '2023-02-20', 'warranty_expiry' => '2026-02-20',
+            'invima_registry' => 'INVIMA-2023EBC-0111360', 'status' => 'maintenance',
         ]);
 
         // ─── FLUJO A: Admin crea OT — estados progresivos ─────────────────────
@@ -388,7 +413,8 @@ class DemoSeeder extends Seeder
         ));
 
         $count = WorkOrder::count();
-        $this->command?->info("DemoSeeder: 3 clientes, 3 técnicos, 5 equipos y {$count} órdenes creados.");
+        $equipmentCount = Equipment::count();
+        $this->command?->info("DemoSeeder: 3 clientes, 3 técnicos, {$equipmentCount} equipos (ficha completa) y {$count} órdenes creados.");
         $this->command?->info('');
         $this->command?->info('── Credenciales de acceso ──────────────────────────');
         $this->command?->info('  Admin    → admin@ingsoln.com          / password');

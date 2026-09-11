@@ -74,11 +74,36 @@ class EquipmentCatalogSeeder extends Seeder
             'maintenance_tasks' => ['Prueba de funcionamiento', 'Limpieza de tarjetas', 'Revisión panel de control'],
             'accessories' => ['Cable de AC', 'Transductor', 'Control'],
         ],
-        'Máquina de anestesia' => ['risk_class' => 'III'],
-        'Incubadora' => ['risk_class' => 'IIB'],
-        'Equipo de imagenología' => ['risk_class' => 'IIA'],
-        'Máquina de diálisis' => ['risk_class' => 'III'],
-        'Equipo quirúrgico' => ['risk_class' => 'IIB'],
+        'Máquina de anestesia' => [
+            'risk_class' => 'III', 'voltage' => '110-240V', 'pressure' => '3-5 bar',
+            'specialties' => ['Tratamiento'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Prueba de fugas', 'Revisión de alarma', 'Ajustes mecánicos'],
+            'accessories' => ['Cable de AC', 'Manguera de oxígeno', 'Manguera de aire', 'Sensor de oxígeno'],
+        ],
+        'Incubadora' => [
+            'risk_class' => 'IIB', 'voltage' => '110-127V', 'power' => '400W', 'temperature' => '20-39°C',
+            'specialties' => ['Tratamiento', 'Prevención'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de alarma', 'Limpieza de filtros', 'Desarmado y limpieza'],
+            'accessories' => ['Cable de AC', 'Sensor de temperatura', 'Sensor SpO2'],
+        ],
+        'Equipo de imagenología' => [
+            'risk_class' => 'IIA', 'voltage' => '220-440V', 'power' => '80kW',
+            'specialties' => ['Prevención', 'Análisis de laboratorio'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Limpieza de tarjetas', 'Revisión panel de control', 'Ajuste sistema electrónico'],
+            'accessories' => ['Cable de AC', 'Control', 'Transductor'],
+        ],
+        'Máquina de diálisis' => [
+            'risk_class' => 'III', 'voltage' => '110-240V', 'pressure' => '1.5-2 bar', 'temperature' => '35-39°C',
+            'specialties' => ['Tratamiento'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Prueba de fugas', 'Limpieza de filtros', 'Revisión de conectores'],
+            'accessories' => ['Cable de AC', 'Manguera de aire', 'Sensor de temperatura'],
+        ],
+        'Equipo quirúrgico' => [
+            'risk_class' => 'IIB', 'voltage' => '110-240V', 'power' => '300W',
+            'specialties' => ['Tratamiento'],
+            'maintenance_tasks' => ['Prueba de funcionamiento', 'Revisión de conectores', 'Ajustes mecánicos', 'Desarmado y limpieza'],
+            'accessories' => ['Cable de AC', 'Pieza de mano', 'Batería'],
+        ],
     ];
 
     /**
