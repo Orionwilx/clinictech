@@ -8,17 +8,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Report extends Model
 {
     public const STATUSES = [
-        'pending'    => 'Pendiente',
+        'pending' => 'Pendiente',
         'processing' => 'Procesando',
-        'done'       => 'Listo',
-        'failed'     => 'Fallido',
+        'done' => 'Listo',
+        'failed' => 'Fallido',
     ];
 
     public const TYPE_LABELS = [
         'work_orders' => 'Órdenes de trabajo',
         'maintenance' => 'Mantenimientos',
         'technicians' => 'Por técnico',
-        'equipment'   => 'Por equipo',
+        'equipment' => 'Por equipo',
     ];
 
     protected $fillable = [
@@ -30,7 +30,7 @@ class Report extends Model
     protected function casts(): array
     {
         return [
-            'filters'       => 'array',
+            'filters' => 'array',
             'downloaded_at' => 'datetime',
         ];
     }
@@ -62,7 +62,7 @@ class Report extends Model
         }
 
         return $this->duration_ms < 1000
-            ? $this->duration_ms . ' ms'
-            : round($this->duration_ms / 1000, 1) . ' s';
+            ? $this->duration_ms.' ms'
+            : round($this->duration_ms / 1000, 1).' s';
     }
 }

@@ -22,17 +22,16 @@ class TechnicianController extends Controller
         $filters = $request->only(['search', 'status']);
 
         $technicians = Technician::withTrashed()
-            ->when($filters['search'] ?? null, fn ($q, $s) =>
-                $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
-                    ->orWhere('document', 'like', "%$s%")
-                    ->orWhere('specialty', 'like', "%$s%"))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
+                ->orWhere('document', 'like', "%$s%")
+                ->orWhere('specialty', 'like', "%$s%"))
             )
             ->when(isset($filters['status']), function ($q) use ($filters) {
                 match ($filters['status']) {
-                    'deleted'  => $q->onlyTrashed(),
+                    'deleted' => $q->onlyTrashed(),
                     'inactive' => $q->where('is_active', false),
-                    'active'   => $q->where('is_active', true),
-                    default    => null,
+                    'active' => $q->where('is_active', true),
+                    default => null,
                 };
             })
             ->latest()

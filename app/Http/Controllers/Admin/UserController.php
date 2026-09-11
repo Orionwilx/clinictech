@@ -25,18 +25,16 @@ class UserController extends Controller
 
         $users = User::with('roles')
             ->withTrashed()
-            ->when($filters['search'] ?? null, fn ($q, $s) =>
-                $q->where(fn ($q) => $q->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%"))
+            ->when($filters['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', "%$s%")->orWhere('email', 'like', "%$s%"))
             )
-            ->when($filters['role'] ?? null, fn ($q, $r) =>
-                $q->whereHas('roles', fn ($q) => $q->where('name', $r))
+            ->when($filters['role'] ?? null, fn ($q, $r) => $q->whereHas('roles', fn ($q) => $q->where('name', $r))
             )
             ->when(isset($filters['status']), function ($q) use ($filters) {
                 match ($filters['status']) {
-                    'deleted'  => $q->onlyTrashed(),
+                    'deleted' => $q->onlyTrashed(),
                     'inactive' => $q->where('is_active', false),
-                    'active'   => $q->where('is_active', true),
-                    default    => null,
+                    'active' => $q->where('is_active', true),
+                    default => null,
                 };
             })
             ->latest()

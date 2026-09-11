@@ -24,27 +24,27 @@ class GenerateReportJob implements ShouldQueue
         $this->report->update(['status' => 'processing']);
 
         try {
-            $filters  = $this->report->filters ?? [];
-            $filename = $this->report->type . '_' . $this->report->id . '_' . now()->format('Ymd_His') . '.xlsx';
-            $path     = 'reports/' . $filename;
+            $filters = $this->report->filters ?? [];
+            $filename = $this->report->type.'_'.$this->report->id.'_'.now()->format('Ymd_His').'.xlsx';
+            $path = 'reports/'.$filename;
 
             $export = match ($this->report->type) {
                 'work_orders' => new WorkOrdersExport($filters),
                 'maintenance' => new MaintenanceExport($filters),
                 'technicians' => new TechnicianExport($filters),
-                'equipment'   => new EquipmentExport($filters),
+                'equipment' => new EquipmentExport($filters),
             };
 
             Excel::store($export, $path, 'local');
 
             $this->report->update([
-                'status'      => 'done',
-                'file_path'   => $path,
+                'status' => 'done',
+                'file_path' => $path,
                 'duration_ms' => (int) round((microtime(true) - $start) * 1000),
             ]);
         } catch (\Throwable $e) {
             $this->report->update([
-                'status'        => 'failed',
+                'status' => 'failed',
                 'error_message' => $e->getMessage(),
             ]);
         }

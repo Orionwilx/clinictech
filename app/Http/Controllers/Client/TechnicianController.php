@@ -11,14 +11,12 @@ class TechnicianController extends ClientPanelController
     {
         $clientId = $this->client()->id;
 
-        $technicians = Technician::whereHas('workOrders', fn ($q) =>
-            $q->where('client_id', $clientId)
+        $technicians = Technician::whereHas('workOrders', fn ($q) => $q->where('client_id', $clientId)
         )
-        ->withCount(['workOrders as orders_count' => fn ($q) =>
-            $q->where('client_id', $clientId)
-        ])
-        ->orderBy('name')
-        ->get();
+            ->withCount(['workOrders as orders_count' => fn ($q) => $q->where('client_id', $clientId),
+            ])
+            ->orderBy('name')
+            ->get();
 
         return view('client.technicians.index', compact('technicians'));
     }

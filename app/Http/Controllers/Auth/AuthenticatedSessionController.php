@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $target = match(true) {
+        $target = match (true) {
             $request->user()->hasRole('cliente') => route('client.dashboard', absolute: false),
             $request->user()->hasRole('tecnico') => route('technician.dashboard', absolute: false),
             default => route('dashboard', absolute: false),

@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class SummarySheet implements FromArray, WithTitle, WithColumnWidths, WithStyles
+class SummarySheet implements FromArray, WithColumnWidths, WithStyles, WithTitle
 {
     public function __construct(private readonly array $filters) {}
 
@@ -25,7 +25,7 @@ class SummarySheet implements FromArray, WithTitle, WithColumnWidths, WithStyles
 
         $preventive = (clone $base)->where('type', 'preventive')->count();
         $corrective = (clone $base)->where('type', 'corrective')->count();
-        $byStatus   = (clone $base)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $byStatus = (clone $base)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
 
         $rows = [];
         $rows[] = ['RESUMEN — MANTENIMIENTOS'];
@@ -36,7 +36,7 @@ class SummarySheet implements FromArray, WithTitle, WithColumnWidths, WithStyles
         $rows[] = [];
         $rows[] = ['Por estado', ''];
         foreach (WorkOrder::STATUSES as $key => $label) {
-            $rows[] = ['  ' . $label, $byStatus[$key] ?? 0];
+            $rows[] = ['  '.$label, $byStatus[$key] ?? 0];
         }
 
         return $rows;

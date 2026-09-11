@@ -13,7 +13,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class DetailSheet implements FromQuery, WithTitle, WithHeadings, WithMapping, WithColumnWidths, WithStyles
+class DetailSheet implements FromQuery, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     public function __construct(private readonly array $filters) {}
 
@@ -22,9 +22,9 @@ class DetailSheet implements FromQuery, WithTitle, WithHeadings, WithMapping, Wi
         return Technician::withCount([
             'workOrders as total_orders',
             'workOrders as completed_orders' => fn ($q) => $q->where('status', 'completed'),
-            'workOrders as active_orders'    => fn ($q) => $q->whereIn('status', WorkOrder::ACTIVE_STATUSES),
+            'workOrders as active_orders' => fn ($q) => $q->whereIn('status', WorkOrder::ACTIVE_STATUSES),
         ])
-            ->when(($this->filters['status'] ?? '') === 'active',   fn ($q) => $q->where('is_active', true))
+            ->when(($this->filters['status'] ?? '') === 'active', fn ($q) => $q->where('is_active', true))
             ->when(($this->filters['status'] ?? '') === 'inactive', fn ($q) => $q->where('is_active', false))
             ->orderByDesc('total_orders');
     }
@@ -42,7 +42,7 @@ class DetailSheet implements FromQuery, WithTitle, WithHeadings, WithMapping, Wi
     public function map($tech): array
     {
         $pct = $tech->total_orders > 0
-            ? round(($tech->completed_orders / $tech->total_orders) * 100) . '%'
+            ? round(($tech->completed_orders / $tech->total_orders) * 100).'%'
             : '0%';
 
         return [

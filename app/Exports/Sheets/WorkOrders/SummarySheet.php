@@ -9,7 +9,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class SummarySheet implements FromArray, WithTitle, WithColumnWidths, WithStyles
+class SummarySheet implements FromArray, WithColumnWidths, WithStyles, WithTitle
 {
     public function __construct(private readonly array $filters) {}
 
@@ -23,9 +23,9 @@ class SummarySheet implements FromArray, WithTitle, WithColumnWidths, WithStyles
             ->when($this->filters['date_from'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($this->filters['date_to'] ?? null, fn ($q, $v) => $q->whereDate('created_at', '<=', $v));
 
-        $total      = (clone $query)->count();
-        $byType     = (clone $query)->selectRaw('type, count(*) as total')->groupBy('type')->pluck('total', 'type');
-        $byStatus   = (clone $query)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $total = (clone $query)->count();
+        $byType = (clone $query)->selectRaw('type, count(*) as total')->groupBy('type')->pluck('total', 'type');
+        $byStatus = (clone $query)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
 
         $rows = [];
         $rows[] = ['RESUMEN — ÓRDENES DE TRABAJO'];
@@ -34,12 +34,12 @@ class SummarySheet implements FromArray, WithTitle, WithColumnWidths, WithStyles
         $rows[] = [];
         $rows[] = ['Por tipo', ''];
         foreach (WorkOrder::TYPES as $key => $label) {
-            $rows[] = ['  ' . $label, $byType[$key] ?? 0];
+            $rows[] = ['  '.$label, $byType[$key] ?? 0];
         }
         $rows[] = [];
         $rows[] = ['Por estado', ''];
         foreach (WorkOrder::STATUSES as $key => $label) {
-            $rows[] = ['  ' . $label, $byStatus[$key] ?? 0];
+            $rows[] = ['  '.$label, $byStatus[$key] ?? 0];
         }
 
         return $rows;
