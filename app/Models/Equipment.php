@@ -16,12 +16,11 @@ class Equipment extends Model
 
     /**
      * Estados: valor (código, EN) => etiqueta (UI, ES).
+     * Activo → visible a todos. Inactivo → solo admin.
      */
     public const STATUSES = [
         'active' => 'Activo',
         'inactive' => 'Inactivo',
-        'maintenance' => 'En mantenimiento',
-        'retired' => 'Dado de baja',
     ];
 
     /**
@@ -133,6 +132,12 @@ class Equipment extends Model
     public function workOrders(): HasMany
     {
         return $this->hasMany(WorkOrder::class);
+    }
+
+    /** Equipos visibles para clientes y técnicos (solo activos). */
+    public function scopeVisibleToClients($query)
+    {
+        return $query->where('status', 'active');
     }
 
     /**

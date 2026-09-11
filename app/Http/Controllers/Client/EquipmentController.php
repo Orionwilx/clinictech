@@ -15,11 +15,11 @@ class EquipmentController extends ClientPanelController
         $filters = $request->only(['search', 'status']);
 
         $equipment = $this->client()->equipment()
+            ->visibleToClients()
             ->with(['brand', 'model', 'area'])
             ->when($filters['search'] ?? null, fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', "%$s%")
                 ->orWhere('serial_number', 'like', "%$s%"))
             )
-            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -27,13 +27,13 @@ class EquipmentController extends ClientPanelController
         return view('client.equipment.index', [
             'equipment' => $equipment,
             'filters' => $filters,
-            'statuses' => Equipment::STATUSES,
         ]);
     }
 
     public function show(Equipment $equipment): View
     {
         abort_if($equipment->client_id !== $this->client()->id, 403);
+        abort_if($equipment->status !== 'active', 404);
 
         $equipment->load([
             'brand', 'model', 'area', 'category',
@@ -50,6 +50,7 @@ class EquipmentController extends ClientPanelController
     public function pdf(Equipment $equipment): Response
     {
         abort_if($equipment->client_id !== $this->client()->id, 403);
+        abort_if($equipment->status !== 'active', 404);
 
         $equipment->load([
             'client', 'area', 'category', 'brand', 'model',

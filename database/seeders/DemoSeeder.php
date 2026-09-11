@@ -145,7 +145,7 @@ class DemoSeeder extends Seeder
         $ventilador = $makeEquipment($clinicaValle, $uci->id, 'Dräger', 'Evita V300', [
             'name' => 'Ventilador mecánico', 'serial_number' => 'SN-VLL-0002', 'location' => 'Sede Principal - Cali',
             'entry_date' => '2022-07-05', 'purchase_date' => '2022-07-01', 'warranty_expiry' => '2025-07-01',
-            'invima_registry' => 'INVIMA-2022EBC-0022110', 'status' => 'maintenance',
+            'invima_registry' => 'INVIMA-2022EBC-0022110', 'status' => 'inactive',
         ]);
         $makeEquipment($clinicaValle, $urgValle->id, 'B. Braun', 'Perfusor Space', [
             'name' => 'Bomba de jeringa', 'serial_number' => 'SN-VLL-0003', 'location' => 'Sede Principal - Cali',
@@ -172,7 +172,7 @@ class DemoSeeder extends Seeder
         $bomba = $makeEquipment($hospitalNorte, $hospNorte->id, 'B. Braun', 'Infusomat Space', [
             'name' => 'Bomba de infusión', 'serial_number' => 'SN-NOR-0002', 'location' => 'Sede Norte - Barranquilla',
             'entry_date' => '2020-05-20', 'purchase_date' => '2020-05-15', 'warranty_expiry' => '2023-05-15',
-            'warranty_status' => 'sin_garantia', 'invima_registry' => 'INVIMA-2020EBC-0066033', 'status' => 'retired',
+            'warranty_status' => 'sin_garantia', 'invima_registry' => 'INVIMA-2020EBC-0066033', 'status' => 'inactive',
         ]);
         $makeEquipment($hospitalNorte, $hospNorte->id, 'Fresenius', '4008S', [
             'name' => 'Máquina de diálisis', 'serial_number' => 'SN-NOR-0003', 'location' => 'Sede Norte - Barranquilla',
@@ -199,7 +199,7 @@ class DemoSeeder extends Seeder
         $makeEquipment($centroImagen, $imgSala->id, 'Mindray', 'Resona 7', [
             'name' => 'Ecógrafo doppler', 'serial_number' => 'SN-IMG-0003', 'location' => 'Sede Medellín',
             'entry_date' => '2023-03-01', 'purchase_date' => '2023-02-20', 'warranty_expiry' => '2026-02-20',
-            'invima_registry' => 'INVIMA-2023EBC-0111360', 'status' => 'maintenance',
+            'invima_registry' => 'INVIMA-2023EBC-0111360', 'status' => 'inactive',
         ]);
 
         // ─── FLUJO A: Admin crea OT — estados progresivos ─────────────────────

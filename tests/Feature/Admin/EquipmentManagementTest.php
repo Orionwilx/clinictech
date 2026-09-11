@@ -114,14 +114,14 @@ class EquipmentManagementTest extends TestCase
             ->put(route('admin.equipment.update', $equipment), $this->validPayload([
                 'client_id' => $equipment->client_id,
                 'serial_number' => $equipment->serial_number,
-                'status' => 'maintenance',
+                'status' => 'inactive',
                 'name' => 'Nombre actualizado',
             ]))
             ->assertRedirect(route('admin.equipment.index'));
 
         $equipment->refresh();
         $this->assertSame('Nombre actualizado', $equipment->name);
-        $this->assertSame('maintenance', $equipment->status);
+        $this->assertSame('inactive', $equipment->status);
     }
 
     public function test_admin_can_soft_delete_and_restore_equipment(): void
@@ -208,14 +208,23 @@ class EquipmentManagementTest extends TestCase
         $this->assertSame('active', $equipment->fresh()->status);
     }
 
-    public function test_toggle_from_maintenance_reactivates_to_active(): void
+    public function test_inactive_equipment_is_hidden_from_client_panel(): void
     {
-        $equipment = Equipment::factory()->create(['status' => 'maintenance']);
+        $client = Client::factory()->create();
+        $user = User::factory()->create()->assignRole('cliente');
+        $client->update(['user_id' => $user->id]);
 
-        $this->actingAs($this->admin())
-            ->patch(route('admin.equipment.toggle-active', $equipment));
+        $active = Equipment::factory()->create(['client_id' => $client->id, 'status' => 'active']);
+        $inactive = Equipment::factory()->create(['client_id' => $client->id, 'status' => 'inactive']);
 
-        $this->assertSame('active', $equipment->fresh()->status);
+        $this->actingAs($user)
+            ->get(route('client.equipment.index'))
+            ->assertSee($active->name)
+            ->assertDontSee($inactive->name);
+
+        $this->actingAs($user)
+            ->get(route('client.equipment.show', $inactive))
+            ->assertNotFound();
     }
 
     public function test_client_cannot_toggle_equipment_status(): void
