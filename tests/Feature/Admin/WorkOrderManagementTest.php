@@ -10,9 +10,11 @@ use App\Models\EquipmentModel;
 use App\Models\Technician;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Notifications\WorkOrderNotification;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -74,6 +76,32 @@ class WorkOrderManagementTest extends TestCase
         $this->assertNotNull($order->code);
         $this->assertStringStartsWith('OT-', $order->code);
         $this->assertSame('Falla en monitor', $order->title);
+    }
+
+    public function test_work_order_code_includes_type_abbreviation(): void
+    {
+        $this->actingAs($this->admin())
+            ->post(route('admin.work_orders.store'), $this->validPayload(['type' => 'preventive']));
+        $this->assertStringEndsWith('_MP', WorkOrder::firstOrFail()->code);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.work_orders.store'), $this->validPayload(['type' => 'review']));
+        $this->assertStringEndsWith('_MR', WorkOrder::latest('id')->firstOrFail()->code);
+    }
+
+    public function test_creating_work_order_with_technician_notifies_them(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create()->assignRole('tecnico');
+        $technician = Technician::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.work_orders.store'), $this->validPayload([
+                'technician_id' => $technician->id,
+                'status' => 'assigned',
+            ]));
+
+        Notification::assertSentTo($user, WorkOrderNotification::class);
     }
 
     public function test_create_form_prefilled_from_equipment_includes_its_details(): void

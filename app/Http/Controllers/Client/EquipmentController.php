@@ -63,6 +63,6 @@ class EquipmentController extends ClientPanelController
             'logoBase64' => $equipment->client?->logoBase64(),
         ])->setPaper('A4', 'portrait');
 
-        return $pdf->download("hoja-de-vida-{$equipment->serial_number}.pdf");
+        return $pdf->download($equipment->pdfFileName());
     }
 }

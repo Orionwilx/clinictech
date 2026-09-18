@@ -5,9 +5,10 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <dl class="divide-y divide-gray-100">
+                {{-- Datos generales en horizontal (tarjetas en cuadrícula) --}}
+                <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     @foreach ([
                         'Nº de orden' => $workOrder->code,
                         'Asunto' => $workOrder->title,
@@ -16,20 +17,33 @@
                         'Tipo' => $workOrder->typeLabel(),
                         'Prioridad' => $workOrder->priorityLabel(),
                         'Estado' => $workOrder->statusLabel(),
-                        'Descripción' => $workOrder->description ?: '—',
-                        'Diagnóstico' => $workOrder->diagnosis ?: '—',
-                        'Actividades realizadas' => $workOrder->work_performed ?: '—',
                         'Fecha programada' => optional($workOrder->scheduled_at)->format('Y-m-d') ?: '—',
                         'Inicio' => optional($workOrder->started_at)->format('Y-m-d') ?: '—',
                         'Completada' => optional($workOrder->completed_at)->format('Y-m-d') ?: '—',
                         'Cerrada' => optional($workOrder->closed_at)->format('Y-m-d') ?: '—',
                     ] as $label => $value)
-                        <div class="py-3 grid grid-cols-3 gap-4">
-                            <dt class="text-sm font-medium text-gray-500">{{ $label }}</dt>
-                            <dd class="text-sm text-gray-900 col-span-2 whitespace-pre-line">{{ $value }}</dd>
+                        <div class="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                            <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>
+                            <dd class="mt-0.5 text-sm text-gray-900 break-words">{{ $value }}</dd>
                         </div>
                     @endforeach
                 </dl>
+
+                {{-- Textos largos a lo ancho --}}
+                <div class="mt-6 space-y-4">
+                    @foreach ([
+                        'Descripción' => $workOrder->description,
+                        'Diagnóstico' => $workOrder->diagnosis,
+                        'Actividades realizadas' => $workOrder->work_performed,
+                    ] as $label => $value)
+                        @if ($value)
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-900 mb-1">{{ $label }}</h3>
+                                <p class="text-sm text-gray-700 whitespace-pre-line">{{ $value }}</p>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
 
                 @if ($workOrder->maintenance_tasks || $workOrder->accessories_checked)
                     <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -72,9 +86,32 @@
                         <h3 class="text-sm font-semibold text-gray-900 mb-2">Evidencias fotográficas</h3>
                         <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
                             @foreach ($workOrder->photos as $photo)
-                                <a href="{{ $photo->url() }}" target="_blank">
-                                    <img src="{{ $photo->url() }}" alt="{{ $photo->original_name }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
-                                </a>
+                                <figure>
+                                    <a href="{{ $photo->url() }}" target="_blank">
+                                        <img src="{{ $photo->url() }}" alt="{{ $photo->label ?: $photo->original_name }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                    </a>
+                                    @if ($photo->label)
+                                        <figcaption class="mt-1 text-xs text-gray-500">{{ $photo->label }}</figcaption>
+                                    @endif
+                                </figure>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                @if ($workOrder->technicianSignature || $workOrder->clientSignature)
+                    <div class="mt-6">
+                        <h3 class="text-sm font-semibold text-gray-900 mb-2">Firmas</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            @foreach (['technicianSignature' => 'Técnico', 'clientSignature' => 'Cliente'] as $rel => $label)
+                                <div>
+                                    <p class="text-xs font-medium text-gray-500 uppercase mb-1">{{ $label }}</p>
+                                    @if ($workOrder->$rel)
+                                        <img src="{{ $workOrder->$rel->url() }}" alt="Firma {{ $label }}" class="h-24 max-w-full object-contain rounded border border-gray-200 bg-white p-1">
+                                    @else
+                                        <p class="text-sm text-gray-400">Sin firma.</p>
+                                    @endif
+                                </div>
                             @endforeach
                         </div>
                     </div>

@@ -72,7 +72,7 @@ class WorkOrderController extends ClientPanelController
             403
         );
 
-        $workOrder->load(['client', 'equipment', 'technician']);
+        $workOrder->load(['client', 'equipment', 'technician', 'photos', 'technicianSignature', 'clientSignature']);
 
         return view('client.work_orders.show', compact('workOrder'));
     }
@@ -83,13 +83,13 @@ class WorkOrderController extends ClientPanelController
         // Solo OT aprobadas y enviadas por el admin.
         abort_unless($workOrder->visible_to_client, 403);
 
-        $workOrder->load(['client.logo', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician']);
+        $workOrder->load(['client.logo', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician', 'photos', 'technicianSignature', 'clientSignature']);
 
         $logoBase64 = $workOrder->client?->logoBase64();
 
         $pdf = Pdf::loadView('admin.work_orders.pdf', compact('workOrder', 'logoBase64'))
             ->setPaper('A4', 'portrait');
 
-        return $pdf->download("OT-{$workOrder->code}.pdf");
+        return $pdf->download($workOrder->pdfFileName());
     }
 }

@@ -107,8 +107,8 @@
                                  x-data="{
                                     tasks: {{ Illuminate\Support\Js::from($taskCatalog) }},
                                     accessories: {{ Illuminate\Support\Js::from($accessoryCatalog) }},
-                                    selectedTasks: {{ Illuminate\Support\Js::from((array) old('maintenance_tasks', $workOrder->maintenance_tasks ?? [])) }},
-                                    selectedAccessories: {{ Illuminate\Support\Js::from((array) old('accessories_checked', $workOrder->accessories_checked ?? [])) }},
+                                    selectedTasks: {{ Illuminate\Support\Js::from((array) old('maintenance_tasks', $workOrder->maintenance_tasks ?? $eq->maintenance_tasks ?? [])) }},
+                                    selectedAccessories: {{ Illuminate\Support\Js::from((array) old('accessories_checked', $workOrder->accessories_checked ?? $eq->accessories ?? [])) }},
                                     newTask: '', newAccessory: '',
                                     addItem(kind) {
                                         const isTask = kind === 'task';
@@ -215,8 +215,20 @@
                     {{-- Evidencias fotográficas (subida inmediata, comprimidas en servidor) --}}
                     <div class="mt-6 pt-4 border-t border-gray-100"
                          x-data="{
-                            photos: {{ Illuminate\Support\Js::from($workOrder->photos->map(fn ($p) => ['id' => $p->id, 'url' => $p->url(), 'name' => $p->original_name])) }},
+                            photos: {{ Illuminate\Support\Js::from($workOrder->photos->map(fn ($p) => ['id' => $p->id, 'url' => $p->url(), 'name' => $p->original_name, 'label' => $p->label])) }},
                             uploading: 0, error: '',
+                            async saveLabel(photo, label) {
+                                photo.label = label;
+                                await fetch(`{{ url('technician/work_orders/'.$workOrder->id.'/photos') }}/${photo.id}`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                    },
+                                    body: JSON.stringify({ label }),
+                                });
+                            },
                             async upload(files) {
                                 this.error = '';
                                 for (const file of files) {
@@ -260,13 +272,18 @@
 
                         <div class="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3" x-show="photos.length" x-cloak>
                             <template x-for="photo in photos" :key="photo.id">
-                                <div class="relative group">
-                                    <a :href="photo.url" target="_blank">
-                                        <img :src="photo.url" :alt="photo.name" class="h-24 w-full object-cover rounded-lg border border-gray-200">
-                                    </a>
-                                    <button type="button" @click="remove(photo)"
-                                            class="absolute -top-2 -right-2 hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white text-xs shadow"
-                                            title="Eliminar foto">✕</button>
+                                <div>
+                                    <div class="relative group">
+                                        <a :href="photo.url" target="_blank">
+                                            <img :src="photo.url" :alt="photo.name" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                        </a>
+                                        <button type="button" @click="remove(photo)"
+                                                class="absolute -top-2 -right-2 hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white text-xs shadow"
+                                                title="Eliminar foto">✕</button>
+                                    </div>
+                                    <input type="text" :value="photo.label ?? ''" @change="saveLabel(photo, $event.target.value)"
+                                           placeholder="Descripción…" maxlength="255"
+                                           class="mt-1 block w-full text-xs border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
                                 </div>
                             </template>
                         </div>
@@ -278,6 +295,25 @@
                                    x-ref="fileInput" @change="upload($event.target.files)">
                         </label>
                         <p class="mt-2 text-xs text-red-600" x-show="error" x-text="error" x-cloak></p>
+                    </div>
+
+                    {{-- Firmas (técnico y cliente de conformidad) --}}
+                    <div class="mt-6 pt-4 border-t border-gray-100">
+                        <p class="text-xs font-medium text-gray-500 uppercase mb-3">Firmas</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <x-signature-slot
+                                label="Firma del técnico"
+                                :current="$workOrder->technicianSignature?->url()"
+                                :currentId="$workOrder->technicianSignature?->id"
+                                :storeUrl="route('technician.work_orders.signatures.store', [$workOrder, 'technician'])"
+                                :destroyUrlBase="url('technician/work_orders/'.$workOrder->id.'/signatures')" />
+                            <x-signature-slot
+                                label="Firma del cliente (conformidad)"
+                                :current="$workOrder->clientSignature?->url()"
+                                :currentId="$workOrder->clientSignature?->id"
+                                :storeUrl="route('technician.work_orders.signatures.store', [$workOrder, 'client'])"
+                                :destroyUrlBase="url('technician/work_orders/'.$workOrder->id.'/signatures')" />
+                        </div>
                     </div>
 
                     {{-- Botón enviar a revisión --}}
@@ -318,9 +354,31 @@
                             <p class="text-xs font-medium text-gray-500 uppercase mb-2">Evidencias fotográficas</p>
                             <div class="grid grid-cols-3 sm:grid-cols-5 gap-3">
                                 @foreach ($workOrder->photos as $photo)
-                                    <a href="{{ $photo->url() }}" target="_blank">
-                                        <img src="{{ $photo->url() }}" alt="{{ $photo->original_name }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
-                                    </a>
+                                    <figure>
+                                        <a href="{{ $photo->url() }}" target="_blank">
+                                            <img src="{{ $photo->url() }}" alt="{{ $photo->label ?: $photo->original_name }}" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                        </a>
+                                        @if ($photo->label)
+                                            <figcaption class="mt-1 text-xs text-gray-500">{{ $photo->label }}</figcaption>
+                                        @endif
+                                    </figure>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    @if ($workOrder->technicianSignature || $workOrder->clientSignature)
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <p class="text-xs font-medium text-gray-500 uppercase mb-2">Firmas</p>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                @foreach (['technicianSignature' => 'Técnico', 'clientSignature' => 'Cliente'] as $rel => $label)
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-500 uppercase mb-1">{{ $label }}</p>
+                                        @if ($workOrder->$rel)
+                                            <img src="{{ $workOrder->$rel->url() }}" alt="Firma {{ $label }}" class="h-24 max-w-full object-contain rounded border border-gray-200 bg-white p-1">
+                                        @else
+                                            <p class="text-sm text-gray-400">Sin firma.</p>
+                                        @endif
+                                    </div>
                                 @endforeach
                             </div>
                         </div>

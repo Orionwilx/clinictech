@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\Technician;
+use App\Models\Upload;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Notifications\WorkOrderNotification;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 
 class WorkOrderService
@@ -77,14 +79,23 @@ class WorkOrderService
      */
     public function create(array $data): WorkOrder
     {
-        $data['code'] = $this->nextCode();
+        $data['code'] = $this->nextCode($data['type'] ?? null);
         $data = $this->applyStatusTimestamps($data, null);
 
-        return WorkOrder::create($data);
+        $workOrder = WorkOrder::create($data);
+
+        // El admin puede crear la OT ya asignada a un técnico: notifícalo.
+        if (! empty($data['technician_id'])) {
+            $this->notifyTechnicianAssigned($workOrder);
+        }
+
+        return $workOrder;
     }
 
     /**
      * Actualiza una OT ajustando los sellos de tiempo si cambió el estado.
+     * Si cambió el tipo, re-deriva la sigla del código (OT-000001_MP…).
+     * Si se asignó/reasignó técnico, lo notifica.
      *
      * @param  array<string, mixed>  $data  validado por UpdateWorkOrderRequest
      */
@@ -92,7 +103,44 @@ class WorkOrderService
     {
         $data = $this->applyStatusTimestamps($data, $workOrder);
 
+        if (array_key_exists('type', $data) && $data['type'] !== $workOrder->type) {
+            $data['code'] = $this->appendTypeAbbr($this->stripTypeAbbr($workOrder->code), $data['type']);
+        }
+
+        $technicianChanged = array_key_exists('technician_id', $data)
+            && ! empty($data['technician_id'])
+            && (int) $data['technician_id'] !== (int) $workOrder->technician_id;
+
         $workOrder->update($data);
+
+        if ($technicianChanged) {
+            $this->notifyTechnicianAssigned($workOrder);
+        }
+    }
+
+    /**
+     * Guarda (reemplazando) la firma del técnico o del cliente de una OT.
+     * $kind: 'technician' | 'client'. Se sube al disco privado sin recompresión
+     * para no ennegrecer PNG con transparencia.
+     */
+    public function storeSignature(WorkOrder $workOrder, UploadedFile $file, string $kind): Upload
+    {
+        $collection = "signature_{$kind}";
+
+        // Solo hay una firma vigente por tipo: purga la anterior.
+        $workOrder->uploadMany($collection)->get()->each->purge();
+
+        $path = $file->store("work_order_signatures/{$workOrder->id}", 'private');
+
+        return $workOrder->uploads()->create([
+            'collection' => $collection,
+            'disk' => 'private',
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'uploaded_by' => auth()->id(),
+        ]);
     }
 
     // ─── Transiciones de estado ───────────────────────────────────────────────
@@ -100,7 +148,7 @@ class WorkOrderService
     /** Cliente crea solicitud → draft */
     public function createClientRequest(array $data, int $clientUserId): WorkOrder
     {
-        $data['code'] = $this->nextCode();
+        $data['code'] = $this->nextCode($data['type'] ?? null);
         $data['status'] = 'draft';
         $data['requested_by_client'] = true;
         $data['visible_to_client'] = false;
@@ -332,13 +380,44 @@ class WorkOrderService
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Genera el siguiente código de OT: OT-000001.
+     * Genera el siguiente código de OT con sigla del tipo: OT-000001_MP.
      */
-    private function nextCode(): string
+    private function nextCode(?string $type = null): string
     {
         $next = (WorkOrder::withTrashed()->max('id') ?? 0) + 1;
+        $base = 'OT-'.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
 
-        return 'OT-'.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+        return $this->appendTypeAbbr($base, $type);
+    }
+
+    /**
+     * Añade la sigla del tipo (MP/MC/MR) a un código base OT-000001.
+     */
+    private function appendTypeAbbr(string $base, ?string $type): string
+    {
+        $abbr = WorkOrder::TYPE_ABBREVIATIONS[$type] ?? null;
+
+        return $abbr ? "{$base}_{$abbr}" : $base;
+    }
+
+    /**
+     * Quita la sigla del tipo del final del código (OT-000001_MP → OT-000001).
+     */
+    private function stripTypeAbbr(string $code): string
+    {
+        return preg_replace('/_[A-Z]{2}$/', '', $code);
+    }
+
+    /**
+     * Notifica al técnico asignado que tiene una nueva OT.
+     */
+    private function notifyTechnicianAssigned(WorkOrder $workOrder): void
+    {
+        Technician::find($workOrder->technician_id)?->user?->notify(new WorkOrderNotification(
+            $workOrder,
+            "Se te asignó la orden {$workOrder->code} — {$workOrder->title}.",
+            route('technician.work_orders.show', $workOrder),
+        ));
     }
 
     /**

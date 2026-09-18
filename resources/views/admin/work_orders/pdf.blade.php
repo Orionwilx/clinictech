@@ -309,6 +309,9 @@
                     @foreach ($row as $photo)
                         <td style="width:33%; padding:4px; text-align:center; vertical-align:top;">
                             <img src="{{ $photo->absolutePath() }}" style="max-width:100%; max-height:160px; border:1px solid #e5e7eb;">
+                            @if ($photo->label)
+                                <div style="font-size:8.5px; color:#4b5563; margin-top:3px;">{{ $photo->label }}</div>
+                            @endif
                         </td>
                     @endforeach
                     @for ($i = $row->count(); $i < 3; $i++)
@@ -325,6 +328,9 @@
         <table class="sig-table">
             <tr>
                 <td class="sig-cell">
+                    @if ($workOrder->technicianSignature)
+                        <img src="{{ $workOrder->technicianSignature->absolutePath() }}" style="max-height:60px; max-width:90%;">
+                    @endif
                     <div class="sig-line">
                         <div class="sig-name">{{ optional($workOrder->technician)->name ?: '____________________' }}</div>
                         <div class="sig-label">Técnico responsable</div>
@@ -334,9 +340,12 @@
                     </div>
                 </td>
                 <td class="sig-cell">
+                    @if ($workOrder->clientSignature)
+                        <img src="{{ $workOrder->clientSignature->absolutePath() }}" style="max-height:60px; max-width:90%;">
+                    @endif
                     <div class="sig-line">
-                        <div class="sig-name">____________________</div>
-                        <div class="sig-label">Ingeniero / Administrador</div>
+                        <div class="sig-name">{{ optional($workOrder->client)->name ?: '____________________' }}</div>
+                        <div class="sig-label">Cliente (conformidad)</div>
                     </div>
                 </td>
             </tr>

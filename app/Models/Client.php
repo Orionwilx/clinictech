@@ -50,6 +50,12 @@ class Client extends Model
         return $this->uploadMany('document');
     }
 
+    /** Capacitaciones (Programa de Educación Continua) en PDF. */
+    public function pec(): MorphMany
+    {
+        return $this->uploadMany('pec');
+    }
+
     /** URL autenticada del logo (via MediaController). */
     public function logoUrl(): ?string
     {

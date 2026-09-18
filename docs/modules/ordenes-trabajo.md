@@ -14,13 +14,13 @@
 ## Campos (`work_orders`)
 | Campo | Tipo | Reglas | Notas |
 |-------|------|--------|-------|
-| code | string | unique, autogenerado | Nº de OT `OT-000001` (lo asigna `WorkOrderService`) |
+| code | string | unique, autogenerado | Nº de OT con sigla de tipo `OT-000001_MP` (lo asigna `WorkOrderService`; se re-deriva la sigla al cambiar el tipo) |
 | client_id | FK clients | required, exists | Cliente dueño de la OT |
 | equipment_id | FK equipment | nullable, exists, debe pertenecer al cliente | Equipo intervenido |
 | technician_id | FK technicians | nullable, exists | Técnico asignado |
 | title | string | required, max:255 | Asunto/motivo |
 | description | text | nullable | Descripción de la solicitud/falla |
-| type | string | required, in:TYPES | Correctivo/Preventivo (código EN/UI ES) |
+| type | string | required, in:TYPES | Preventivo/Correctivo/Revisión (código EN/UI ES) |
 | priority | string | required, in:PRIORITIES | Baja/Media/Alta (código EN/UI ES) |
 | status | string | required, in:STATUSES | Estado (ver abajo) |
 | diagnosis | text | nullable | Diagnóstico técnico |
@@ -49,8 +49,9 @@
 Máquina de estados del flujo colaborativo: `draft → open/assigned → in_progress → pending_review → closed → (visible_to_client)`.
 
 ## Tipos (`WorkOrder::TYPES`)
-- `corrective` → «Correctivo» (default) · `preventive` → «Preventivo»
-- Representan la naturaleza del trabajo (mantenimiento correctivo/preventivo). **Diseñado para ampliarse**; pendiente hacerlos configurables por el admin.
+- `preventive` → «Preventivo» (default) · `corrective` → «Correctivo» · `review` → «Revisión»
+- Sigla por tipo (`WorkOrder::TYPE_ABBREVIATIONS`): `MP` (preventivo) · `MC` (correctivo) · `MR` (revisión). Se usa en el `code` y en el nombre del PDF.
+- Representan la naturaleza del trabajo. **Diseñado para ampliarse**; pendiente hacerlos configurables por el admin.
 
 ## Prioridades (`WorkOrder::PRIORITIES`)
 - `low` → «Baja» · `medium` → «Media» (default) · `high` → «Alta»
@@ -62,7 +63,9 @@ Máquina de estados del flujo colaborativo: `draft → open/assigned → in_prog
 - Inversas: `Client hasMany WorkOrder` · `Equipment hasMany WorkOrder` · `Technician hasMany WorkOrder`.
 
 ## Reglas de negocio
-- `code` autogenerado y único (`OT-` + consecutivo de 6 dígitos) en `WorkOrderService::create`.
+- `code` autogenerado y único (`OT-` + consecutivo de 6 dígitos + `_` + sigla del tipo, p. ej. `OT-000001_MP`) en `WorkOrderService::create`. Al cambiar el tipo en la edición, `update` re-deriva la sigla conservando el número.
+- **Nombre del PDF** descriptivo y saneado (sin acentos): `MP_OT000001_equipo_marca_serie.pdf` (`WorkOrder::pdfFileName()` + `sanitizeFileName()`). La hoja de vida del equipo usa `HV_equipo_marca_serie.pdf` (`Equipment::pdfFileName()`).
+- Al crear/reasignar una OT con técnico desde el admin, `WorkOrderService::create`/`update` **notifican al técnico** (además de `assignTechnician`/`approveClientRequest`).
 - `equipment_id`, si se indica, **debe pertenecer** al `client_id` seleccionado (validado en el Request).
 - Sellos de tiempo automáticos según el estado (en `WorkOrderService`):
   - `in_progress` → `started_at` · `completed` → `completed_at` · `closed` → `closed_at` (solo si estaban vacíos).
@@ -92,11 +95,18 @@ El índice de OT es un **centro de operación** orientado a reducir clics del ad
 **Servicio** (`WorkOrderService`): `advanceForAdmin` / `regressForAdmin` (despachan la transición correcta según estado), `assignTechnician` (ajusta `open⇆assigned` y notifica) y `batchForAdmin` (itera y devuelve cuántas afectó; omite las que no aplican). **Rutas**: `advance`, `regress`, `assign` (por OT) y `batch` (colección, declarada **antes** del `Route::resource` para no colisionar con `{work_order}`).
 
 ## Evidencias fotográficas (técnico y admin)
-- `WorkOrderPhoto` (tabla `work_order_photos`: `work_order_id`, `path`, `original_name`, `size`) · `WorkOrder hasMany photos`.
-- El técnico dueño de la OT (estado `assigned`/`in_progress`) sube fotos desde el diligenciamiento; **subida AJAX inmediata** (rutas `technician.work_orders.photos.{store,destroy}`) — no dependen del envío del formulario, así no se pierden con mala conexión.
-- **El admin también anexa/quita fotos** desde la ficha de la OT (`admin/work_orders/show`, galería interactiva; rutas `admin.work_orders.photos.{store,destroy}`, permiso `update work_orders`, **cualquier estado**). Es habitual que el admin llene las OT que ejecutó el técnico y suba las fotos que este tomó. Por eso `store`/`update` de OT ahora **redirigen a la ficha** (show) para poder anexar fotos de inmediato.
+- `Upload` polimórfico (collection `photo`) · `WorkOrder::photos()` → `uploadMany('photo')`.
+- El técnico dueño de la OT (estado `assigned`/`in_progress`) sube fotos desde el diligenciamiento; **subida AJAX inmediata** (rutas `technician.work_orders.photos.{store,update,destroy}`) — no dependen del envío del formulario, así no se pierden con mala conexión.
+- **El admin también anexa/quita fotos** desde la ficha de la OT (`admin/work_orders/show`, galería interactiva; rutas `admin.work_orders.photos.{store,update,destroy}`, permiso `update work_orders`, **cualquier estado**). Es habitual que el admin llene las OT que ejecutó el técnico y suba las fotos que este tomó. Por eso `store`/`update` de OT ahora **redirigen a la ficha** (show) para poder anexar fotos de inmediato.
+- **Descripción por foto**: cada foto tiene un campo de texto (`Upload.label`) editable inline que se guarda por AJAX (`PATCH .../photos/{photo}`, ruta `*.work_orders.photos.update`). Se muestra como pie de foto en show admin/técnico/cliente y en el PDF.
 - **Compresión en servidor** (`ImageService`, GD): lado mayor ≤ 1600 px, re-codificado JPEG calidad 72, orientación EXIF corregida, transparencias aplanadas en blanco. Límite de subida 15 MB.
 - Galería visible en el show del admin, del cliente (cuando la OT le es visible) y en el **PDF de la OT**.
+
+## Firmas (técnico y cliente)
+- Se capturan como **imagen subida** (no dibujo en canvas): collections `signature_technician` y `signature_client` sobre `Upload`; relaciones `WorkOrder::technicianSignature()`/`clientSignature()` (MorphOne, última vigente).
+- Se suben/reemplazan desde el diligenciamiento del técnico (`assigned`/`in_progress`) y desde el show del admin (`update work_orders`, cualquier estado), vía el componente `<x-signature-slot>` y `WorkOrderService::storeSignature` (disco privado, **sin recompresión** para no ennegrecer PNG transparentes).
+- Rutas: `{admin|technician}.work_orders.signatures.store` (`{kind}` ∈ `technician|client`) y `...signatures.destroy`.
+- Aparecen en el show de admin/técnico/cliente y en el **PDF** (bloque de firmas: técnico + cliente de conformidad, reemplazando al antiguo «técnico + administrador»).
 
 ## Borrador con autoguardado (técnico)
 El formulario de diligenciamiento se **autoguarda** cada 20 s cuando hay cambios (fetch `PUT` con `Accept: application/json`; `Technician\WorkOrderController::update` responde JSON `saved_at`). Indicador «✓ Borrador guardado» / aviso de sin conexión. El botón «Guardar borrador» sigue disponible.

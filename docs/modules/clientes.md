@@ -7,7 +7,7 @@
 > Base del sistema: de Clientes cuelgan equipos, órdenes y el panel cliente. "De menos a más": empresa + login + hub con áreas ya implementados; contactos, adjuntos y recordatorios se añaden después.
 
 ## Hub del cliente
-La ficha `clients/show` es un **tablero con pestañas** (Datos / Áreas / Equipos / Órdenes / OT pendientes / Documentos) que lista lo del cliente. La pestaña activa se puede fijar con `?tab=areas`. Desde Equipos/Órdenes se crea con `?client_id` precargado. Si el cliente tiene logo, se muestra en la cabecera del hub.
+La ficha `clients/show` es un **tablero con pestañas** (Datos / Áreas / Equipos / Órdenes / OT pendientes / Documentos / PEC) que lista lo del cliente. La pestaña activa se puede fijar con `?tab=areas`. Desde Equipos/Órdenes se crea con `?client_id` precargado. Si el cliente tiene logo, se muestra en la cabecera del hub.
 
 ### Pestaña «OT pendientes»
 Lista los **equipos del cliente que tienen OT activas** (estados `open`/`assigned`/`in_progress`, ver `WorkOrder::ACTIVE_STATUSES`). Columnas: equipo, área, marca/modelo, N. serie, estado, obs. técnicas, OT pendientes (nº + enlaces a cada OT) y acceso a la hoja de vida. El controlador arma `pendingEquipment` con `whereHas`/`withCount` sobre las OT activas.
@@ -52,6 +52,13 @@ Subdivisiones internas del cliente (UCI, Urgencias, Laboratorio…). `Area belon
 - Rutas: `POST clients/{client}/attachments`, `GET …/{attachment}/download`, `DELETE …/{attachment}` (donde `{attachment}` es un `Upload`).
 - UI: pestaña «Documentos» en el hub del cliente; formulario de subida + tabla con descarga/eliminar.
 - Permiso: `update clients` para subir/eliminar; `view clients` para descargar.
+
+## Capacitaciones — PEC (Programa de Educación Continua) ✅
+- **PDFs** que el admin sube para el cliente y este consulta desde su panel. Reutiliza `uploads` (collection `pec`, disk `private`). Relación `Client::pec()` (`uploadMany('pec')`).
+- Admin: `Admin/ClientPecController` (store / download / destroy), pestaña «PEC» del hub. Solo acepta `mimes:pdf` (máx. 20 MB); `Upload.label` guarda el nombre/tema.
+- Rutas admin: `POST clients/{client}/pec`, `GET …/{upload}/download`, `DELETE …/{upload}`.
+- Cliente: `Client/PecController` (index + download), página «Capacitaciones (PEC)» en el panel + enlace en el sidebar; solo ve el PEC de su propia empresa.
+- Permiso: reutiliza `clients` (admin gestiona; cliente accede solo al suyo por segregación de `client_id`).
 
 ## Pendientes
 

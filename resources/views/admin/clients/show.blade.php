@@ -41,6 +41,7 @@
                     'ordenes' => ['Órdenes', $client->workOrders->count()],
                     'pendientes' => ['OT pendientes', $pendingEquipment->count()],
                     'documentos' => ['Documentos', $client->documents->count()],
+                    'pec' => ['PEC', $client->pec->count()],
                 ])
                 @foreach ($tabs as $key => [$label, $count])
                     <button type="button" @click="tab = '{{ $key }}'" role="tab"
@@ -377,6 +378,78 @@
                                 <tr>
                                     <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-400">
                                         No hay documentos adjuntos para este cliente.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- Capacitaciones (PEC) del cliente --}}
+            <div x-show="tab === 'pec'" x-cloak id="tab-pec">
+                <p class="mb-4 text-sm text-gray-500">Programa de Educación Continua: capacitaciones del cliente en PDF. El cliente puede consultarlas y descargarlas desde su panel.</p>
+                @can('update clients')
+                    <div class="bg-white shadow-sm sm:rounded-lg p-6 mb-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4">Subir capacitación (PDF)</h3>
+                        <form action="{{ route('admin.clients.pec.store', $client) }}" method="POST" enctype="multipart/form-data"
+                              class="flex flex-wrap items-end gap-3">
+                            @csrf
+                            <div class="flex-1 min-w-[12rem]">
+                                <x-input-label for="pec_name" :value="__('Nombre / tema de la capacitación')" />
+                                <x-text-input id="pec_name" name="name" type="text" class="mt-1 block w-full"
+                                              :value="old('name')" placeholder="Ej. Bioseguridad, Manejo de equipos…" required />
+                            </div>
+                            <div class="flex-1 min-w-[12rem]">
+                                <x-input-label for="pec_file" :value="__('Archivo PDF (máx. 20 MB)')" />
+                                <input id="pec_file" name="file" type="file" accept="application/pdf"
+                                       class="mt-1 block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
+                                       required />
+                            </div>
+                            <x-primary-button>{{ __('Subir') }}</x-primary-button>
+                        </form>
+                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                        <x-input-error :messages="$errors->get('file')" class="mt-1" />
+                    </div>
+                @endcan
+
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacitación</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tamaño</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subido por</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @forelse ($client->pec as $pec)
+                                <tr>
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $pec->label }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $pec->original_name }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $pec->humanSize() }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ optional($pec->uploader)->name ?? '—' }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ $pec->created_at->format('d/m/Y') }}</td>
+                                    <td class="px-6 py-4 text-right text-sm font-medium space-x-3">
+                                        <a href="{{ route('admin.clients.pec.download', [$client, $pec]) }}"
+                                           class="text-brand-600 hover:text-brand-800">Descargar</a>
+                                        @can('update clients')
+                                            <form action="{{ route('admin.clients.pec.destroy', [$client, $pec]) }}" method="POST" class="inline"
+                                                  data-confirm="¿Eliminar esta capacitación?">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-900">Eliminar</button>
+                                            </form>
+                                        @endcan
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-400">
+                                        No hay capacitaciones (PEC) para este cliente.
                                     </td>
                                 </tr>
                             @endforelse
