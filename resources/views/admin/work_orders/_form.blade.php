@@ -4,7 +4,7 @@
 {{-- Equipo y cliente bloqueados cuando la OT ya está en curso (in_progress en adelante). --}}
 @php($equipmentLocked = $editing && in_array($workOrder->status, ['in_progress', 'pending_review', 'completed', 'closed']))
 
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-4"
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
      x-data="{
         editing: {{ $editing ? 'true' : 'false' }},
         repopulate: {{ old() ? 'true' : 'false' }},
@@ -55,45 +55,43 @@
             else { if (!this.selectedAccessories.includes(name)) this.selectedAccessories.push(name); this.newAccessory = ''; }
         }
      }">
-    <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-            <x-input-label for="client_id" :value="__('Cliente')" />
-            @if ($equipmentLocked)
-                <input type="hidden" name="client_id" value="{{ $workOrder->client_id }}">
-                <div class="mt-1 block w-full border border-gray-200 bg-gray-50 rounded-md shadow-sm px-3 py-2 text-sm text-gray-700">
-                    {{ $workOrder->client?->name ?? '—' }}
-                </div>
-            @else
-                <select id="client_id" name="client_id" x-model="client" @change="onClientChange()" required
-                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-                    <option value="">— Selecciona —</option>
-                    @foreach ($clients as $id => $name)
-                        <option value="{{ $id }}" @selected(old('client_id', $workOrder->client_id ?? request('client_id')) == $id)>{{ $name }}</option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('client_id')" class="mt-2" />
-            @endif
-        </div>
+    <div>
+        <x-input-label for="client_id" :value="__('Cliente')" />
+        @if ($equipmentLocked)
+            <input type="hidden" name="client_id" value="{{ $workOrder->client_id }}">
+            <div class="mt-1 block w-full border border-gray-200 bg-gray-50 rounded-md shadow-sm px-3 py-2 text-sm text-gray-700">
+                {{ $workOrder->client?->name ?? '—' }}
+            </div>
+        @else
+            <select id="client_id" name="client_id" x-model="client" @change="onClientChange()" required
+                    class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                <option value="">— Selecciona —</option>
+                @foreach ($clients as $id => $name)
+                    <option value="{{ $id }}" @selected(old('client_id', $workOrder->client_id ?? request('client_id')) == $id)>{{ $name }}</option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('client_id')" class="mt-2" />
+        @endif
+    </div>
 
-        <div>
-            <x-input-label for="equipment_id" :value="__('Equipo')" />
-            @if ($equipmentLocked)
-                <input type="hidden" name="equipment_id" value="{{ $workOrder->equipment_id }}">
-                <div class="mt-1 block w-full border border-gray-200 bg-gray-50 rounded-md shadow-sm px-3 py-2 text-sm text-gray-700">
-                    {{ $workOrder->equipment?->name ?? '— Sin equipo —' }}
-                    <span class="text-xs text-gray-400 ml-1">(OT en curso — no editable)</span>
-                </div>
-            @else
-                <select id="equipment_id" name="equipment_id" x-model="equipmentId" @change="onEquipmentChange()" :disabled="!client"
-                        class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
-                    <option value="">{{ __('— Sin equipo —') }}</option>
-                    <template x-for="e in filteredEquipment" :key="e.id">
-                        <option :value="e.id" x-text="e.name" :selected="String(e.id) === String(equipmentId)"></option>
-                    </template>
-                </select>
-                <x-input-error :messages="$errors->get('equipment_id')" class="mt-2" />
-            @endif
-        </div>
+    <div>
+        <x-input-label for="equipment_id" :value="__('Equipo')" />
+        @if ($equipmentLocked)
+            <input type="hidden" name="equipment_id" value="{{ $workOrder->equipment_id }}">
+            <div class="mt-1 block w-full border border-gray-200 bg-gray-50 rounded-md shadow-sm px-3 py-2 text-sm text-gray-700">
+                {{ $workOrder->equipment?->name ?? '— Sin equipo —' }}
+                <span class="text-xs text-gray-400 ml-1">(OT en curso — no editable)</span>
+            </div>
+        @else
+            <select id="equipment_id" name="equipment_id" x-model="equipmentId" @change="onEquipmentChange()" :disabled="!client"
+                    class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm disabled:bg-gray-100">
+                <option value="">{{ __('— Sin equipo —') }}</option>
+                <template x-for="e in filteredEquipment" :key="e.id">
+                    <option :value="e.id" x-text="e.name" :selected="String(e.id) === String(equipmentId)"></option>
+                </template>
+            </select>
+            <x-input-error :messages="$errors->get('equipment_id')" class="mt-2" />
+        @endif
     </div>
 
     <div>
@@ -135,45 +133,34 @@
     </div>
 
     <div>
-        <x-input-label for="status" :value="__('Estado')" />
-        <select id="status" name="status" required
-                class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
-            @foreach (\App\Models\WorkOrder::STATUSES as $value => $label)
-                <option value="{{ $value }}" @selected(old('status', $workOrder->status ?? 'open') === $value)>{{ $label }}</option>
-            @endforeach
-        </select>
-        <x-input-error :messages="$errors->get('status')" class="mt-2" />
-    </div>
-
-    <div>
         <x-input-label for="scheduled_at" :value="__('Fecha programada')" />
         <x-text-input id="scheduled_at" name="scheduled_at" type="date" class="mt-1 block w-full"
                       :value="old('scheduled_at', optional($workOrder->scheduled_at ?? null)->format('Y-m-d'))" />
         <x-input-error :messages="$errors->get('scheduled_at')" class="mt-2" />
     </div>
 
-    <div class="sm:col-span-2">
+    <div class="sm:col-span-2 lg:col-span-3">
         <x-input-label for="description" :value="__('Descripción de la solicitud / falla')" />
         <textarea id="description" name="description" rows="3"
                   class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('description', $workOrder->description ?? '') }}</textarea>
         <x-input-error :messages="$errors->get('description')" class="mt-2" />
     </div>
 
-    <div class="sm:col-span-2">
+    <div class="sm:col-span-2 lg:col-span-3">
         <x-input-label for="diagnosis" :value="__('Diagnóstico')" />
         <textarea id="diagnosis" name="diagnosis" rows="3"
                   class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('diagnosis', $workOrder->diagnosis ?? '') }}</textarea>
         <x-input-error :messages="$errors->get('diagnosis')" class="mt-2" />
     </div>
 
-    <div class="sm:col-span-2">
+    <div class="sm:col-span-2 lg:col-span-3">
         <x-input-label for="work_performed" :value="__('Actividades realizadas / solución')" />
         <textarea id="work_performed" name="work_performed" rows="3"
                   class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('work_performed', $workOrder->work_performed ?? '') }}</textarea>
         <x-input-error :messages="$errors->get('work_performed')" class="mt-2" />
     </div>
 
-    <div class="sm:col-span-2">
+    <div class="sm:col-span-2 lg:col-span-3">
         <x-input-label for="additional_observations" :value="__('Observaciones adicionales')" />
         <textarea id="additional_observations" name="additional_observations" rows="2"
                   class="mt-1 block w-full border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">{{ old('additional_observations', $workOrder->additional_observations ?? '') }}</textarea>
@@ -181,7 +168,7 @@
     </div>
 
     {{-- Panel del equipo: editable y persistente en su ficha --}}
-    <div class="sm:col-span-2 border-t border-gray-100 pt-4" x-show="equipmentId" x-cloak>
+    <div class="sm:col-span-2 lg:col-span-3 border-t border-gray-100 pt-4" x-show="equipmentId" x-cloak>
         <h3 class="text-sm font-semibold text-brand-900 mb-1">Datos del equipo</h3>
         <p class="text-xs text-gray-400 mb-4">Estos campos se <strong>guardan en la ficha del equipo</strong> (y quedan registrados en esta orden). Edítalos aquí sin salir de la OT.</p>
 

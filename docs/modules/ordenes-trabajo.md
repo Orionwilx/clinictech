@@ -38,7 +38,7 @@
 
 ## Estados (código EN / UI ES) — `WorkOrder::STATUSES`
 - `draft` → «Borrador» (solicitud del cliente pendiente de aprobación)
-- `open` → «Abierta» (default)
+- `open` → «Abierta»
 - `assigned` → «Asignada»
 - `in_progress` → «En proceso»
 - `pending_review` → «En revisión» (técnico completó, espera al admin)
@@ -47,6 +47,15 @@
 - `cancelled` → «Cancelada»
 
 Máquina de estados del flujo colaborativo: `draft → open/assigned → in_progress → pending_review → closed → (visible_to_client)`.
+
+**Los estados son automáticos — no hay selector manual en el formulario admin:**
+- Al **crear** una OT desde el admin: si incluye `technician_id` → `assigned`; si no → `open`.
+- Al **editar** una OT en estado `open`/`assigned`: asignar técnico → `assigned`; quitar técnico → `open`. Editar contenido sin tocar `technician_id` no cambia el estado.
+- `draft`: solo lo crea `WorkOrderService::createClientRequest` (solicitud del cliente). No lo toca el admin en el form.
+- `in_progress`: el técnico empieza a diligenciar (transición automática en `Technician\WorkOrderController::update`).
+- `pending_review`: el técnico envía a revisión (`submitForReview`). **El admin también puede enviarlo a revisión** desde la ficha (ruta `POST work_orders/{work_order}/submit-review`, nombre `work_orders.submit-review`, acción `WorkOrderController::submitReview`) cuando la OT está `assigned` o `in_progress` — el admin suele llenar la OT del técnico.
+- `closed`: el admin aprueba el trabajo (`approveWork`).
+- `visible_to_client = true`: el **único paso manual** del flujo — el admin elige cuándo enviarlo al cliente (`sendToClient`). No es un estado independiente sino una bandera sobre `closed`.
 
 ## Tipos (`WorkOrder::TYPES`)
 - `preventive` → «Preventivo» (default) · `corrective` → «Correctivo» · `review` → «Revisión»
@@ -76,6 +85,7 @@ Máquina de estados del flujo colaborativo: `draft → open/assigned → in_prog
 - admin: todo · tecnico: `view`, `update` (opera sus OT) · cliente: `view` (su propia OT, Policy futura).
 
 ## Notas de UI
+- **Layout horizontal consistente**: la cabecera de identidad de una OT (Nº de orden, Asunto, Cliente, Equipo, Técnico, Tipo, Prioridad, Estado, Fecha programada) se presenta en **cuadrícula horizontal** (`grid grid-cols-2 sm:grid-cols-3 gap-3`) en los tres roles: admin (formulario editable, `lg:grid-cols-3`), técnico (tarjetas solo lectura en la cabecera, formulario de diligenciamiento debajo) y cliente (tarjetas solo lectura). Los textos largos (Descripción, Diagnóstico, Actividades, Observaciones) van a ancho completo debajo de la cuadrícula. Admin y técnico ven inputs; el cliente ve solo tarjetas `rounded-lg bg-gray-50 border border-gray-100 p-3` con `dt`/`dd`.
 - Vistas en `resources/views/admin/work_orders/` siguiendo `DESIGN.md`.
 - Selectores de cliente, equipo y técnico; selectores de tipo/prioridad/estado con etiquetas en español.
 - **Lista dependiente cliente→equipo** (Alpine): al elegir cliente se filtran solo sus equipos; al cambiar de cliente se limpia el equipo. Además validado en servidor (el equipo debe pertenecer al cliente).
@@ -102,11 +112,11 @@ El índice de OT es un **centro de operación** orientado a reducir clics del ad
 - **Compresión en servidor** (`ImageService`, GD): lado mayor ≤ 1600 px, re-codificado JPEG calidad 72, orientación EXIF corregida, transparencias aplanadas en blanco. Límite de subida 15 MB.
 - Galería visible en el show del admin, del cliente (cuando la OT le es visible) y en el **PDF de la OT**.
 
-## Firmas (técnico y cliente)
-- Se capturan como **imagen subida** (no dibujo en canvas): collections `signature_technician` y `signature_client` sobre `Upload`; relaciones `WorkOrder::technicianSignature()`/`clientSignature()` (MorphOne, última vigente).
-- Se suben/reemplazan desde el diligenciamiento del técnico (`assigned`/`in_progress`) y desde el show del admin (`update work_orders`, cualquier estado), vía el componente `<x-signature-slot>` y `WorkOrderService::storeSignature` (disco privado, **sin recompresión** para no ennegrecer PNG transparentes).
-- Rutas: `{admin|technician}.work_orders.signatures.store` (`{kind}` ∈ `technician|client`) y `...signatures.destroy`.
-- Aparecen en el show de admin/técnico/cliente y en el **PDF** (bloque de firmas: técnico + cliente de conformidad, reemplazando al antiguo «técnico + administrador»).
+## Firmas
+Las firmas ya NO se suben por-OT. Modelo nuevo (T3):
+- **Firma del técnico**: ligada al `User` del técnico. El técnico la sube una vez en su perfil (`POST /profile/signature`, `DELETE /profile/signature`; `ProfileController::updateSignature/destroySignature`). Se guarda como `Upload` con collection `signature` sobre el `User`. Se lee con `User::signatureBase64()` (data-URI inline). Si el técnico asignado no tiene firma y la OT está en `assigned`/`in_progress`, se muestra un banner amber no bloqueante con enlace al perfil.
+- **Firma de empresa** (administrador): única global. El admin la configura en `GET/POST/DELETE admin/company-signature` (`Admin/CompanySignatureController`), guardada como `Upload` collection `company_signature` sobre el `User` admin que la sube. Se recupera globalmente con `App\Support\CompanySignature::current()/base64()` sin depender de qué admin la subió.
+- Ambas firmas se muestran **solo lectura** en el show de admin/técnico/cliente y en el **PDF**, siempre como imagen base64 inline (data-URI); si no existe, se muestra una línea vacía. NO hay subida desde la OT.
 
 ## Borrador con autoguardado (técnico)
 El formulario de diligenciamiento se **autoguarda** cada 20 s cuando hay cambios (fetch `PUT` con `Accept: application/json`; `Technician\WorkOrderController::update` responde JSON `saved_at`). Indicador «✓ Borrador guardado» / aviso de sin conexión. El botón «Guardar borrador» sigue disponible.

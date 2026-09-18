@@ -5,10 +5,22 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             @if (session('status'))
                 <div class="rounded-md bg-green-50 p-4 text-sm text-green-700">{{ session('status') }}</div>
+            @endif
+
+            @if (in_array($workOrder->status, ['assigned', 'in_progress']) && ! auth()->user()->signatureBase64())
+                <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
+                    <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm text-amber-800">No tienes una firma registrada. Cárgala en tu perfil para que aparezca en las órdenes.</p>
+                        <a href="{{ route('profile.edit') }}" class="text-sm font-medium text-amber-700 underline hover:text-amber-900">Ir a mi perfil →</a>
+                    </div>
+                </div>
             @endif
 
             {{-- Motivo de devolución --}}
@@ -21,19 +33,20 @@
 
             {{-- Datos de la OT --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <dl class="divide-y divide-gray-100">
+                <dl class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     @foreach ([
                         'Nº de orden' => $workOrder->code,
-                        'Estado' => $workOrder->statusLabel(),
-                        'Tipo' => $workOrder->typeLabel(),
-                        'Prioridad' => $workOrder->priorityLabel(),
+                        'Asunto' => $workOrder->title,
                         'Cliente' => optional($workOrder->client)->name ?? '—',
                         'Equipo' => optional($workOrder->equipment)->name ?? '—',
+                        'Tipo' => $workOrder->typeLabel(),
+                        'Prioridad' => $workOrder->priorityLabel(),
+                        'Estado' => $workOrder->statusLabel(),
                         'Fecha programada' => optional($workOrder->scheduled_at)->format('Y-m-d') ?: '—',
                     ] as $label => $value)
-                        <div class="py-3 grid grid-cols-3 gap-4">
-                            <dt class="text-sm font-medium text-gray-500">{{ $label }}</dt>
-                            <dd class="text-sm text-gray-900 col-span-2">{{ $value }}</dd>
+                        <div class="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                            <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>
+                            <dd class="mt-0.5 text-sm text-gray-900 break-words">{{ $value }}</dd>
                         </div>
                     @endforeach
                 </dl>
@@ -297,22 +310,30 @@
                         <p class="mt-2 text-xs text-red-600" x-show="error" x-text="error" x-cloak></p>
                     </div>
 
-                    {{-- Firmas (técnico y cliente de conformidad) --}}
+                    {{-- Firmas (solo lectura) --}}
                     <div class="mt-6 pt-4 border-t border-gray-100">
                         <p class="text-xs font-medium text-gray-500 uppercase mb-3">Firmas</p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <x-signature-slot
-                                label="Firma del técnico"
-                                :current="$workOrder->technicianSignature?->url()"
-                                :currentId="$workOrder->technicianSignature?->id"
-                                :storeUrl="route('technician.work_orders.signatures.store', [$workOrder, 'technician'])"
-                                :destroyUrlBase="url('technician/work_orders/'.$workOrder->id.'/signatures')" />
-                            <x-signature-slot
-                                label="Firma del cliente (conformidad)"
-                                :current="$workOrder->clientSignature?->url()"
-                                :currentId="$workOrder->clientSignature?->id"
-                                :storeUrl="route('technician.work_orders.signatures.store', [$workOrder, 'client'])"
-                                :destroyUrlBase="url('technician/work_orders/'.$workOrder->id.'/signatures')" />
+                            @php($techSig = $workOrder->technician?->user?->signatureBase64())
+                            <div class="text-center">
+                                @if ($techSig)
+                                    <img src="{{ $techSig }}" alt="Firma técnico" class="h-20 mx-auto mb-2 object-contain rounded border border-gray-200 bg-white p-1">
+                                @else
+                                    <div class="h-20 border-b border-gray-400 mb-2"></div>
+                                @endif
+                                <p class="text-sm font-medium text-gray-900">{{ $workOrder->technician?->name ?? '—' }}</p>
+                                <p class="text-xs text-gray-500">Técnico responsable</p>
+                            </div>
+                            @php($companySig = \App\Support\CompanySignature::base64())
+                            <div class="text-center">
+                                @if ($companySig)
+                                    <img src="{{ $companySig }}" alt="Firma empresa" class="h-20 mx-auto mb-2 object-contain rounded border border-gray-200 bg-white p-1">
+                                @else
+                                    <div class="h-20 border-b border-gray-400 mb-2"></div>
+                                @endif
+                                <p class="text-sm font-medium text-gray-900">Administrador</p>
+                                <p class="text-xs text-gray-500">Administrador</p>
+                            </div>
                         </div>
                     </div>
 
@@ -366,20 +387,30 @@
                             </div>
                         </div>
                     @endif
-                    @if ($workOrder->technicianSignature || $workOrder->clientSignature)
+                    @php($techSigRo = $workOrder->technician?->user?->signatureBase64())
+                    @php($companySigRo = \App\Support\CompanySignature::base64())
+                    @if ($techSigRo || $companySigRo)
                         <div class="mt-4 pt-4 border-t border-gray-100">
                             <p class="text-xs font-medium text-gray-500 uppercase mb-2">Firmas</p>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                @foreach (['technicianSignature' => 'Técnico', 'clientSignature' => 'Cliente'] as $rel => $label)
-                                    <div>
-                                        <p class="text-xs font-medium text-gray-500 uppercase mb-1">{{ $label }}</p>
-                                        @if ($workOrder->$rel)
-                                            <img src="{{ $workOrder->$rel->url() }}" alt="Firma {{ $label }}" class="h-24 max-w-full object-contain rounded border border-gray-200 bg-white p-1">
-                                        @else
-                                            <p class="text-sm text-gray-400">Sin firma.</p>
-                                        @endif
-                                    </div>
-                                @endforeach
+                                <div class="text-center">
+                                    @if ($techSigRo)
+                                        <img src="{{ $techSigRo }}" alt="Firma técnico" class="h-20 mx-auto mb-2 object-contain rounded border border-gray-200 bg-white p-1">
+                                    @else
+                                        <div class="h-20 border-b border-gray-400 mb-2"></div>
+                                    @endif
+                                    <p class="text-sm font-medium text-gray-900">{{ $workOrder->technician?->name ?? '—' }}</p>
+                                    <p class="text-xs text-gray-500">Técnico responsable</p>
+                                </div>
+                                <div class="text-center">
+                                    @if ($companySigRo)
+                                        <img src="{{ $companySigRo }}" alt="Firma empresa" class="h-20 mx-auto mb-2 object-contain rounded border border-gray-200 bg-white p-1">
+                                    @else
+                                        <div class="h-20 border-b border-gray-400 mb-2"></div>
+                                    @endif
+                                    <p class="text-sm font-medium text-gray-900">Administrador</p>
+                                    <p class="text-xs text-gray-500">Administrador</p>
+                                </div>
                             </div>
                         </div>
                     @endif

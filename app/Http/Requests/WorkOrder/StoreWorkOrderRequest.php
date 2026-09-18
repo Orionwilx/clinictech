@@ -31,7 +31,6 @@ class StoreWorkOrderRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'type' => ['required', Rule::in(array_keys(WorkOrder::TYPES))],
             'priority' => ['required', Rule::in(array_keys(WorkOrder::PRIORITIES))],
-            'status' => ['required', Rule::in(array_keys(WorkOrder::STATUSES))],
             'diagnosis' => ['nullable', 'string'],
             'work_performed' => ['nullable', 'string'],
             'additional_observations' => ['nullable', 'string'],

@@ -94,7 +94,7 @@ class WorkOrderController extends Controller
     {
         $this->authorize('view work_orders');
 
-        $workOrder->load(['client', 'equipment', 'technician', 'photos', 'technicianSignature', 'clientSignature']);
+        $workOrder->load(['client', 'equipment', 'technician.user', 'photos']);
 
         return view('admin.work_orders.show', compact('workOrder'));
     }
@@ -178,32 +178,11 @@ class WorkOrderController extends Controller
         return response()->json(['deleted' => true]);
     }
 
-    /** Firma (técnico/cliente): el admin también llena la OT del técnico. */
-    public function storeSignature(Request $request, WorkOrder $workOrder, string $kind): JsonResponse
-    {
-        $this->authorize('update work_orders');
-        $request->validate(['signature' => ['required', 'image', 'max:4096']]);
-
-        $upload = $this->service->storeSignature($workOrder, $request->file('signature'), $kind);
-
-        return response()->json(['id' => $upload->id, 'url' => $upload->url()], 201);
-    }
-
-    public function destroySignature(WorkOrder $workOrder, Upload $signature): JsonResponse
-    {
-        $this->authorize('update work_orders');
-        abort_if($signature->uploadable_id !== $workOrder->id, 404);
-
-        $signature->purge();
-
-        return response()->json(['deleted' => true]);
-    }
-
     public function pdf(WorkOrder $workOrder): Response
     {
         $this->authorize('view work_orders');
 
-        $workOrder->load(['client.logo', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician', 'photos', 'technicianSignature', 'clientSignature']);
+        $workOrder->load(['client.logo', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician.user', 'photos']);
 
         $logoBase64 = $workOrder->client?->logoBase64();
 
@@ -251,6 +230,15 @@ class WorkOrderController extends Controller
         $this->service->rejectWork($workOrder, $request->input('rejection_reason'));
 
         return back()->with('status', 'Trabajo devuelto al técnico.');
+    }
+
+    public function submitReview(WorkOrder $workOrder): RedirectResponse
+    {
+        $this->authorize('update work_orders');
+        abort_unless(in_array($workOrder->status, ['assigned', 'in_progress']), 403);
+        $this->service->submitForReview($workOrder);
+
+        return back()->with('status', 'OT enviada a revisión correctamente.');
     }
 
     public function sendToClient(WorkOrder $workOrder): RedirectResponse

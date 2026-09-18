@@ -324,12 +324,16 @@
     @endif
 
     {{-- FIRMAS --}}
+    @php
+        $techSigPdf = $workOrder->technician?->user?->signatureBase64();
+        $companySigPdf = \App\Support\CompanySignature::base64();
+    @endphp
     <div class="signatures">
         <table class="sig-table">
             <tr>
                 <td class="sig-cell">
-                    @if ($workOrder->technicianSignature)
-                        <img src="{{ $workOrder->technicianSignature->absolutePath() }}" style="max-height:60px; max-width:90%;">
+                    @if ($techSigPdf)
+                        <img src="{{ $techSigPdf }}" style="max-height:60px; max-width:90%;">
                     @endif
                     <div class="sig-line">
                         <div class="sig-name">{{ optional($workOrder->technician)->name ?: '____________________' }}</div>
@@ -340,12 +344,12 @@
                     </div>
                 </td>
                 <td class="sig-cell">
-                    @if ($workOrder->clientSignature)
-                        <img src="{{ $workOrder->clientSignature->absolutePath() }}" style="max-height:60px; max-width:90%;">
+                    @if ($companySigPdf)
+                        <img src="{{ $companySigPdf }}" style="max-height:60px; max-width:90%;">
                     @endif
                     <div class="sig-line">
-                        <div class="sig-name">{{ optional($workOrder->client)->name ?: '____________________' }}</div>
-                        <div class="sig-label">Cliente (conformidad)</div>
+                        <div class="sig-name">Administrador</div>
+                        <div class="sig-label">Administrador</div>
                     </div>
                 </td>
             </tr>

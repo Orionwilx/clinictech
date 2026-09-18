@@ -72,7 +72,7 @@ class WorkOrderController extends ClientPanelController
             403
         );
 
-        $workOrder->load(['client', 'equipment', 'technician', 'photos', 'technicianSignature', 'clientSignature']);
+        $workOrder->load(['client', 'equipment', 'technician.user', 'photos']);
 
         return view('client.work_orders.show', compact('workOrder'));
     }
@@ -83,7 +83,7 @@ class WorkOrderController extends ClientPanelController
         // Solo OT aprobadas y enviadas por el admin.
         abort_unless($workOrder->visible_to_client, 403);
 
-        $workOrder->load(['client.logo', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician', 'photos', 'technicianSignature', 'clientSignature']);
+        $workOrder->load(['client.logo', 'equipment.brand', 'equipment.model', 'equipment.area', 'technician.user', 'photos']);
 
         $logoBase64 = $workOrder->client?->logoBase64();
 

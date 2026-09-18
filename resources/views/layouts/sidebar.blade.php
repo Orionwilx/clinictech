@@ -223,6 +223,14 @@
                     </svg>
                 </x-slot:icon>
             </x-sidebar-link>
+
+            <x-sidebar-link :href="route('admin.company-signature.edit')" :active="request()->routeIs('admin.company-signature.*')" label="Firma de empresa">
+                <x-slot:icon>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 1 1 3.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                    </svg>
+                </x-slot:icon>
+            </x-sidebar-link>
             </div>
         @endcan
         @endif

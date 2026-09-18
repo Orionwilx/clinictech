@@ -99,20 +99,32 @@
                     </div>
                 @endif
 
-                @if ($workOrder->technicianSignature || $workOrder->clientSignature)
+                @php
+                    $techSig = $workOrder->technician?->user?->signatureBase64();
+                    $companySig = \App\Support\CompanySignature::base64();
+                @endphp
+                @if ($techSig || $companySig)
                     <div class="mt-6">
                         <h3 class="text-sm font-semibold text-gray-900 mb-2">Firmas</h3>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            @foreach (['technicianSignature' => 'Técnico', 'clientSignature' => 'Cliente'] as $rel => $label)
-                                <div>
-                                    <p class="text-xs font-medium text-gray-500 uppercase mb-1">{{ $label }}</p>
-                                    @if ($workOrder->$rel)
-                                        <img src="{{ $workOrder->$rel->url() }}" alt="Firma {{ $label }}" class="h-24 max-w-full object-contain rounded border border-gray-200 bg-white p-1">
-                                    @else
-                                        <p class="text-sm text-gray-400">Sin firma.</p>
-                                    @endif
-                                </div>
-                            @endforeach
+                            <div class="text-center">
+                                @if ($techSig)
+                                    <img src="{{ $techSig }}" alt="Firma técnico" class="h-20 mx-auto mb-2 object-contain rounded border border-gray-200 bg-white p-1">
+                                @else
+                                    <div class="h-20 border-b border-gray-400 mb-2"></div>
+                                @endif
+                                <p class="text-sm font-medium text-gray-900">{{ $workOrder->technician?->name ?? '—' }}</p>
+                                <p class="text-xs text-gray-500">Técnico responsable</p>
+                            </div>
+                            <div class="text-center">
+                                @if ($companySig)
+                                    <img src="{{ $companySig }}" alt="Firma empresa" class="h-20 mx-auto mb-2 object-contain rounded border border-gray-200 bg-white p-1">
+                                @else
+                                    <div class="h-20 border-b border-gray-400 mb-2"></div>
+                                @endif
+                                <p class="text-sm font-medium text-gray-900">Administrador</p>
+                                <p class="text-xs text-gray-500">Administrador</p>
+                            </div>
                         </div>
                     </div>
                 @endif

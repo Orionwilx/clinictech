@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\ClientAttachmentController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\ClientPecController;
+use App\Http\Controllers\Admin\CompanySignatureController;
 use App\Http\Controllers\Admin\EquipmentCatalogController;
 use App\Http\Controllers\Admin\EquipmentCategoryController;
 use App\Http\Controllers\Admin\EquipmentController;
@@ -23,7 +24,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Technician\DashboardController as TechDashboardController;
 use App\Http\Controllers\Technician\WorkOrderController as TechWorkOrderController;
 use App\Http\Controllers\Technician\WorkOrderPhotoController;
-use App\Http\Controllers\Technician\WorkOrderSignatureController;
 use App\Models\Client;
 use Illuminate\Support\Facades\Route;
 
@@ -47,6 +47,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/signature', [ProfileController::class, 'updateSignature'])->name('profile.signature.update');
+    Route::delete('/profile/signature', [ProfileController::class, 'destroySignature'])->name('profile.signature.destroy');
 
     Route::post('/notifications/read-all', function () {
         auth()->user()->unreadNotifications->markAsRead();
@@ -101,14 +103,15 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('work_orders/{work_order}/approve-work', [WorkOrderController::class, 'approveWork'])->name('work_orders.approve-work');
     Route::post('work_orders/{work_order}/reject-work', [WorkOrderController::class, 'rejectWork'])->name('work_orders.reject-work');
     Route::post('work_orders/{work_order}/send-to-client', [WorkOrderController::class, 'sendToClient'])->name('work_orders.send-to-client');
+    Route::post('work_orders/{work_order}/submit-review', [WorkOrderController::class, 'submitReview'])->name('work_orders.submit-review');
     // Evidencias fotográficas (el admin llena OT y anexa fotos que tomó el técnico).
     Route::post('work_orders/{work_order}/photos', [WorkOrderController::class, 'storePhoto'])->name('work_orders.photos.store');
     Route::patch('work_orders/{work_order}/photos/{photo}', [WorkOrderController::class, 'updatePhoto'])->name('work_orders.photos.update');
     Route::delete('work_orders/{work_order}/photos/{photo}', [WorkOrderController::class, 'destroyPhoto'])->name('work_orders.photos.destroy');
-    // Firmas (técnico / cliente) — imagen subida.
-    Route::post('work_orders/{work_order}/signatures/{kind}', [WorkOrderController::class, 'storeSignature'])
-        ->whereIn('kind', ['technician', 'client'])->name('work_orders.signatures.store');
-    Route::delete('work_orders/{work_order}/signatures/{signature}', [WorkOrderController::class, 'destroySignature'])->name('work_orders.signatures.destroy');
+    // Firma de empresa (única global).
+    Route::get('company-signature', [CompanySignatureController::class, 'edit'])->name('company-signature.edit');
+    Route::post('company-signature', [CompanySignatureController::class, 'update'])->name('company-signature.update');
+    Route::delete('company-signature', [CompanySignatureController::class, 'destroy'])->name('company-signature.destroy');
     // Acciones rápidas y masivas desde la lista.
     Route::post('work_orders/batch', [WorkOrderController::class, 'batch'])->name('work_orders.batch');
     Route::post('work_orders/{work_order}/advance', [WorkOrderController::class, 'advance'])->name('work_orders.advance');
@@ -166,10 +169,6 @@ Route::middleware(['auth', 'role:tecnico', 'technician.profile'])
         Route::post('work_orders/{work_order}/photos', [WorkOrderPhotoController::class, 'store'])->name('work_orders.photos.store');
         Route::patch('work_orders/{work_order}/photos/{photo}', [WorkOrderPhotoController::class, 'update'])->name('work_orders.photos.update');
         Route::delete('work_orders/{work_order}/photos/{photo}', [WorkOrderPhotoController::class, 'destroy'])->name('work_orders.photos.destroy');
-        // Firmas (técnico / cliente) — imagen subida en el diligenciamiento.
-        Route::post('work_orders/{work_order}/signatures/{kind}', [WorkOrderSignatureController::class, 'store'])
-            ->whereIn('kind', ['technician', 'client'])->name('work_orders.signatures.store');
-        Route::delete('work_orders/{work_order}/signatures/{signature}', [WorkOrderSignatureController::class, 'destroy'])->name('work_orders.signatures.destroy');
         Route::resource('work_orders', TechWorkOrderController::class)->only(['index', 'show', 'update']);
     });
 

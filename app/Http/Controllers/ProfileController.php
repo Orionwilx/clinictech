@@ -37,6 +37,39 @@ class ProfileController extends Controller
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
 
+    public function updateSignature(Request $request): RedirectResponse
+    {
+        $request->validate(['signature' => ['required', 'image', 'max:4096']]);
+
+        $user = $request->user();
+
+        // Purge previous signature if any.
+        $user->signature?->purge();
+
+        $file = $request->file('signature');
+        $path = $file->store("signatures/{$user->id}", 'private');
+
+        $user->uploads()->create([
+            'collection' => 'signature',
+            'disk' => 'private',
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'uploaded_by' => $user->id,
+        ]);
+
+        return Redirect::route('profile.edit')->with('status', 'signature-updated');
+    }
+
+    public function destroySignature(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        $user->signature?->purge();
+
+        return Redirect::route('profile.edit')->with('status', 'signature-deleted');
+    }
+
     /**
      * Delete the user's account.
      */
