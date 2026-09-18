@@ -58,7 +58,7 @@
 
             {{-- Datos --}}
             <div x-show="tab === 'datos'" x-cloak class="bg-white shadow-sm sm:rounded-lg p-6">
-                <dl class="divide-y divide-gray-100">
+                <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     @foreach ([
                         'Empresa' => $client->name,
                         'NIT' => $client->nit,
@@ -70,34 +70,39 @@
                         'Usuario de acceso' => optional($client->user)->name ?: '—',
                         'Estado' => $client->is_active ? 'Activo' : 'Inactivo',
                     ] as $label => $value)
-                        <div class="py-3 grid grid-cols-3 gap-4">
-                            <dt class="text-sm font-medium text-gray-500">{{ $label }}</dt>
-                            <dd class="text-sm text-gray-900 col-span-2">{{ $value }}</dd>
+                        <div class="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                            <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>
+                            <dd class="mt-0.5 text-sm text-gray-900 break-words">{{ $value }}</dd>
                         </div>
                     @endforeach
-
-                    {{-- Credenciales de acceso (solo admin) --}}
-                    @can('update clients')
-                        <div class="py-3 grid grid-cols-3 gap-4">
-                            <dt class="text-sm font-medium text-gray-500">Login (correo)</dt>
-                            <dd class="text-sm text-gray-900 col-span-2">{{ optional($client->user)->email ?: '—' }}</dd>
-                        </div>
-                        <div class="py-3 grid grid-cols-3 gap-4" x-data="{ visible: false }">
-                            <dt class="text-sm font-medium text-gray-500">Contraseña</dt>
-                            <dd class="text-sm text-gray-900 col-span-2 flex items-center gap-3">
-                                @if ($client->access_password)
-                                    <span x-show="!visible" class="tracking-widest select-none">••••••••</span>
-                                    <span x-show="visible" x-cloak class="font-mono">{{ $client->access_password }}</span>
-                                    <button type="button" @click="visible = !visible"
-                                            class="text-xs font-semibold text-brand-700 hover:text-brand-900"
-                                            x-text="visible ? 'Ocultar' : 'Mostrar'"></button>
-                                @else
-                                    <span class="text-gray-400">No registrada — asígnala editando el cliente.</span>
-                                @endif
-                            </dd>
-                        </div>
-                    @endcan
                 </dl>
+
+                {{-- Credenciales de acceso (solo admin) --}}
+                @can('update clients')
+                    <div class="mt-6 pt-6 border-t border-gray-100">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4">Credenciales de acceso</h3>
+                        <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <div class="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                                <dt class="text-xs font-medium text-gray-500 uppercase">Login (correo)</dt>
+                                <dd class="mt-0.5 text-sm text-gray-900 break-words">{{ optional($client->user)->email ?: '—' }}</dd>
+                            </div>
+                            <div class="rounded-lg bg-gray-50 border border-gray-100 p-3" x-data="{ visible: false }">
+                                <dt class="text-xs font-medium text-gray-500 uppercase">Contraseña</dt>
+                                <dd class="mt-0.5 text-sm text-gray-900 break-words flex items-center gap-2">
+                                    @if ($client->access_password)
+                                        <span x-show="!visible" class="tracking-widest select-none">••••••••</span>
+                                        <span x-show="visible" x-cloak class="font-mono text-xs">{{ $client->access_password }}</span>
+                                        <button type="button" @click="visible = !visible"
+                                                class="text-xs font-semibold text-brand-700 hover:text-brand-900 whitespace-nowrap"
+                                                x-text="visible ? 'Ocultar' : 'Mostrar'"></button>
+                                    @else
+                                        <span class="text-xs text-gray-400">No registrada</span>
+                                    @endif
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                @endcan
             </div>
 
             {{-- Áreas (gestión en línea) --}}

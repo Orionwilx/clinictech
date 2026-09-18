@@ -169,24 +169,30 @@
                     @endcan
                 </div>
 
-                {{-- Firmas (técnico y cliente) --}}
+                {{-- Firmas --}}
                 <div class="mt-6">
                     <h3 class="text-sm font-semibold text-gray-900 mb-3">Firmas</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <x-signature-slot
-                            label="Firma del técnico"
-                            :current="$workOrder->technicianSignature?->url()"
-                            :currentId="$workOrder->technicianSignature?->id"
-                            :storeUrl="route('admin.work_orders.signatures.store', [$workOrder, 'technician'])"
-                            :destroyUrlBase="url('admin/work_orders/'.$workOrder->id.'/signatures')"
-                            :editable="auth()->user()->can('update work_orders')" />
-                        <x-signature-slot
-                            label="Firma del cliente (conformidad)"
-                            :current="$workOrder->clientSignature?->url()"
-                            :currentId="$workOrder->clientSignature?->id"
-                            :storeUrl="route('admin.work_orders.signatures.store', [$workOrder, 'client'])"
-                            :destroyUrlBase="url('admin/work_orders/'.$workOrder->id.'/signatures')"
-                            :editable="auth()->user()->can('update work_orders')" />
+                        @php $techSig = $workOrder->technician?->user?->signatureBase64(); @endphp
+                        <div class="text-center">
+                            @if ($techSig)
+                                <img src="{{ $techSig }}" alt="Firma técnico" class="h-20 mx-auto mb-2 object-contain rounded border border-gray-200 bg-white p-1">
+                            @else
+                                <div class="h-20 border-b border-gray-400 mb-2"></div>
+                            @endif
+                            <p class="text-sm font-medium text-gray-900">{{ $workOrder->technician?->name ?? '—' }}</p>
+                            <p class="text-xs text-gray-500">Técnico responsable</p>
+                        </div>
+                        @php $companySig = \App\Support\CompanySignature::base64(); @endphp
+                        <div class="text-center">
+                            @if ($companySig)
+                                <img src="{{ $companySig }}" alt="Firma empresa" class="h-20 mx-auto mb-2 object-contain rounded border border-gray-200 bg-white p-1">
+                            @else
+                                <div class="h-20 border-b border-gray-400 mb-2"></div>
+                            @endif
+                            <p class="text-sm font-medium text-gray-900">Administrador</p>
+                            <p class="text-xs text-gray-500">Administrador</p>
+                        </div>
                     </div>
                 </div>
 
@@ -253,6 +259,20 @@
                                     </button>
                                 </form>
                             </div>
+                        </div>
+                    @endif
+
+                    {{-- Admin envía a revisión (en nombre del técnico) --}}
+                    @if (in_array($workOrder->status, ['assigned', 'in_progress']))
+                        <div class="rounded-md bg-yellow-50 border border-yellow-200 p-4">
+                            <p class="text-sm font-semibold text-yellow-800 mb-2">La OT está {{ $workOrder->statusLabel() }} — el admin puede enviarla a revisión</p>
+                            <form method="POST" action="{{ route('admin.work_orders.submit-review', $workOrder) }}">
+                                @csrf
+                                <button type="submit"
+                                        class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-700">
+                                    Enviar a revisión
+                                </button>
+                            </form>
                         </div>
                     @endif
 

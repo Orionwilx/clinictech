@@ -46,7 +46,6 @@ class WorkOrderManagementTest extends TestCase
             'description' => 'El equipo no enciende',
             'type' => 'corrective',
             'priority' => 'high',
-            'status' => 'open',
         ], $overrides);
     }
 
@@ -98,7 +97,6 @@ class WorkOrderManagementTest extends TestCase
         $this->actingAs($this->admin())
             ->post(route('admin.work_orders.store'), $this->validPayload([
                 'technician_id' => $technician->id,
-                'status' => 'assigned',
             ]));
 
         Notification::assertSentTo($user, WorkOrderNotification::class);
@@ -132,14 +130,26 @@ class WorkOrderManagementTest extends TestCase
     {
         $this->actingAs($this->admin())
             ->post(route('admin.work_orders.store'), [])
-            ->assertSessionHasErrors(['client_id', 'title', 'type', 'priority', 'status']);
+            ->assertSessionHasErrors(['client_id', 'title', 'type', 'priority']);
     }
 
-    public function test_status_must_be_a_valid_value(): void
+    public function test_creating_work_order_without_technician_sets_open_status(): void
     {
         $this->actingAs($this->admin())
-            ->post(route('admin.work_orders.store'), $this->validPayload(['status' => 'foo']))
-            ->assertSessionHasErrors('status');
+            ->post(route('admin.work_orders.store'), $this->validPayload(['technician_id' => null]));
+
+        $this->assertSame('open', WorkOrder::firstOrFail()->status);
+    }
+
+    public function test_creating_work_order_with_technician_sets_assigned_status(): void
+    {
+        $user = User::factory()->create()->assignRole('tecnico');
+        $technician = Technician::factory()->create(['user_id' => $user->id]);
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.work_orders.store'), $this->validPayload(['technician_id' => $technician->id]));
+
+        $this->assertSame('assigned', WorkOrder::firstOrFail()->status);
     }
 
     public function test_equipment_must_belong_to_selected_client(): void
@@ -156,18 +166,20 @@ class WorkOrderManagementTest extends TestCase
             ->assertSessionHasErrors('equipment_id');
     }
 
-    public function test_moving_to_in_progress_stamps_started_at(): void
+    public function test_assigning_technician_via_update_transitions_open_to_assigned(): void
     {
-        $order = WorkOrder::factory()->create(['status' => 'open', 'started_at' => null]);
+        $user = User::factory()->create()->assignRole('tecnico');
+        $technician = Technician::factory()->create(['user_id' => $user->id]);
+        $order = WorkOrder::factory()->create(['status' => 'open', 'technician_id' => null]);
 
         $this->actingAs($this->admin())
             ->put(route('admin.work_orders.update', $order), $this->validPayload([
                 'client_id' => $order->client_id,
-                'status' => 'in_progress',
+                'technician_id' => $technician->id,
             ]))
             ->assertRedirect(route('admin.work_orders.show', $order));
 
-        $this->assertNotNull($order->fresh()->started_at);
+        $this->assertSame('assigned', $order->fresh()->status);
     }
 
     public function test_admin_can_assign_technician(): void
@@ -179,7 +191,6 @@ class WorkOrderManagementTest extends TestCase
             ->put(route('admin.work_orders.update', $order), $this->validPayload([
                 'client_id' => $order->client_id,
                 'technician_id' => $technician->id,
-                'status' => 'assigned',
             ]))
             ->assertRedirect(route('admin.work_orders.show', $order));
 

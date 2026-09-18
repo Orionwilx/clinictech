@@ -3,11 +3,9 @@
 namespace App\Services;
 
 use App\Models\Technician;
-use App\Models\Upload;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Notifications\WorkOrderNotification;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Arr;
 
 class WorkOrderService
@@ -80,6 +78,7 @@ class WorkOrderService
     public function create(array $data): WorkOrder
     {
         $data['code'] = $this->nextCode($data['type'] ?? null);
+        $data['status'] = ! empty($data['technician_id']) ? 'assigned' : 'open';
         $data = $this->applyStatusTimestamps($data, null);
 
         $workOrder = WorkOrder::create($data);
@@ -101,6 +100,12 @@ class WorkOrderService
      */
     public function update(WorkOrder $workOrder, array $data): void
     {
+        // Auto-transition open↔assigned when technician is added/removed.
+        // Only applies to early statuses; do not disturb more advanced ones.
+        if (array_key_exists('technician_id', $data) && in_array($workOrder->status, ['open', 'assigned'], true)) {
+            $data['status'] = ! empty($data['technician_id']) ? 'assigned' : 'open';
+        }
+
         $data = $this->applyStatusTimestamps($data, $workOrder);
 
         if (array_key_exists('type', $data) && $data['type'] !== $workOrder->type) {
@@ -116,31 +121,6 @@ class WorkOrderService
         if ($technicianChanged) {
             $this->notifyTechnicianAssigned($workOrder);
         }
-    }
-
-    /**
-     * Guarda (reemplazando) la firma del técnico o del cliente de una OT.
-     * $kind: 'technician' | 'client'. Se sube al disco privado sin recompresión
-     * para no ennegrecer PNG con transparencia.
-     */
-    public function storeSignature(WorkOrder $workOrder, UploadedFile $file, string $kind): Upload
-    {
-        $collection = "signature_{$kind}";
-
-        // Solo hay una firma vigente por tipo: purga la anterior.
-        $workOrder->uploadMany($collection)->get()->each->purge();
-
-        $path = $file->store("work_order_signatures/{$workOrder->id}", 'private');
-
-        return $workOrder->uploads()->create([
-            'collection' => $collection,
-            'disk' => 'private',
-            'path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'size' => $file->getSize(),
-            'uploaded_by' => auth()->id(),
-        ]);
     }
 
     // ─── Transiciones de estado ───────────────────────────────────────────────

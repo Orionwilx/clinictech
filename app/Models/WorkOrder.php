@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -120,16 +119,6 @@ class WorkOrder extends Model
     public function photos(): MorphMany
     {
         return $this->uploadMany('photo');
-    }
-
-    public function technicianSignature(): MorphOne
-    {
-        return $this->upload('signature_technician');
-    }
-
-    public function clientSignature(): MorphOne
-    {
-        return $this->upload('signature_client');
     }
 
     public function statusLabel(): string
