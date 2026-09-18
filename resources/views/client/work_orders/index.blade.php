@@ -56,6 +56,7 @@
                                 'inline-flex rounded-full px-2 text-xs font-semibold',
                                 'bg-sky-100 text-sky-800' => $order->type === 'preventive',
                                 'bg-orange-100 text-orange-800' => $order->type === 'corrective',
+                                'bg-violet-100 text-violet-800' => $order->type === 'review',
                             ])>{{ $order->typeLabel() }}</span>
                         </x-td>
                         <x-td plain>

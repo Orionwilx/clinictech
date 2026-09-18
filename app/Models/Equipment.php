@@ -162,4 +162,18 @@ class Equipment extends Model
     {
         return self::ACQUISITION_TYPES[$this->acquisition_type] ?? $this->acquisition_type;
     }
+
+    /**
+     * Nombre del PDF de la hoja de vida, saneado y sin acentos:
+     * HV_equipo_marca_serie.pdf
+     */
+    public function pdfFileName(): string
+    {
+        return WorkOrder::sanitizeFileName([
+            'HV',
+            $this->name,
+            optional($this->brand)->name,
+            $this->serial_number,
+        ]).'.pdf';
+    }
 }

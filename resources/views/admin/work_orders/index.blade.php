@@ -334,17 +334,19 @@
                     toggleAll(e) {
                         this.selected = e.target.checked ? [...this.selectableIds] : [];
                     },
+                    // $nextTick: deja que Alpine escriba el value de los inputs x-model
+                    // (action/technician_id/reason) en el DOM antes del submit nativo.
                     submitApprove() {
                         this.batchAction = 'approve';
-                        this.$refs.batchForm.submit();
+                        this.$nextTick(() => this.$refs.batchForm.submit());
                     },
                     submitReject() {
                         this.batchAction = 'reject';
-                        this.$refs.batchForm.submit();
+                        this.$nextTick(() => this.$refs.batchForm.submit());
                     },
                     submitAssign() {
                         this.batchAction = 'assign';
-                        this.$refs.batchForm.submit();
+                        this.$nextTick(() => this.$refs.batchForm.submit());
                     },
                     openRowModal(cfg) {
                         this.rowModal = { open: true, tech: '', reason: '', required: false, ...cfg };
@@ -352,7 +354,7 @@
                     submitRowModal() {
                         const form = this.$refs.rowForm;
                         form.action = this.rowUrls[this.rowModal.kind].replace('__ID__', this.rowModal.orderId);
-                        form.submit();
+                        this.$nextTick(() => form.submit());
                     },
                 };
             }

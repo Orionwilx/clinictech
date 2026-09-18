@@ -93,7 +93,7 @@ class EquipmentController extends Controller
             'logoBase64' => $equipment->client?->logoBase64(),
         ])->setPaper('A4', 'portrait');
 
-        return $pdf->download("hoja-de-vida-{$equipment->serial_number}.pdf");
+        return $pdf->download($equipment->pdfFileName());
     }
 
     public function edit(Equipment $equipment): View

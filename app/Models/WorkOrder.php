@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class WorkOrder extends Model
 {
@@ -38,8 +40,19 @@ class WorkOrder extends Model
      * Tipos: valor (código, EN) => etiqueta (UI, ES).
      */
     public const TYPES = [
-        'corrective' => 'Correctivo',
         'preventive' => 'Preventivo',
+        'corrective' => 'Correctivo',
+        'review' => 'Revisión',
+    ];
+
+    /**
+     * Sigla por tipo, usada en el código de la OT y en el nombre de los PDF.
+     * MP = mantenimiento preventivo · MC = correctivo · MR = revisión.
+     */
+    public const TYPE_ABBREVIATIONS = [
+        'preventive' => 'MP',
+        'corrective' => 'MC',
+        'review' => 'MR',
     ];
 
     /**
@@ -109,6 +122,16 @@ class WorkOrder extends Model
         return $this->uploadMany('photo');
     }
 
+    public function technicianSignature(): MorphOne
+    {
+        return $this->upload('signature_technician');
+    }
+
+    public function clientSignature(): MorphOne
+    {
+        return $this->upload('signature_client');
+    }
+
     public function statusLabel(): string
     {
         return self::STATUSES[$this->status] ?? $this->status;
@@ -117,6 +140,48 @@ class WorkOrder extends Model
     public function typeLabel(): string
     {
         return self::TYPES[$this->type] ?? $this->type;
+    }
+
+    /**
+     * Sigla del tipo (MP/MC/MR) para código y nombres de archivo.
+     */
+    public function typeAbbreviation(): string
+    {
+        return self::TYPE_ABBREVIATIONS[$this->type] ?? 'OT';
+    }
+
+    /**
+     * Nombre del archivo PDF de la OT, saneado y sin acentos:
+     * MP_OT000001_equipo_marca_serie.pdf  (para preventivas MP, correctivas MC, revisión MR).
+     */
+    public function pdfFileName(): string
+    {
+        $numericCode = preg_replace('/_[A-Z]{2}$/', '', (string) $this->code);
+
+        $parts = [$this->typeAbbreviation(), $numericCode];
+
+        if ($equipment = $this->equipment) {
+            $parts[] = $equipment->name;
+            $parts[] = optional($equipment->brand)->name;
+            $parts[] = $equipment->serial_number;
+        }
+
+        return static::sanitizeFileName($parts).'.pdf';
+    }
+
+    /**
+     * Une partes en un nombre de archivo seguro: sin acentos, espacios → guion,
+     * separando cada parte con guion bajo, descartando vacías.
+     *
+     * @param  array<int, string|null>  $parts
+     */
+    public static function sanitizeFileName(array $parts): string
+    {
+        return collect($parts)
+            ->filter(fn ($p) => filled($p))
+            ->map(fn ($p) => trim(preg_replace('/[^A-Za-z0-9]+/', '-', Str::ascii((string) $p)), '-'))
+            ->filter(fn ($p) => $p !== '')
+            ->implode('_');
     }
 
     public function priorityLabel(): string

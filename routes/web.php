@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AreaController;
 use App\Http\Controllers\Admin\BrandController;
 use App\Http\Controllers\Admin\ClientAttachmentController;
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\ClientPecController;
 use App\Http\Controllers\Admin\EquipmentCatalogController;
 use App\Http\Controllers\Admin\EquipmentCategoryController;
 use App\Http\Controllers\Admin\EquipmentController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkOrderController;
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\EquipmentController as ClientEquipmentController;
+use App\Http\Controllers\Client\PecController as ClientPecPanelController;
 use App\Http\Controllers\Client\TechnicianController as ClientTechnicianController;
 use App\Http\Controllers\Client\WorkOrderController as ClientWorkOrderController;
 use App\Http\Controllers\MediaController;
@@ -21,6 +23,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Technician\DashboardController as TechDashboardController;
 use App\Http\Controllers\Technician\WorkOrderController as TechWorkOrderController;
 use App\Http\Controllers\Technician\WorkOrderPhotoController;
+use App\Http\Controllers\Technician\WorkOrderSignatureController;
 use App\Models\Client;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +73,10 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('clients/{client}/attachments', [ClientAttachmentController::class, 'store'])->name('clients.attachments.store');
     Route::get('clients/{client}/attachments/{attachment}/download', [ClientAttachmentController::class, 'download'])->name('clients.attachments.download');
     Route::delete('clients/{client}/attachments/{attachment}', [ClientAttachmentController::class, 'destroy'])->name('clients.attachments.destroy');
+    // Capacitaciones (PEC) del cliente — PDFs.
+    Route::post('clients/{client}/pec', [ClientPecController::class, 'store'])->name('clients.pec.store');
+    Route::get('clients/{client}/pec/{upload}/download', [ClientPecController::class, 'download'])->name('clients.pec.download');
+    Route::delete('clients/{client}/pec/{upload}', [ClientPecController::class, 'destroy'])->name('clients.pec.destroy');
     Route::put('areas/{area}', [AreaController::class, 'update'])->name('areas.update');
     Route::delete('areas/{area}', [AreaController::class, 'destroy'])->name('areas.destroy');
 
@@ -96,7 +103,12 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
     Route::post('work_orders/{work_order}/send-to-client', [WorkOrderController::class, 'sendToClient'])->name('work_orders.send-to-client');
     // Evidencias fotográficas (el admin llena OT y anexa fotos que tomó el técnico).
     Route::post('work_orders/{work_order}/photos', [WorkOrderController::class, 'storePhoto'])->name('work_orders.photos.store');
+    Route::patch('work_orders/{work_order}/photos/{photo}', [WorkOrderController::class, 'updatePhoto'])->name('work_orders.photos.update');
     Route::delete('work_orders/{work_order}/photos/{photo}', [WorkOrderController::class, 'destroyPhoto'])->name('work_orders.photos.destroy');
+    // Firmas (técnico / cliente) — imagen subida.
+    Route::post('work_orders/{work_order}/signatures/{kind}', [WorkOrderController::class, 'storeSignature'])
+        ->whereIn('kind', ['technician', 'client'])->name('work_orders.signatures.store');
+    Route::delete('work_orders/{work_order}/signatures/{signature}', [WorkOrderController::class, 'destroySignature'])->name('work_orders.signatures.destroy');
     // Acciones rápidas y masivas desde la lista.
     Route::post('work_orders/batch', [WorkOrderController::class, 'batch'])->name('work_orders.batch');
     Route::post('work_orders/{work_order}/advance', [WorkOrderController::class, 'advance'])->name('work_orders.advance');
@@ -139,6 +151,8 @@ Route::middleware(['auth', 'role:cliente', 'client.profile'])
         Route::get('work_orders/{work_order}/pdf', [ClientWorkOrderController::class, 'pdf'])->name('work_orders.pdf');
         Route::resource('work_orders', ClientWorkOrderController::class)->only(['index', 'show', 'create', 'store']);
         Route::get('technicians', [ClientTechnicianController::class, 'index'])->name('technicians.index');
+        Route::get('pec', [ClientPecPanelController::class, 'index'])->name('pec.index');
+        Route::get('pec/{upload}/download', [ClientPecPanelController::class, 'download'])->name('pec.download');
     });
 
 // Panel técnico
@@ -150,7 +164,12 @@ Route::middleware(['auth', 'role:tecnico', 'technician.profile'])
         Route::post('work_orders/{work_order}/submit', [TechWorkOrderController::class, 'submit'])->name('work_orders.submit');
         // Evidencias fotográficas (subida AJAX inmediata + borrado).
         Route::post('work_orders/{work_order}/photos', [WorkOrderPhotoController::class, 'store'])->name('work_orders.photos.store');
+        Route::patch('work_orders/{work_order}/photos/{photo}', [WorkOrderPhotoController::class, 'update'])->name('work_orders.photos.update');
         Route::delete('work_orders/{work_order}/photos/{photo}', [WorkOrderPhotoController::class, 'destroy'])->name('work_orders.photos.destroy');
+        // Firmas (técnico / cliente) — imagen subida en el diligenciamiento.
+        Route::post('work_orders/{work_order}/signatures/{kind}', [WorkOrderSignatureController::class, 'store'])
+            ->whereIn('kind', ['technician', 'client'])->name('work_orders.signatures.store');
+        Route::delete('work_orders/{work_order}/signatures/{signature}', [WorkOrderSignatureController::class, 'destroy'])->name('work_orders.signatures.destroy');
         Route::resource('work_orders', TechWorkOrderController::class)->only(['index', 'show', 'update']);
     });
 

@@ -30,6 +30,7 @@ Reutiliza SIEMPRE estos; no escribas clases sueltas para lo que ya existe:
 - `<x-page-header :title :breadcrumbs>` con slot `actions` — cabecera de página estándar (migas + título prominente `text-2xl font-bold` + botones a la derecha). Va SIEMPRE dentro del `<x-slot name="header">`.
 - `<x-data-table :heads :cols>` + `<x-td>` + `<x-td-actions>` — **data table estándar** de cualquier listado admin (truncado+tooltip, columna de acciones fija). Ver sección «Componentes de data table» más abajo. `<x-icon-btn>` para los botones de acción.
 - `<x-catalog-checkboxes name catalog :options :selected>` — checkboxes alimentados por un catálogo configurable, con alta rápida inline.
+- `<x-signature-slot label :current :currentId :storeUrl :destroyUrlBase :editable>` — slot de **firma por imagen** (subir/reemplazar/eliminar vía AJAX). Se usa en el show de OT (admin/técnico) para las firmas de técnico y cliente.
 - `<x-confirm-modal>` — **modal de confirmación estándar** (ver sección abajo). PROHIBIDO usar `confirm()` nativo del navegador.
 
 ## Modal de confirmación (estándar obligatorio)

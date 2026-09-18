@@ -54,6 +54,33 @@ class ClientManagementTest extends TestCase
             ->assertOk();
     }
 
+    public function test_admin_can_upload_pec_pdf_for_client(): void
+    {
+        Storage::fake('private');
+        $client = Client::factory()->create();
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.clients.pec.store', $client), [
+                'name' => 'Bioseguridad',
+                'file' => UploadedFile::fake()->create('capacitacion.pdf', 100, 'application/pdf'),
+            ])->assertRedirect();
+
+        $this->assertSame(1, $client->pec()->count());
+        $this->assertSame('Bioseguridad', $client->pec()->first()->label);
+    }
+
+    public function test_pec_upload_rejects_non_pdf(): void
+    {
+        Storage::fake('private');
+        $client = Client::factory()->create();
+
+        $this->actingAs($this->admin())
+            ->post(route('admin.clients.pec.store', $client), [
+                'name' => 'Bioseguridad',
+                'file' => UploadedFile::fake()->image('foto.png'),
+            ])->assertSessionHasErrors('file');
+    }
+
     public function test_admin_can_upload_client_logo(): void
     {
         Storage::fake('private');

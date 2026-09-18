@@ -4,9 +4,10 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <dl class="divide-y divide-gray-100">
+                {{-- Datos generales en horizontal (tarjetas en cuadrícula) --}}
+                <dl class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                     @foreach ([
                         'Nº de orden' => $workOrder->code,
                         'Asunto' => $workOrder->title,
@@ -16,20 +17,33 @@
                         'Tipo' => $workOrder->typeLabel(),
                         'Prioridad' => $workOrder->priorityLabel(),
                         'Estado' => $workOrder->statusLabel(),
-                        'Descripción' => $workOrder->description ?: '—',
-                        'Diagnóstico' => $workOrder->diagnosis ?: '—',
-                        'Actividades realizadas' => $workOrder->work_performed ?: '—',
                         'Fecha programada' => optional($workOrder->scheduled_at)->format('Y-m-d') ?: '—',
                         'Inicio' => optional($workOrder->started_at)->format('Y-m-d') ?: '—',
                         'Completada' => optional($workOrder->completed_at)->format('Y-m-d') ?: '—',
                         'Cerrada' => optional($workOrder->closed_at)->format('Y-m-d') ?: '—',
                     ] as $label => $value)
-                        <div class="py-3 grid grid-cols-3 gap-4">
-                            <dt class="text-sm font-medium text-gray-500">{{ $label }}</dt>
-                            <dd class="text-sm text-gray-900 col-span-2 whitespace-pre-line">{{ $value }}</dd>
+                        <div class="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                            <dt class="text-xs font-medium text-gray-500 uppercase">{{ $label }}</dt>
+                            <dd class="mt-0.5 text-sm text-gray-900 break-words">{{ $value }}</dd>
                         </div>
                     @endforeach
                 </dl>
+
+                {{-- Textos largos a lo ancho --}}
+                <div class="mt-6 space-y-4">
+                    @foreach ([
+                        'Descripción' => $workOrder->description,
+                        'Diagnóstico' => $workOrder->diagnosis,
+                        'Actividades realizadas' => $workOrder->work_performed,
+                    ] as $label => $value)
+                        @if ($value)
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-900 mb-1">{{ $label }}</h3>
+                                <p class="text-sm text-gray-700 whitespace-pre-line">{{ $value }}</p>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
 
                 @if ($workOrder->maintenance_tasks || $workOrder->accessories_checked)
                     <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -70,8 +84,20 @@
                 {{-- Evidencias fotográficas: el admin puede anexar/quitar (llena OT del técnico) --}}
                 <div class="mt-6"
                      x-data="{
-                        photos: {{ Illuminate\Support\Js::from($workOrder->photos->map(fn ($p) => ['id' => $p->id, 'url' => $p->url(), 'name' => $p->original_name])) }},
+                        photos: {{ Illuminate\Support\Js::from($workOrder->photos->map(fn ($p) => ['id' => $p->id, 'url' => $p->url(), 'name' => $p->original_name, 'label' => $p->label])) }},
                         uploading: 0, error: '',
+                        async saveLabel(photo, label) {
+                            photo.label = label;
+                            await fetch(`{{ url('admin/work_orders/'.$workOrder->id.'/photos') }}/${photo.id}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                },
+                                body: JSON.stringify({ label }),
+                            });
+                        },
                         async upload(files) {
                             this.error = '';
                             for (const file of files) {
@@ -108,14 +134,23 @@
 
                     <div class="grid grid-cols-3 sm:grid-cols-6 gap-3" x-show="photos.length" x-cloak>
                         <template x-for="photo in photos" :key="photo.id">
-                            <div class="relative group">
-                                <a :href="photo.url" target="_blank">
-                                    <img :src="photo.url" :alt="photo.name" class="h-24 w-full object-cover rounded-lg border border-gray-200">
-                                </a>
+                            <div>
+                                <div class="relative group">
+                                    <a :href="photo.url" target="_blank">
+                                        <img :src="photo.url" :alt="photo.label || photo.name" class="h-24 w-full object-cover rounded-lg border border-gray-200">
+                                    </a>
+                                    @can('update work_orders')
+                                        <button type="button" @click="remove(photo)"
+                                                class="absolute -top-2 -right-2 hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white text-xs shadow"
+                                                title="Eliminar foto">✕</button>
+                                    @endcan
+                                </div>
                                 @can('update work_orders')
-                                    <button type="button" @click="remove(photo)"
-                                            class="absolute -top-2 -right-2 hidden group-hover:flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-white text-xs shadow"
-                                            title="Eliminar foto">✕</button>
+                                    <input type="text" :value="photo.label ?? ''" @change="saveLabel(photo, $event.target.value)"
+                                           placeholder="Descripción…" maxlength="255"
+                                           class="mt-1 block w-full text-xs border-gray-300 focus:border-brand-500 focus:ring-brand-500 rounded-md shadow-sm">
+                                @else
+                                    <p class="mt-1 text-xs text-gray-500" x-show="photo.label" x-text="photo.label"></p>
                                 @endcan
                             </div>
                         </template>
@@ -132,6 +167,27 @@
                         <p class="mt-1 text-xs text-gray-400">Se comprimen automáticamente al subir.</p>
                         <p class="mt-1 text-xs text-red-600" x-show="error" x-text="error" x-cloak></p>
                     @endcan
+                </div>
+
+                {{-- Firmas (técnico y cliente) --}}
+                <div class="mt-6">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-3">Firmas</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <x-signature-slot
+                            label="Firma del técnico"
+                            :current="$workOrder->technicianSignature?->url()"
+                            :currentId="$workOrder->technicianSignature?->id"
+                            :storeUrl="route('admin.work_orders.signatures.store', [$workOrder, 'technician'])"
+                            :destroyUrlBase="url('admin/work_orders/'.$workOrder->id.'/signatures')"
+                            :editable="auth()->user()->can('update work_orders')" />
+                        <x-signature-slot
+                            label="Firma del cliente (conformidad)"
+                            :current="$workOrder->clientSignature?->url()"
+                            :currentId="$workOrder->clientSignature?->id"
+                            :storeUrl="route('admin.work_orders.signatures.store', [$workOrder, 'client'])"
+                            :destroyUrlBase="url('admin/work_orders/'.$workOrder->id.'/signatures')"
+                            :editable="auth()->user()->can('update work_orders')" />
+                    </div>
                 </div>
 
                 {{-- Acciones según estado del flujo colaborativo --}}
