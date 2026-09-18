@@ -126,9 +126,7 @@
                         </thead>
                         <tbody class="divide-y divide-gray-200">
                             @forelse ($workedEquipment as $item)
-                                @php
-                                    $otCount = $technician->workOrders->where('equipment_id', $item->id)->count();
-                                @endphp
+                                @php($otCount = $technician->workOrders->where('equipment_id', $item->id)->count())
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $item->name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

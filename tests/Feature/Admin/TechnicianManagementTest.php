@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Client;
+use App\Models\Equipment;
 use App\Models\Technician;
 use App\Models\User;
+use App\Models\WorkOrder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -38,6 +41,25 @@ class TechnicianManagementTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ], $overrides);
+    }
+
+    public function test_admin_can_view_technician_show_with_worked_equipment(): void
+    {
+        // Con equipo trabajado se renderiza la pestaña «Equipos» (loop @forelse/@php),
+        // que antes rompía la compilación Blade. Este test lo cubre.
+        $technician = Technician::factory()->create();
+        $client = Client::factory()->create();
+        $equipment = Equipment::factory()->create(['client_id' => $client->id]);
+        WorkOrder::factory()->create([
+            'client_id' => $client->id,
+            'equipment_id' => $equipment->id,
+            'technician_id' => $technician->id,
+        ]);
+
+        $this->actingAs($this->admin())
+            ->get(route('admin.technicians.show', $technician))
+            ->assertOk()
+            ->assertSee($equipment->name);
     }
 
     public function test_admin_can_view_technicians_index(): void
